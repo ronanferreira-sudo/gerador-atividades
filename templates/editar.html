@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta charset="utf-8">
+    <title>Editar Atividade</title>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+
+        <div class="container">
+
+            <a class="navbar-brand" href="/">
+                Gerador IA
+            </a>
+
+            <div>
+
+                <a class="btn btn-outline-light me-2" href="/">
+                    Nova Atividade
+                </a>
+
+                <a class="btn btn-outline-light me-2" href="/atividades">
+                    Atividades
+                </a>
+
+                <a class="btn btn-outline-light" href="/dashboard">
+                    Dashboard
+                </a>
+
+            </div>
+
+        </div>
+
+    </nav>
+    <h1>Editar Atividade</h1>
+
+    <form method="POST">
+
+        <p>Curso</p>
+        <input type="text" name="curso" value="{{ atividade[1] }}">
+
+        <p>Disciplina</p>
+        <input type="text" name="disciplina" value="{{ atividade[2] }}">
+
+        <p>Conteúdo</p>
+        <input type="text" name="conteudo" value="{{ atividade[3] }}">
+
+        <p>Dificuldade</p>
+        <input type="text" name="dificuldade" value="{{ atividade[4] }}">
+
+        <p>Atividade Gerada</p>
+
+        <textarea name="atividade_gerada" rows="20" cols="100">{{ atividade[5] }}</textarea>
+
+        <br><br>
+
+        <button type="submit">
+            Salvar
+        </button>
+
+    </form>
+
+    <br>
+
+    <a href="/atividades">
+        Voltar
+    </a>
+
+</body>
+
+</html>

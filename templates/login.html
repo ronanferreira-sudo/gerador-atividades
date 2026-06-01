@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Repositório de Atividades</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <div class="container-fluid">
+
+        <div class="row vh-100">
+
+            <!-- LADO ESQUERDO -->
+            <div class="col-md-6 painel-esquerdo">
+
+                <h1 class="titulo-sistema">
+                    REPOSITÓRIO DE<br>
+                    ATIVIDADES
+                </h1>
+
+                <p class="subtitulo-sistema">
+                    Plataforma inteligente para geração de atividades educacionais com Inteligência Artificial.
+                </p>
+
+                <img src="{{ url_for('static', filename='img/computador.png') }}" alt="Computador" class="imagem-login">
+
+            </div>
+
+            <!-- LADO DIREITO -->
+            <div class="col-md-6 painel-direito">
+
+                <div class="card-login">
+
+                    <div class="icone-login">
+                        📚
+                    </div>
+
+                    <h2>
+                        Bem-vindo
+                    </h2>
+
+                    <p class="texto-login">
+                        Faça login para acessar o sistema
+                    </p>
+
+                    <form method="POST">
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                E-mail
+                            </label>
+
+                            <input type="email" name="email" class="form-control form-control-lg" required>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">
+                                Senha
+                            </label>
+
+                            <input type="password" name="senha" class="form-control form-control-lg" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-login">
+
+                            Entrar
+
+                        </button>
+                        <div class="text-center mt-3">
+
+                            <a href="/cadastro">
+                                Fazer cadastro
+                            </a>
+
+                        </div>
+
+                    </form>
+
+                    <div class="rodape-login">
+                        © 2026 Repositório de Atividades
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>
