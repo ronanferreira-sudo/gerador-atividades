@@ -156,24 +156,56 @@ def atividades():
     if 'usuario_id' not in session:
         return redirect('/login')
 
+    busca = request.args.get('busca')
+
     if session['perfil'] == 'admin':
 
-        cursor.execute("""
-            SELECT *
-            FROM atividades
-            ORDER BY id DESC
-        """)
+        if busca:
+            cursor.execute("""
+                SELECT *
+                FROM atividades
+                WHERE curso ILIKE %s
+                   OR disciplina ILIKE %s
+                   OR conteudo ILIKE %s
+                ORDER BY id DESC
+            """, (
+                f"%{busca}%",
+                f"%{busca}%",
+                f"%{busca}%"
+            ))
+        else:
+            cursor.execute("""
+                SELECT *
+                FROM atividades
+                ORDER BY id DESC
+            """)
 
     else:
 
-        cursor.execute("""
-            SELECT *
-            FROM atividades
-            WHERE usuario_id = %s
-            ORDER BY id DESC
-        """, (
-            session['usuario_id'],
-        ))
+        if busca:
+            cursor.execute("""
+                SELECT *
+                FROM atividades
+                WHERE usuario_id = %s
+                  AND (curso ILIKE %s
+                   OR disciplina ILIKE %s
+                   OR conteudo ILIKE %s)
+                ORDER BY id DESC
+            """, (
+                session['usuario_id'],
+                f"%{busca}%",
+                f"%{busca}%",
+                f"%{busca}%"
+            ))
+        else:
+            cursor.execute("""
+                SELECT *
+                FROM atividades
+                WHERE usuario_id = %s
+                ORDER BY id DESC
+            """, (
+                session['usuario_id'],
+            ))
 
     dados = cursor.fetchall()
 
