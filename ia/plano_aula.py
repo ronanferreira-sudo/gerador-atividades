@@ -17,24 +17,19 @@ Informações do curso:
 - Horas por dia: {aulas_por_dia} horas
 - Total de dias previstos: {total_dias}
 
-Crie APENAS os 5 primeiros dias de aula.
+Crie APENAS os 2 primeiros dias de aula.
 
 Para cada dia utilize exatamente a estrutura abaixo:
-
-================================================
 
 PLANO DE AULA - DIA 1
 
 1. Dados de Identificação
-
 Tema da Aula:
 Carga Horária:
 Professor:
 
 2. Objetivos
-
 Objetivo Geral:
-
 Objetivos Específicos:
 
 3. Conteúdo Programático
@@ -44,21 +39,16 @@ Objetivos Específicos:
 5. Recursos Didáticos
 
 6. Avaliação
-
-================================================
 
 PLANO DE AULA - DIA 2
 
 1. Dados de Identificação
-
 Tema da Aula:
 Carga Horária:
 Professor:
 
 2. Objetivos
-
 Objetivo Geral:
-
 Objetivos Específicos:
 
 3. Conteúdo Programático
@@ -69,11 +59,9 @@ Objetivos Específicos:
 
 6. Avaliação
 
-================================================
-
 Seja detalhado.
-Não faça apenas uma lista de conteúdos.
-Crie um plano pedagógico completo.
+Não faça lista simples.
+Crie planos pedagógicos completos.
 """
 
     print("Chamando Ollama...")

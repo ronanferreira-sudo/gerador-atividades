@@ -1,53 +1,78 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
+
     <meta charset="UTF-8">
+
     <title>Planos de Aula</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+
 </head>
+
 <body>
 
-<div class="container mt-4">
+    {% include 'menu.html' %}
 
-    <h2>Planos de Aula Gerados</h2>
+    <div class="container mt-4">
 
-    <table class="table table-striped">
+        <h2>Planos de Aula Gerados</h2>
 
-        <tr>
-            <th>Curso</th>
-            <th>Carga Horária</th>
-            <th>Aulas/Dia</th>
-            <th>Plano</th>
-        </tr>
+        <table class="table table-striped">
 
-        {% for plano in planos %}
+            <thead>
 
-        <tr>
+                <tr>
 
-            <td>{{ plano[1] }}</td>
+                 
+                    <th>Curso</th>
+                    <th>Carga Horária</th>
+                    <th>Aulas/Dia</th>
+                    <th>Ações</th>
 
-            <td>{{ plano[2] }}h</td>
+                </tr>
 
-            <td>{{ plano[3] }}h</td>
+            </thead>
 
-            <td>
+            <tbody>
 
-                {% if plano[4]|length > 200 %}
-                    {{ plano[4][:200] }}...
-                {% else %}
-                    {{ plano[4] }}
-                {% endif %}
+                {% for plano in planos %}
 
-            </td>
+                <tr>
+                  
+                    <td>{{ plano[1] }}</td>
 
-        </tr>
+                    <td>{{ plano[2] }}h</td>
 
-        {% endfor %}
+                    <td>{{ plano[3] }}</td>
 
-    </table>
+                    <td>
 
-</div>
+                        <a href="/visualizar_plano/{{ plano[0] }}" class="btn btn-primary btn-sm">
+                            Ver
+                        </a>
+
+                        <a href="/editar_plano/{{ plano[0] }}" class="btn btn-warning btn-sm">
+                            Editar
+                        </a>
+
+                        <a href="/excluir_plano/{{ plano[0] }}" class="btn btn-danger btn-sm">
+                            Excluir
+                        </a>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
 
 </body>
+
 </html>

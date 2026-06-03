@@ -186,3 +186,23 @@ body{
 .table td{
     vertical-align:middle;
 }
+/* ==========================
+   TABELA DE PLANOS
+========================== */
+
+.plano{
+    max-width:400px;
+}
+
+.acoes{
+    white-space:nowrap;
+    text-align:center;
+}
+
+.acoes .btn{
+    margin:2px;
+}
+
+.table td{
+    vertical-align:middle;
+}

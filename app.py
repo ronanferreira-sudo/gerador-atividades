@@ -6,9 +6,8 @@ from docx import Document
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 import os
-
-from database.conexao import conexao, cursor
 from ia.gerador import gerar_atividade
+from database.conexao import conexao, cursor
 
 app = Flask(__name__)
 app.secret_key = "gerador_atividades_2026"
@@ -475,7 +474,7 @@ def planos():
 
         conexao.commit()
 
-        return render_template("resultado_plano.html", texto=texto, plano=plano_gerado)
+        return redirect("/listar_planos")
 
     return render_template("planos.html")
 
@@ -483,7 +482,6 @@ def planos():
 # =========================
 # LISTAR PLANOS
 # =========================
-
 @app.route("/listar_planos")
 def listar_planos():
 
@@ -513,6 +511,28 @@ def listar_planos():
     planos = cursor.fetchall()
 
     return render_template("listar_planos.html", planos=planos)
+
+
+# =========================
+# LISTAR PLANOS
+# =========================
+
+
+@app.route("/visualizar_plano/<int:id>")
+def visualizar_plano(id):
+
+    cursor.execute(
+        """
+        SELECT *
+        FROM planos_aula
+        WHERE id=%s
+    """,
+        (id,),
+    )
+
+    plano = cursor.fetchone()
+
+    return render_template("listar_planos.html", plano=plano)
 
 
 # =========================
