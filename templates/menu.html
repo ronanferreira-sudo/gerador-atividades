@@ -1,0 +1,71 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+
+    <div class="container">
+
+        <a class="navbar-brand" href="/dashboard">
+            Gerador IA
+        </a>
+
+        <button class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#menu">
+
+            <span class="navbar-toggler-icon"></span>
+
+        </button>
+
+        <div class="collapse navbar-collapse" id="menu">
+
+            <ul class="navbar-nav me-auto">
+
+                <li class="nav-item">
+                    <a class="nav-link" href="/dashboard">
+                        Dashboard
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="/">
+                        Nova Atividade
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="/atividades">
+                        Atividades
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="/planos">
+                        Gerar Plano
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="/listar_planos">
+                        Planos de Aula
+                    </a>
+                </li>
+
+            </ul>
+
+            <span class="navbar-text me-3">
+
+                {{ session['nome'] }}
+
+            </span>
+
+            <a class="btn btn-danger btn-sm"
+               href="/logout">
+
+                Sair
+
+            </a>
+
+        </div>
+
+    </div>
+
+</nav>

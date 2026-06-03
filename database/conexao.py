@@ -8,4 +8,6 @@ conexao = psycopg2.connect(
     password="123"
 )
 
+conexao.autocommit = True
+
 cursor = conexao.cursor()

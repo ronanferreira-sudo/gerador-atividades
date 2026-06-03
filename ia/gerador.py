@@ -8,26 +8,37 @@ def gerar_atividade(
 ):
 
     prompt = f"""
-    
+Você é um professor experiente.
 
-CURSO: _________
-DISCIPLINA: _________
-ALUNO: ___________________________
-DATA: ____/____/____
+Crie uma atividade educacional.
 
-    Tema: {conteudo}
-  
-    Gere:
-    - 5 questões objetivas
-    - 4 alternativas por questão
-    - informe o gabarito
-    - 1 atividade prática
-    """
+Tema:
+{conteudo}
+
+Dificuldade:
+{dificuldade}
+
+Tipo:
+{tipo}
+
+Quantidade de questões:
+{quantidade}
+
+Regras:
+
+- Se for objetiva, gere apenas questões objetivas.
+- Se for discursiva, gere apenas questões discursivas.
+- Se for mista, gere metade objetivas e metade discursivas.
+- Nas objetivas use 4 alternativas.
+- Informe o gabarito quando houver questões objetivas.
+
+Organize a atividade pronta para impressão.
+"""
 
     resposta = requests.post(
         "http://localhost:11434/api/generate",
         json={
-            "model": "gemma3:4b",
+           "model": "llama3.1:8b",
             "prompt": prompt,
             "stream": False
         },

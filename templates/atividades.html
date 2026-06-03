@@ -12,47 +12,7 @@
 
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-
-        <div class="container">
-
-            <a class="navbar-brand" href="/">
-                Gerador IA
-            </a>
-
-            <form method="GET" action="/atividades" class="d-flex">
-
-                <input
-                    type="text"
-                    name="busca"
-                    class="form-control me-2"
-                    placeholder="Pesquisar curso, disciplina ou conteúdo">
-
-                <button class="btn btn-primary" type="submit">
-                    Buscar
-                </button>
-
-            </form>
-
-            <div>
-
-                <a class="btn btn-outline-light me-2" href="/">
-                    Nova Atividade
-                </a>
-
-                <a class="btn btn-outline-light me-2" href="/atividades">
-                    Atividades
-                </a>
-
-                <a class="btn btn-outline-light" href="/dashboard">
-                    Dashboard
-                </a>
-
-            </div>
-
-        </div>
-
-    </nav>
+    {% include 'menu.html' %}
 
     <div class="container-fluid mt-4">
 
@@ -94,38 +54,33 @@
                         <td class="atividade">
 
                             {% if atividade[5]|length > 120 %}
-                                {{ atividade[5][:120] }}...
+                            {{ atividade[5][:120] }}...
                             {% else %}
-                                {{ atividade[5] }}
+                            {{ atividade[5] }}
                             {% endif %}
 
                         </td>
 
                         <td class="acoes">
 
-                            <a class="btn btn-warning btn-sm"
-                               href="/editar/{{ atividade[0] }}">
+                            <a class="btn btn-warning btn-sm" href="/editar/{{ atividade[0] }}">
                                 Editar
                             </a>
 
-                            <a class="btn btn-danger btn-sm"
-                               href="/pdf/{{ atividade[0] }}">
+                            <a class="btn btn-danger btn-sm" href="/pdf/{{ atividade[0] }}">
                                 PDF
                             </a>
 
-                            <a class="btn btn-primary btn-sm"
-                               href="/word/{{ atividade[0] }}">
+                            <a class="btn btn-primary btn-sm" href="/word/{{ atividade[0] }}">
                                 Word
                             </a>
 
-                            <a class="btn btn-success btn-sm"
-                               href="/regenerar/{{ atividade[0] }}">
+                            <a class="btn btn-success btn-sm" href="/regenerar/{{ atividade[0] }}">
                                 IA
                             </a>
 
-                            <a class="btn btn-dark btn-sm"
-                               href="/deletar/{{ atividade[0] }}"
-                               onclick="return confirm('Deseja excluir esta atividade?')">
+                            <a class="btn btn-dark btn-sm" href="/deletar/{{ atividade[0] }}"
+                                onclick="return confirm('Deseja excluir esta atividade?')">
                                 Excluir
                             </a>
 

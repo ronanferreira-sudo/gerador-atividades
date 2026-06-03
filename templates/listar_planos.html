@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Planos de Aula</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="container mt-4">
+
+    <h2>Planos de Aula Gerados</h2>
+
+    <table class="table table-striped">
+
+        <tr>
+            <th>Curso</th>
+            <th>Carga Horária</th>
+            <th>Aulas/Dia</th>
+            <th>Plano</th>
+        </tr>
+
+        {% for plano in planos %}
+
+        <tr>
+
+            <td>{{ plano[1] }}</td>
+
+            <td>{{ plano[2] }}h</td>
+
+            <td>{{ plano[3] }}h</td>
+
+            <td>
+
+                {% if plano[4]|length > 200 %}
+                    {{ plano[4][:200] }}...
+                {% else %}
+                    {{ plano[4] }}
+                {% endif %}
+
+            </td>
+
+        </tr>
+
+        {% endfor %}
+
+    </table>
+
+</div>
+
+</body>
+</html>

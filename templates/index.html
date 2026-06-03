@@ -12,33 +12,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-
-        <div class="container">
-
-            <a class="navbar-brand" href="/">
-                Gerador IA
-            </a>
-
-            <div>
-
-                <a class="btn btn-outline-light me-2" href="/">
-                    Nova Atividade
-                </a>
-
-                <a class="btn btn-outline-light me-2" href="/atividades">
-                    Atividades
-                </a>
-
-                <a class="btn btn-outline-light" href="/dashboard">
-                    Dashboard
-                </a>
-
-            </div>
-
-        </div>
-
-    </nav>
+   {% include 'menu.html' %}
     <nav class="navbar navbar-dark bg-dark">
         <div class="container-fluid">
             <span class="navbar-brand mb-0 h1">

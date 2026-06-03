@@ -1,3 +1,6 @@
+from PyPDF2 import PdfReader
+from werkzeug.utils import secure_filename
+from ia.plano_aula import gerar_plano_aula
 from flask import Flask, render_template, request, redirect, session, send_file
 from docx import Document
 from reportlab.platypus import SimpleDocTemplate, Paragraph
@@ -8,38 +11,45 @@ from database.conexao import conexao, cursor
 from ia.gerador import gerar_atividade
 
 app = Flask(__name__)
-app.secret_key = 'gerador_atividades_2026'
+app.secret_key = "gerador_atividades_2026"
+
+
 def pode_acessar_atividade(id):
 
-    if session['perfil'] == 'admin':
+    if session["perfil"] == "admin":
         return True
 
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT usuario_id
         FROM atividades
         WHERE id = %s
-    """, (id,))
+    """,
+        (id,),
+    )
 
     atividade = cursor.fetchone()
 
     if not atividade:
         return False
 
-    return atividade[0] == session['usuario_id']
+    return atividade[0] == session["usuario_id"]
+
 
 # =========================
 # LOGIN
 # =========================
-@app.route('/cadastro', methods=['GET', 'POST'])
+@app.route("/cadastro", methods=["GET", "POST"])
 def cadastro():
 
-    if request.method == 'POST':
+    if request.method == "POST":
 
-        nome = request.form['nome']
-        email = request.form['email']
-        senha = request.form['senha']
+        nome = request.form["nome"]
+        email = request.form["email"]
+        senha = request.form["senha"]
 
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO usuarios (
                 nome,
                 email,
@@ -47,83 +57,81 @@ def cadastro():
                 perfil
             )
             VALUES (%s,%s,%s,%s)
-        """, (
-            nome,
-            email,
-            senha,
-            'professor'
-        ))
+        """,
+            (nome, email, senha, "professor"),
+        )
 
         conexao.commit()
 
-        return redirect('/login')
+        return redirect("/login")
 
-    return render_template('cadastro.html')
-@app.route('/login', methods=['GET', 'POST'])
+    return render_template("cadastro.html")
+
+
+@app.route("/login", methods=["GET", "POST"])
 def login():
 
-    if request.method == 'POST':
+    if request.method == "POST":
 
-        email = request.form['email']
-        senha = request.form['senha']
+        email = request.form["email"]
+        senha = request.form["senha"]
 
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT id, nome, email, perfil
             FROM usuarios
             WHERE email=%s AND senha=%s
-        """, (email, senha))
+        """,
+            (email, senha),
+        )
 
         usuario = cursor.fetchone()
 
         if usuario:
-            session['usuario_id'] = usuario[0]
-            session['nome'] = usuario[1]
-            session['perfil'] = usuario[3]
+            session["usuario_id"] = usuario[0]
+            session["nome"] = usuario[1]
+            session["perfil"] = usuario[3]
 
-            return redirect('/dashboard')
+            return redirect("/dashboard")
 
         return "Login inválido"
 
-    return render_template('login.html')
+    return render_template("login.html")
 
 
-@app.route('/logout')
+@app.route("/logout")
 def logout():
     session.clear()
-    return redirect('/login')
+    return redirect("/login")
 
 
 # =========================
 # INDEX (GERAR IA)
 # =========================
-@app.route('/', methods=['GET', 'POST'])
+@app.route("/", methods=["GET", "POST"])
 def index():
 
-    if 'usuario_id' not in session:
-        return redirect('/login')
+    if "usuario_id" not in session:
+        return redirect("/login")
 
-    if request.method == 'POST':
+    if request.method == "POST":
 
-        curso = request.form['curso']
-        disciplina = request.form['disciplina']
-        conteudo = request.form['conteudo']
-        dificuldade = request.form['dificuldade']
+        curso = request.form["curso"]
+        disciplina = request.form["disciplina"]
+        conteudo = request.form["conteudo"]
+        dificuldade = request.form["dificuldade"]
 
-        tipo = request.form['tipo']
-        quantidade = request.form['quantidade']
+        tipo = request.form["tipo"]
+        quantidade = request.form["quantidade"]
 
         print("Gerando atividade com IA...")
 
-        atividade_gerada = gerar_atividade(
-            conteudo,
-            dificuldade,
-            tipo,
-            quantidade
-        )
+        atividade_gerada = gerar_atividade(conteudo, dificuldade, tipo, quantidade)
 
-        usuario_id = session['usuario_id']
+        usuario_id = session["usuario_id"]
 
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO atividades (
                 curso,
                 disciplina,
@@ -133,46 +141,42 @@ def index():
                 usuario_id
             )
             VALUES (%s,%s,%s,%s,%s,%s)
-        """, (
-            curso,
-            disciplina,
-            conteudo,
-            dificuldade,
-            atividade_gerada,
-            usuario_id
-        ))
+        """,
+            (curso, disciplina, conteudo, dificuldade, atividade_gerada, usuario_id),
+        )
 
         conexao.commit()
 
-        return redirect('/atividades')
+        return redirect("/atividades")
 
-    return render_template('index.html')
+    return render_template("index.html")
+
+
 # =========================
 # LISTAR + PESQUISA
 # =========================
-@app.route('/atividades')
+@app.route("/atividades")
 def atividades():
 
-    if 'usuario_id' not in session:
-        return redirect('/login')
+    if "usuario_id" not in session:
+        return redirect("/login")
 
-    busca = request.args.get('busca')
+    busca = request.args.get("busca")
 
-    if session['perfil'] == 'admin':
+    if session["perfil"] == "admin":
 
         if busca:
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT *
                 FROM atividades
                 WHERE curso ILIKE %s
                    OR disciplina ILIKE %s
                    OR conteudo ILIKE %s
                 ORDER BY id DESC
-            """, (
-                f"%{busca}%",
-                f"%{busca}%",
-                f"%{busca}%"
-            ))
+            """,
+                (f"%{busca}%", f"%{busca}%", f"%{busca}%"),
+            )
         else:
             cursor.execute("""
                 SELECT *
@@ -183,7 +187,8 @@ def atividades():
     else:
 
         if busca:
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT *
                 FROM atividades
                 WHERE usuario_id = %s
@@ -191,66 +196,60 @@ def atividades():
                    OR disciplina ILIKE %s
                    OR conteudo ILIKE %s)
                 ORDER BY id DESC
-            """, (
-                session['usuario_id'],
-                f"%{busca}%",
-                f"%{busca}%",
-                f"%{busca}%"
-            ))
+            """,
+                (session["usuario_id"], f"%{busca}%", f"%{busca}%", f"%{busca}%"),
+            )
         else:
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT *
                 FROM atividades
                 WHERE usuario_id = %s
                 ORDER BY id DESC
-            """, (
-                session['usuario_id'],
-            ))
+            """,
+                (session["usuario_id"],),
+            )
 
     dados = cursor.fetchall()
 
-    return render_template(
-        'atividades.html',
-        atividades=dados
-    )
+    return render_template("atividades.html", atividades=dados)
+
 
 # =========================
 # DELETE
 # =========================
-@app.route('/deletar/<int:id>')
+@app.route("/deletar/<int:id>")
 def deletar(id):
 
     if not pode_acessar_atividade(id):
         return "Acesso negado"
 
-    cursor.execute(
-        "DELETE FROM atividades WHERE id=%s",
-        (id,)
-    )
+    cursor.execute("DELETE FROM atividades WHERE id=%s", (id,))
 
     conexao.commit()
 
-    return redirect('/atividades')
+    return redirect("/atividades")
 
 
 # =========================
 # EDITAR
 # =========================
-@app.route('/editar/<int:id>', methods=['GET', 'POST'])
+@app.route("/editar/<int:id>", methods=["GET", "POST"])
 def editar(id):
 
     if not pode_acessar_atividade(id):
         return "Acesso negado"
 
-    if request.method == 'POST':
+    if request.method == "POST":
 
-        curso = request.form['curso']
-        disciplina = request.form['disciplina']
-        conteudo = request.form['conteudo']
-        dificuldade = request.form['dificuldade']
-        atividade_gerada = request.form['atividade_gerada']
+        curso = request.form["curso"]
+        disciplina = request.form["disciplina"]
+        conteudo = request.form["conteudo"]
+        dificuldade = request.form["dificuldade"]
+        atividade_gerada = request.form["atividade_gerada"]
 
-        cursor.execute("""
+        cursor.execute(
+            """
             UPDATE atividades
             SET curso=%s,
                 disciplina=%s,
@@ -258,18 +257,13 @@ def editar(id):
                 dificuldade=%s,
                 atividade_gerada=%s
             WHERE id=%s
-        """, (
-            curso,
-            disciplina,
-            conteudo,
-            dificuldade,
-            atividade_gerada,
-            id
-        ))
+        """,
+            (curso, disciplina, conteudo, dificuldade, atividade_gerada, id),
+        )
 
         conexao.commit()
 
-        return redirect('/atividades')
+        return redirect("/atividades")
 
     cursor.execute("SELECT * FROM atividades WHERE id=%s", (id,))
     atividade = cursor.fetchone()
@@ -277,13 +271,13 @@ def editar(id):
     if not atividade:
         return "Atividade não encontrada"
 
-    return render_template('editar.html', atividade=atividade)
+    return render_template("editar.html", atividade=atividade)
 
 
 # =========================
 # PDF
 # =========================
-@app.route('/pdf/<int:id>')
+@app.route("/pdf/<int:id>")
 def gerar_pdf(id):
     if not pode_acessar_atividade(id):
         return "Acesso negado"
@@ -297,11 +291,13 @@ def gerar_pdf(id):
 
     elementos = []
 
-    elementos.append(Paragraph(f"<b>Curso:</b> {atividade[1]}", estilos['Normal']))
-    elementos.append(Paragraph(f"<b>Disciplina:</b> {atividade[2]}", estilos['Normal']))
-    elementos.append(Paragraph(f"<b>Conteúdo:</b> {atividade[3]}", estilos['Normal']))
-    elementos.append(Paragraph(f"<b>Dificuldade:</b> {atividade[4]}", estilos['Normal']))
-    elementos.append(Paragraph(atividade[5].replace("\n", "<br/>"), estilos['Normal']))
+    elementos.append(Paragraph(f"<b>Curso:</b> {atividade[1]}", estilos["Normal"]))
+    elementos.append(Paragraph(f"<b>Disciplina:</b> {atividade[2]}", estilos["Normal"]))
+    elementos.append(Paragraph(f"<b>Conteúdo:</b> {atividade[3]}", estilos["Normal"]))
+    elementos.append(
+        Paragraph(f"<b>Dificuldade:</b> {atividade[4]}", estilos["Normal"])
+    )
+    elementos.append(Paragraph(atividade[5].replace("\n", "<br/>"), estilos["Normal"]))
 
     doc.build(elementos)
 
@@ -311,11 +307,11 @@ def gerar_pdf(id):
 # =========================
 # WORD
 # =========================
-@app.route('/word/<int:id>')
+@app.route("/word/<int:id>")
 def gerar_word(id):
     if not pode_acessar_atividade(id):
-      return "Acesso negado"
-    
+        return "Acesso negado"
+
     cursor.execute("SELECT * FROM atividades WHERE id=%s", (id,))
     atividade = cursor.fetchone()
 
@@ -339,36 +335,42 @@ def gerar_word(id):
 # =========================
 # REGENERAR IA
 # =========================
-@app.route('/regenerar/<int:id>')
+@app.route("/regenerar/<int:id>")
 def regenerar(id):
     if not pode_acessar_atividade(id):
-     return "Acesso negado"
-    
-    cursor.execute("""
+        return "Acesso negado"
+
+    cursor.execute(
+        """
         SELECT conteudo, dificuldade
         FROM atividades
         WHERE id=%s
-    """, (id,))
+    """,
+        (id,),
+    )
 
     atividade = cursor.fetchone()
 
     nova = gerar_atividade(atividade[0], atividade[1])
 
-    cursor.execute("""
+    cursor.execute(
+        """
         UPDATE atividades
         SET atividade_gerada=%s
         WHERE id=%s
-    """, (nova, id))
+    """,
+        (nova, id),
+    )
 
     conexao.commit()
 
-    return redirect('/atividades')
+    return redirect("/atividades")
 
 
 # =========================
 # DASHBOARD
 # =========================
-@app.route('/dashboard')
+@app.route("/dashboard")
 def dashboard():
 
     cursor.execute("""
@@ -382,12 +384,139 @@ def dashboard():
 
     cursos = cursor.fetchall()
 
-    return render_template(
-        'dashboard.html',
-        cursos=cursos
+    return render_template("dashboard.html", cursos=cursos)
+
+
+# =========================
+# PLANOS
+# =========================
+@app.route("/planos", methods=["GET", "POST"])
+def planos():
+
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    if request.method == "POST":
+
+        nome_curso = request.form["nome_curso"]
+        carga_horaria = request.form["carga_horaria"]
+        aulas_por_dia = request.form["aulas_por_dia"]
+
+        arquivo = request.files["arquivo_pdf"]
+
+        nome_arquivo = secure_filename(arquivo.filename)
+
+        caminho = os.path.join("uploads", nome_arquivo)
+
+        arquivo.save(caminho)
+
+        print("PDF salvo!")
+
+        reader = PdfReader(caminho)
+
+        texto = ""
+
+        for pagina in reader.pages:
+
+            conteudo = pagina.extract_text()
+
+            if conteudo:
+                texto += conteudo + "\n"
+
+        print("Texto extraído!")
+        print("Quantidade de caracteres:", len(texto))
+
+        print("Enviando para IA...")
+
+        plano_gerado = gerar_plano_aula(texto[:300], carga_horaria, aulas_por_dia)
+
+        print("IA respondeu!")
+        cursor.execute(
+            """
+    INSERT INTO planos_aula (
+        nome_curso,
+        carga_horaria,
+        aulas_por_dia,
+        plano_gerado,
+        usuario_id
     )
+    VALUES (%s,%s,%s,%s,%s)
+""",
+            (
+                nome_curso,
+                carga_horaria,
+                aulas_por_dia,
+                plano_gerado,
+                session["usuario_id"],
+            ),
+        )
+
+        cursor.execute(
+            """
+            INSERT INTO planos_curso (
+                nome_curso,
+                carga_horaria,
+                aulas_por_dia,
+                arquivo_pdf,
+                texto_extraido,
+                usuario_id
+            )
+            VALUES (%s,%s,%s,%s,%s,%s)
+        """,
+            (
+                nome_curso,
+                carga_horaria,
+                aulas_por_dia,
+                nome_arquivo,
+                texto,
+                session["usuario_id"],
+            ),
+        )
+
+        conexao.commit()
+
+        return render_template("resultado_plano.html", texto=texto, plano=plano_gerado)
+
+    return render_template("planos.html")
+
+
+# =========================
+# LISTAR PLANOS
+# =========================
+
+@app.route("/listar_planos")
+def listar_planos():
+
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    if session["perfil"] == "admin":
+
+        cursor.execute("""
+            SELECT *
+            FROM planos_aula
+            ORDER BY id DESC
+        """)
+
+    else:
+
+        cursor.execute(
+            """
+            SELECT *
+            FROM planos_aula
+            WHERE usuario_id = %s
+            ORDER BY id DESC
+        """,
+            (session["usuario_id"],),
+        )
+
+    planos = cursor.fetchall()
+
+    return render_template("listar_planos.html", planos=planos)
+
+
 # =========================
 # START
 # =========================
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)

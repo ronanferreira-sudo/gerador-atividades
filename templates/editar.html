@@ -10,33 +10,7 @@
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-
-        <div class="container">
-
-            <a class="navbar-brand" href="/">
-                Gerador IA
-            </a>
-
-            <div>
-
-                <a class="btn btn-outline-light me-2" href="/">
-                    Nova Atividade
-                </a>
-
-                <a class="btn btn-outline-light me-2" href="/atividades">
-                    Atividades
-                </a>
-
-                <a class="btn btn-outline-light" href="/dashboard">
-                    Dashboard
-                </a>
-
-            </div>
-
-        </div>
-
-    </nav>
+    {% include 'menu.html' %}
     <h1>Editar Atividade</h1>
 
     <form method="POST">
