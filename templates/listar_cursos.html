@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block titulo %}
+Cursos Gerados
+{% endblock %}
+
+{% block conteudo %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+```
+<h2>
+    Cursos Gerados
+</h2>
+
+<a href="/planos" class="btn btn-success">
+    Novo Curso
+</a>
+```
+
+</div>
+
+<table class="table table-bordered table-hover">
+
+```
+<thead class="table-dark">
+
+    <tr>
+
+        <th>ID</th>
+
+        <th>Curso</th>
+
+        <th>Carga Horária</th>
+
+        <th>Aulas por Dia</th>
+
+        <th>Data</th>
+
+        <th width="180">
+            Ações
+        </th>
+
+    </tr>
+
+</thead>
+
+<tbody>
+
+    {% for curso in cursos %}
+
+    <tr>
+
+        <td>
+            {{ curso[0] }}
+        </td>
+
+        <td>
+            {{ curso[1] }}
+        </td>
+
+        <td>
+            {{ curso[2] }}h
+        </td>
+
+        <td>
+            {{ curso[3] }}h
+        </td>
+
+        <td>
+            {{ curso[5] }}
+        </td>
+
+        <td>
+
+            <a href="/curso/{{ curso[0] }}"
+               class="btn btn-primary btn-sm">
+
+                Ver Planos
+
+            </a>
+
+        </td>
+
+    </tr>
+
+    {% endfor %}
+
+</tbody>
+```
+
+</table>
+
+{% endblock %}

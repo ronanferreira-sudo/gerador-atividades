@@ -9,67 +9,76 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
 
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
 </head>
 
 <body>
 
     {% include 'menu.html' %}
 
-    <div class="container mt-4">
+    <div class="container-fluid mt-4">
 
-        <h2>Planos de Aula Gerados</h2>
+        <h1 class="text-center mb-4">
+            Planos de Aula Gerados
+        </h1>
 
-        <table class="table table-striped">
+        <div class="table-responsive">
 
-            <thead>
+            <table class="table table-striped table-hover align-middle">
 
-                <tr>
+                <thead class="table-dark">
 
-                 
-                    <th>Curso</th>
-                    <th>Carga Horária</th>
-                    <th>Aulas/Dia</th>
-                    <th>Ações</th>
+                    <tr>
 
-                </tr>
+                        <th>Curso</th>
+                        <th>Carga Horária</th>
+                        <th>Aulas/Dia</th>
+                        <th></th>
 
-            </thead>
+                    </tr>
 
-            <tbody>
+                </thead>
 
-                {% for plano in planos %}
+                <tbody>
 
-                <tr>
-                  
-                    <td>{{ plano[1] }}</td>
+                    {% for plano in planos %}
 
-                    <td>{{ plano[2] }}h</td>
+                    <tr>
 
-                    <td>{{ plano[3] }}</td>
+                        <td>{{ plano[1] }}</td>
 
-                    <td>
+                        <td>{{ plano[2] }}h</td>
 
-                        <a href="/visualizar_plano/{{ plano[0] }}" class="btn btn-primary btn-sm">
-                            Ver
-                        </a>
+                        <td>{{ plano[3] }}</td>
 
-                        <a href="/editar_plano/{{ plano[0] }}" class="btn btn-warning btn-sm">
-                            Editar
-                        </a>
+                        <td class="acoes">
 
-                        <a href="/excluir_plano/{{ plano[0] }}" class="btn btn-danger btn-sm">
-                            Excluir
-                        </a>
+                            <a class="btn btn-primary btn-sm" href="/visualizar_plano/{{ plano[0] }}">
+                                Ver
+                            </a>
 
-                    </td>
+                            <a class="btn btn-warning btn-sm" href="/editar_plano/{{ plano[0] }}">
+                                Editar
+                            </a>
 
-                </tr>
+                            <a class="btn btn-danger btn-sm"
+                               href="/excluir_plano/{{ plano[0] }}"
+                               onclick="return confirm('Deseja excluir este plano?')">
+                                Excluir
+                            </a>
 
-                {% endfor %}
+                        </td>
 
-            </tbody>
+                    </tr>
 
-        </table>
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
 
     </div>
 

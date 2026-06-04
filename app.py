@@ -387,7 +387,7 @@ def dashboard():
 
 
 # =========================
-# PLANOS
+# PLANOS DE AULA
 # =========================
 @app.route("/planos", methods=["GET", "POST"])
 def planos():
@@ -398,18 +398,27 @@ def planos():
     if request.method == "POST":
 
         nome_curso = request.form["nome_curso"]
-        carga_horaria = request.form["carga_horaria"]
-        aulas_por_dia = request.form["aulas_por_dia"]
+        carga_horaria = int(request.form["carga_horaria"])
+        aulas_por_dia = int(request.form["aulas_por_dia"])
 
         arquivo = request.files["arquivo_pdf"]
 
         nome_arquivo = secure_filename(arquivo.filename)
 
-        caminho = os.path.join("uploads", nome_arquivo)
+        pasta_upload = "uploads"
+
+        if not os.path.exists(pasta_upload):
+            os.makedirs(pasta_upload)
+
+        caminho = os.path.join(pasta_upload, nome_arquivo)
 
         arquivo.save(caminho)
 
         print("PDF salvo!")
+
+        # =========================
+        # EXTRAIR TEXTO DO PDF
+        # =========================
 
         reader = PdfReader(caminho)
 
@@ -425,56 +434,83 @@ def planos():
         print("Texto extraído!")
         print("Quantidade de caracteres:", len(texto))
 
-        print("Enviando para IA...")
-
-        plano_gerado = gerar_plano_aula(texto[:300], carga_horaria, aulas_por_dia)
-
-        print("IA respondeu!")
-        cursor.execute(
-            """
-    INSERT INTO planos_aula (
-        nome_curso,
-        carga_horaria,
-        aulas_por_dia,
-        plano_gerado,
-        usuario_id
-    )
-    VALUES (%s,%s,%s,%s,%s)
-""",
-            (
-                nome_curso,
-                carga_horaria,
-                aulas_por_dia,
-                plano_gerado,
-                session["usuario_id"],
-            ),
-        )
+        # =========================
+        # SALVAR CURSO
+        # =========================
 
         cursor.execute(
             """
-            INSERT INTO planos_curso (
+            INSERT INTO cursos_plano (
                 nome_curso,
                 carga_horaria,
                 aulas_por_dia,
-                arquivo_pdf,
-                texto_extraido,
                 usuario_id
             )
-            VALUES (%s,%s,%s,%s,%s,%s)
+            VALUES (%s,%s,%s,%s)
+            RETURNING id
         """,
-            (
-                nome_curso,
-                carga_horaria,
-                aulas_por_dia,
-                nome_arquivo,
-                texto,
-                session["usuario_id"],
-            ),
+            (nome_curso, carga_horaria, aulas_por_dia, session["usuario_id"]),
         )
+
+        curso_id = cursor.fetchone()[0]
+
+        print("Curso salvo!")
+
+        # =========================
+        # GERAR PLANO COM IA
+        # =========================
+
+        print("Enviando para IA...")
+
+        plano_gerado = gerar_plano_aula(texto[:1000], carga_horaria, aulas_por_dia)
+
+        print("IA respondeu!")
+
+        # =========================
+        # SEPARAR DIAS
+        # =========================
+
+        planos = plano_gerado.split("### DIA")
+
+        print("Planos encontrados:", len(planos))
+
+        # =========================
+        # SALVAR CADA DIA
+        # =========================
+
+        for plano in planos:
+
+            plano = plano.strip()
+
+            if not plano:
+                continue
+
+            linhas = plano.split("\n")
+
+            try:
+                dia = int(linhas[0].strip())
+            except:
+                dia = 0
+
+            cursor.execute(
+                """
+                INSERT INTO planos_aula (
+                    curso_id,
+                    dia,
+                    tema,
+                    plano_gerado,
+                    usuario_id
+                )
+                VALUES (%s,%s,%s,%s,%s)
+            """,
+                (curso_id, dia, f"Plano Dia {dia}", plano, session["usuario_id"]),
+            )
 
         conexao.commit()
 
-        return redirect("/listar_planos")
+        print("Planos salvos no banco!")
+
+        return redirect("/listar_cursos")
 
     return render_template("planos.html")
 
@@ -514,7 +550,7 @@ def listar_planos():
 
 
 # =========================
-# LISTAR PLANOS
+# VISUALIZAR PLANOS
 # =========================
 
 
@@ -525,14 +561,72 @@ def visualizar_plano(id):
         """
         SELECT *
         FROM planos_aula
-        WHERE id=%s
+        WHERE id = %s
     """,
         (id,),
     )
 
     plano = cursor.fetchone()
 
-    return render_template("listar_planos.html", plano=plano)
+    return render_template("visualizar_plano.html", plano=plano)
+
+
+# =========================
+# LISTAR CURSOS
+# =========================
+@app.route("/listar_cursos")
+def listar_cursos():
+
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    if session["perfil"] == "admin":
+
+        cursor.execute("""
+            SELECT *
+            FROM cursos_plano
+            ORDER BY id DESC
+        """)
+
+    else:
+
+        cursor.execute(
+            """
+            SELECT *
+            FROM cursos_plano
+            WHERE usuario_id = %s
+            ORDER BY id DESC
+        """,
+            (session["usuario_id"],),
+        )
+
+    cursos = cursor.fetchall()
+
+    return render_template("listar_cursos.html", cursos=cursos)
+
+
+# =========================
+# VISUALIZAR CURSO
+# =========================
+@app.route("/curso/<int:curso_id>")
+def visualizar_curso(curso_id):
+
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    cursor.execute(
+        """
+        SELECT *
+        FROM planos_aula
+        WHERE curso_id = %s
+        ORDER BY dia
+    """,
+        (curso_id,),
+    )
+
+    planos = cursor.fetchall()
+
+    return render_template("planos_curso.html", planos=planos, curso_id=curso_id)
 
 
 # =========================

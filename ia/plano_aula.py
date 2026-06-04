@@ -17,7 +17,7 @@ Informações do curso:
 - Horas por dia: {aulas_por_dia} horas
 - Total de dias previstos: {total_dias}
 
-Crie APENAS os 2 primeiros dias de aula.
+criar apenas 02 primeiros dias   
 
 Para cada dia utilize exatamente a estrutura abaixo:
 
@@ -62,6 +62,23 @@ Objetivos Específicos:
 Seja detalhado.
 Não faça lista simples.
 Crie planos pedagógicos completos.
+IMPORTANTE:
+
+Inicie cada plano exatamente assim:
+
+### DIA 1
+
+...
+
+### DIA 2
+
+...
+
+### DIA 3
+
+...
+
+Nunca pule a marcação ### DIA X.
 """
 
     print("Chamando Ollama...")
@@ -73,7 +90,7 @@ Crie planos pedagógicos completos.
             "prompt": prompt,
             "stream": False
         },
-        timeout=600
+         timeout=1200
     )
 
     print("Resposta recebida do Ollama!")

@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h2>Planos de Aula</h2>
+
+    <table class="table table-bordered">
+
+        <thead>
+
+            <tr>
+                <th>Dia</th>
+                <th>Tema</th>
+                <th>Ações</th>
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+        {% for plano in planos %}
+
+            <tr>
+
+                <td>{{ plano[2] }}</td>
+
+                <td>{{ plano[3] }}</td>
+
+                <td>
+
+                    <a href="/visualizar_plano/{{ plano[0] }}"
+                       class="btn btn-success btn-sm">
+
+                        Visualizar
+
+                    </a>
+
+                </td>
+
+            </tr>
+
+        {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% endblock %}
