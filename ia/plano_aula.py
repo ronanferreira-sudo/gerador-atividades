@@ -1,98 +1,73 @@
 import requests
+import hashlib
 
-def gerar_plano_aula(texto_pdf, carga_horaria, aulas_por_dia):
+cache_planos = {}
 
-    total_dias = int(carga_horaria) // int(aulas_por_dia)
 
-    prompt = f"""
-Você é um coordenador pedagógico especialista em educação profissional.
+def gerar_hash_plano(texto_pdf, carga_horaria, aulas_por_dia, dia):
+    base = f"{texto_pdf[:800]}-{carga_horaria}-{aulas_por_dia}-{dia}"
+    return hashlib.md5(base.encode()).hexdigest()
 
-Analise o conteúdo abaixo:
 
-{texto_pdf[:1000]}
+def preprocessar_texto(texto):
+    texto = texto.replace("\n", " ")
+    texto = " ".join(texto.split())
+    return texto[:800]
 
-Informações do curso:
 
-- Carga horária total: {carga_horaria} horas
-- Horas por dia: {aulas_por_dia} horas
-- Total de dias previstos: {total_dias}
+def gerar_plano_aula(texto_pdf, carga_horaria, aulas_por_dia, dia):
 
-criar apenas 02 primeiros dias   
+    key = gerar_hash_plano(texto_pdf, carga_horaria, aulas_por_dia, dia)
 
-Para cada dia utilize exatamente a estrutura abaixo:
-
-PLANO DE AULA - DIA 1
-
-1. Dados de Identificação
-Tema da Aula:
-Carga Horária:
-Professor:
-
-2. Objetivos
-Objetivo Geral:
-Objetivos Específicos:
-
-3. Conteúdo Programático
-
-4. Estratégia Didática e Atividades Práticas
-
-5. Recursos Didáticos
-
-6. Avaliação
-
-PLANO DE AULA - DIA 2
-
-1. Dados de Identificação
-Tema da Aula:
-Carga Horária:
-Professor:
-
-2. Objetivos
-Objetivo Geral:
-Objetivos Específicos:
-
-3. Conteúdo Programático
-
-4. Estratégia Didática e Atividades Práticas
-
-5. Recursos Didáticos
-
-6. Avaliação
-
-Seja detalhado.
-Não faça lista simples.
-Crie planos pedagógicos completos.
-IMPORTANTE:
-
-Inicie cada plano exatamente assim:
-
-### DIA 1
-
-...
-
-### DIA 2
-
-...
-
-### DIA 3
-
-...
-
-Nunca pule a marcação ### DIA X.
-"""
+    # 🔥 CACHE
+    if key in cache_planos:
+        print("CACHE PLANO HIT - resposta instantânea")
+        return cache_planos[key]
 
     print("Chamando Ollama...")
 
-    resposta = requests.post(
-        "http://localhost:11434/api/generate",
-        json={
-            "model": "llama3.1:8b",
-            "prompt": prompt,
-            "stream": False
-        },
-         timeout=1200
-    )
+    prompt = f"""
+Crie o plano de aula do DIA {dia}.
 
-    print("Resposta recebida do Ollama!")
+Conteúdo:
+{preprocessar_texto(texto_pdf)}
 
-    return resposta.json()["response"]
+Estrutura obrigatória:
+1. Identificação
+2. Objetivos
+3. Conteúdo Programático
+4. Estratégia Didática
+5. Recursos Didáticos
+6. Avaliação
+
+Texto puro, sem markdown e sem símbolos especiais.
+"""
+
+    try:
+        resposta = requests.post(
+            "http://localhost:11434/api/generate",
+            json={
+                "model": "llama3.1:8b",
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "num_predict": 500
+                }
+            },
+            timeout=1200
+        )
+
+        if resposta.status_code != 200:
+            return "Erro ao gerar plano"
+
+        data = resposta.json()
+        plano = data.get("response", "")
+
+        # 🔥 salva no cache
+        cache_planos[key] = plano
+
+        return plano
+
+    except Exception as e:
+        print("Erro na IA:", e)
+        return "Erro ao conectar com a IA"

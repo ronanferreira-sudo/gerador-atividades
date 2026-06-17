@@ -8,86 +8,87 @@ Cursos Gerados
 
 <div class="d-flex justify-content-between align-items-center mb-4">
 
-```
-<h2>
-    Cursos Gerados
-</h2>
+    ```
+    <h2>
+        Cursos Gerados
+    </h2>
 
-<a href="/planos" class="btn btn-success">
-    Novo Curso
-</a>
-```
+    <a href="/planos" class="btn btn-success">
+        Novo Curso
+    </a>
+    ```
 
 </div>
 
 <table class="table table-bordered table-hover">
 
-```
-<thead class="table-dark">
+    ```
+    <thead class="table-dark">
 
-    <tr>
+        <tr>
 
-        <th>ID</th>
+            <th>ID</th>
 
-        <th>Curso</th>
+            <th>Curso</th>
 
-        <th>Carga Horária</th>
+            <th>Carga Horária</th>
 
-        <th>Aulas por Dia</th>
+            <th>Aulas por Dia</th>
 
-        <th>Data</th>
+            <th>Data</th>
 
-        <th width="180">
-            Ações
-        </th>
+            <th width="180">
+                Ações
+            </th>
 
-    </tr>
+        </tr>
 
-</thead>
+    </thead>
 
-<tbody>
+    <tbody>
 
-    {% for curso in cursos %}
+        {% for curso in cursos %}
 
-    <tr>
+        <tr>
 
-        <td>
-            {{ curso[0] }}
-        </td>
+            <td>
+                {{ curso[0] }}
+            </td>
 
-        <td>
-            {{ curso[1] }}
-        </td>
+            <td>
+                {{ curso[1] }}
+            </td>
 
-        <td>
-            {{ curso[2] }}h
-        </td>
+            <td>
+                {{ curso[2] }}h
+            </td>
 
-        <td>
-            {{ curso[3] }}h
-        </td>
+            <td>
+                {{ curso[3] }}h
+            </td>
 
-        <td>
-            {{ curso[5] }}
-        </td>
+            <td>
+                {{ curso[5] }}
+            </td>
 
-        <td>
+            <td>
 
-            <a href="/curso/{{ curso[0] }}"
-               class="btn btn-primary btn-sm">
+                <a href="{{ url_for('visualizar_curso', curso_id=curso[0]) }}" class="btn btn-primary btn-sm">
+                    Ver Planos
+                </a>
 
                 Ver Planos
 
-            </a>
+                </a>
 
-        </td>
+            </td>
 
-    </tr>
+        </tr>
 
-    {% endfor %}
+        {% endfor %}
 
-</tbody>
-```
+    </tbody>
+    ```
 
 </table>
 

@@ -54,17 +54,16 @@
 
                         <td class="acoes">
 
-                            <a class="btn btn-primary btn-sm" href="/visualizar_plano/{{ plano[0] }}">
-                                Ver
+                            <a href="/plano/{{ plano[0] }}" class="btn btn-success btn-sm">
+                                Visualizar
                             </a>
 
-                            <a class="btn btn-warning btn-sm" href="/editar_plano/{{ plano[0] }}">
+                            <a class="btn btn-warning btn-sm" href="/editar_plano/{{ plano[1] }}">
                                 Editar
                             </a>
 
-                            <a class="btn btn-danger btn-sm"
-                               href="/excluir_plano/{{ plano[0] }}"
-                               onclick="return confirm('Deseja excluir este plano?')">
+                            <a class="btn btn-danger btn-sm" href="/excluir_plano/{{ plano[0] }}"
+                                onclick="return confirm('Deseja excluir este plano?')">
                                 Excluir
                             </a>
 

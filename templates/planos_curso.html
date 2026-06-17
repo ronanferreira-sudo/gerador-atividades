@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block content %}
+{% block conteudo %}
 
 <div class="container mt-4">
 
@@ -20,28 +20,28 @@
 
         <tbody>
 
-        {% for plano in planos %}
+            {% for plano in planos %}
 
             <tr>
 
-                <td>{{ plano[2] }}</td>
+                <td>
+                    <strong>Dia {{ plano[2] }}</strong><br>
+                    <pre style="white-space: pre-wrap;">{{ plano[3] }}</pre>
+                </td>
 
                 <td>{{ plano[3] }}</td>
 
                 <td>
 
-                    <a href="/visualizar_plano/{{ plano[0] }}"
-                       class="btn btn-success btn-sm">
-
+                    <a href="/plano/{{ plano[0] }}" class="btn btn-success btn-sm">
                         Visualizar
-
                     </a>
 
                 </td>
 
             </tr>
 
-        {% endfor %}
+            {% endfor %}
 
         </tbody>
 

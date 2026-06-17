@@ -1,23 +1,73 @@
 {% extends 'base.html' %}
 
-{% block content %}
+{% block conteudo %}
+<hr>
+
 
 <div class="container mt-4">
 
-    <h2>{{ plano[3] }}</h2>
+    <h2>Plano de Aula</h2>
 
-    <div class="card">
+    <hr>
 
-        <div class="card-body">
+    <p><strong>ID:</strong> {{ plano[0] }}</p>
+    <p><strong>Curso ID:</strong> {{ plano[1] }}</p>
+    <p><strong>Dia:</strong> {{ plano[2] }}</p>
+    <p><strong>Tema:</strong> {{ plano[3] }}</p>
 
-            <pre style="white-space: pre-wrap;">
+    <hr>
+
+    <pre style="white-space: pre-wrap; font-size: 14px;">
 {{ plano[4] }}
-            </pre>
+    </pre>
 
-        </div>
+</div>
+<hr>
+
+<h4>Gerar atividade a partir deste plano</h4>
+
+<form action="/gerar_atividade_plano/{{ plano[0] }}" method="GET">
+
+    <div class="mb-2">
+        <label>Tipo da atividade</label>
+        <select name="tipo" class="form-control">
+            <option value="objetiva">Objetiva</option>
+            <option value="discursiva">Discursiva</option>
+            <option value="mista">Mista</option>
+        </select>
+    </div>
+
+    <div class="mb-2">
+        <label>Quantidade de questões</label>
+        <input type="number" name="quantidade" class="form-control" value="5" min="1" max="20">
+    </div>
+    <div class="mb-2">
+        <label>Dificuldade</label>
+        <select name="dificuldade" class="form-control">
+            <option value="facil">Fácil</option>
+            <option value="medio">Médio</option>
+            <option value="dificil">Difícil</option>
+        </select>
+    </div>
+
+    <div class="d-flex gap-2">
+
+        <!-- PDF -->
+        <a href="/plano_pdf/{{ plano[0] }}" class="btn btn-danger">
+            📄 PDF
+        </a>
+
+        <!-- WORD -->
+        <a href="/plano_word/{{ plano[0] }}" class="btn btn-primary">
+            📝 Word
+        </a>
+
+        <!-- GERAR ATIVIDADE -->
+        <a href="/gerar_atividade_plano/{{ plano[0] }}" class="btn btn-success">
+            🤖 Gerar Atividade
+        </a>
 
     </div>
 
-</div>
-
+</form>
 {% endblock %}
