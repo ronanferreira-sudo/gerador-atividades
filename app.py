@@ -360,8 +360,8 @@ def gerar_pdf(id):
     if not atividade:
         return "Atividade não encontrada"
 
-    arquivo_docx = f"atividade_{id}.docx"
-    arquivo_pdf = f"atividade_{id}.pdf"
+    arquivo_docx = f"outputs/atividade_{id}.docx"
+    arquivo_pdf = f"outputs/atividade_{id}.pdf"
 
     gerar_docx_atividade(
         titulo=f"{atividade[1]} - {atividade[2]}",
@@ -411,7 +411,7 @@ def gerar_word(id):
     if not atividade:
         return "Atividade não encontrada"
 
-    arquivo = f"atividade_{id}.docx"
+    arquivo = f"outputs/atividade_{id}.docx"
 
     gerar_docx_atividade(
         titulo=f"{atividade[1]} - {atividade[2]}",
@@ -764,8 +764,8 @@ def plano_pdf(id):
     if not plano:
         return "Plano não encontrado"
 
-    arquivo_docx = f"plano_{id}.docx"
-    arquivo_pdf = f"plano_{id}.pdf"
+    arquivo_docx = f"outputs/plano_{id}.docx"
+    arquivo_pdf = f"outputs/plano_{id}.pdf"
 
     gerar_docx_plano(
         titulo="PLANO DE AULA",
@@ -808,7 +808,7 @@ def plano_word(id):
     if not plano:
         return "Plano não encontrado"
 
-    arquivo = f"plano_{id}.docx"
+    arquivo = f"outputs/plano_{id}.docx"
 
     gerar_docx_plano(
         titulo="PLANO DE AULA",
