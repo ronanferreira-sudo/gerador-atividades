@@ -29,18 +29,19 @@ def gerar_plano_aula(texto_pdf, carga_horaria, aulas_por_dia, dia):
     prompt = f"""
 Crie o plano de aula do DIA {dia}.
 
-Conteúdo:
+Conteúdo base:
 {preprocessar_texto(texto_pdf)}
 
-Estrutura obrigatória:
-1. Identificação
-2. Objetivos
-3. Conteúdo Programático
-4. Estratégia Didática
-5. Recursos Didáticos
-6. Avaliação
+Gere APENAS o plano de aula com a estrutura abaixo, em texto puro, sem formatação markdown, sem símbolos especiais, sem asteriscos, sem negrito, sem itálico:
 
-Texto puro, sem markdown e sem símbolos especiais.
+1. Identificação:
+2. Objetivos:
+3. Conteúdo Programático:
+4. Estratégia Didática:
+5. Recursos Didáticos:
+6. Avaliação:
+
+Não escreva introduções, não escreva explicações, não use markdown. Comece diretamente com "1. Identificação:".
 """
 
     try:

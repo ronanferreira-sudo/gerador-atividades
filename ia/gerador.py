@@ -1,6 +1,7 @@
 import requests
 import hashlib
 
+# Cache limpo a cada reinício — garante que parâmetros alterados gerem novas respostas
 cache_atividades = {}
 
 
@@ -17,62 +18,72 @@ def gerar_hash(texto_pdf, dificuldade, tipo, quantidade):
 
 def gerar_atividade(texto_pdf, dificuldade, tipo="objetiva", quantidade=5):
 
-    print("Chamando Ollama...")
+    quantidade = int(quantidade)
+
+    print("Dificuldade:", dificuldade)
+    print("Tipo:", tipo)
+    print("Quantidade:", quantidade)
 
     key = gerar_hash(texto_pdf, dificuldade, tipo, quantidade)
 
     # =========================
-    # CACHE HIT
+    # CACHE
     # =========================
     if key in cache_atividades:
-        print("CACHE HIT - resposta instantânea")
+        print("CACHE HIT")
         return cache_atividades[key]
 
-    # =========================
-    # PROMPT
-    # =========================
-    prompt = f"""
-Você é um professor especialista na elaboração de avaliações educacionais.
+    print("Chamando Ollama...")
 
-Analise cuidadosamente o conteúdo abaixo:
+    prompt = f"""
+Você é um professor especialista em elaboração de avaliações.
+
+CONTEÚDO PARA AS QUESTÕES:
 
 {preprocessar_texto(texto_pdf)}
 
-INSTRUÇÕES GERAIS:
+INSTRUÇÕES:
 
-- Gere EXATAMENTE {quantidade} questões
-- Dificuldade: {dificuldade}
-- Tipo da atividade: {tipo}
+1. Gere EXATAMENTE {quantidade} questões.
 
-REGRA MAIS IMPORTANTE:
+2. Todas as questões devem ser elaboradas SOMENTE com base no conteúdo fornecido.
 
-VOCÊ DEVE GERAR EXATAMENTE {quantidade} QUESTÕES NUMERADAS DE 1 ATÉ {quantidade}.
-Não pode gerar menos.
-Não pode gerar mais.
+3. Não invente assuntos que não estejam presentes no conteúdo.
 
-Se não cumprir essa regra, a resposta será inválida.
+4. Não faça perguntas sobre:
+- carga horária;
+- professor;
+- objetivos;
+- metodologia;
+- avaliação;
+- recursos didáticos.
 
-REGRAS DE CONTEÚDO:
+5. Nível de dificuldade:
+{dificuldade}
 
-- Crie perguntas SOMENTE baseadas no conteúdo fornecido
-- Não inclua perguntas sobre:
-  nome do curso
-  tema da aula
-  professor
-  carga horária
-  metodologia
-  objetivos
-  avaliação
-  recursos didáticos
+6. Tipo da atividade:
+{tipo}
 
-FORMATO:
+REGRAS:
 
-Atividade:
+SE O TIPO FOR "objetiva":
+- faça questões de múltipla escolha;
+- alternativas A), B), C) e D);
+- NÃO coloque gabarito, NÃO coloque respostas.
 
-1.
-2.
-3.
-...
+SE O TIPO FOR "discursiva":
+- faça perguntas abertas;
+- não coloque alternativas.
+
+SE O TIPO FOR "mista":
+- misture questões objetivas e discursivas.
+
+IMPORTANTE:
+
+- Numere as questões de 1 até {quantidade}.
+- Gere exatamente {quantidade} questões.
+- Gere APENAS as questões, sem introduções, sem explicações, sem gabarito, sem respostas.
+- Comece diretamente na questão 1.
 """
 
     try:
@@ -84,8 +95,8 @@ Atividade:
                 "prompt": prompt,
                 "stream": False,
                 "options": {
-                    "temperature": 0.7,
-                    "num_predict": 1200
+                    "temperature": 0.3,
+                    "num_predict": 2000
                 }
             },
             timeout=300
@@ -96,9 +107,9 @@ Atividade:
             return "Erro ao gerar atividade"
 
         dados = resposta.json()
-        atividade = dados.get("response", "")
 
-        # salva no cache
+        atividade = dados.get("response", "").strip()
+
         cache_atividades[key] = atividade
 
         return atividade

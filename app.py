@@ -337,6 +337,9 @@ def editar(id):
 # =========================
 # PDF
 # =========================
+# =========================
+# PDF
+# =========================
 @app.route("/pdf/<int:id>")
 def gerar_pdf(id):
 
@@ -360,18 +363,24 @@ def gerar_pdf(id):
     arquivo_docx = f"atividade_{id}.docx"
     arquivo_pdf = f"atividade_{id}.pdf"
 
-    # Gera o Word usando o modelo
     gerar_docx_atividade(
         titulo=f"{atividade[1]} - {atividade[2]}",
         conteudo=atividade[5],
         caminho_saida=arquivo_docx
     )
 
-    # Converte Word em PDF
-    gerar_pdf_atividade(
+    resultado = gerar_pdf_atividade(
         arquivo_docx,
         arquivo_pdf
     )
+
+    # Se o PDF falhar (exemplo: Word não instalado), envia o DOCX como fallback
+    if not resultado:
+        return send_file(
+            arquivo_docx,
+            as_attachment=True,
+            download_name=f"atividade_{id}.docx"
+        )
 
     return send_file(
         arquivo_pdf,
@@ -384,24 +393,36 @@ def gerar_pdf(id):
 # =========================
 @app.route("/word/<int:id>")
 def gerar_word(id):
+
     if not pode_acessar_atividade(id):
         return "Acesso negado"
 
-    cursor.execute("SELECT * FROM atividades WHERE id=%s", (id,))
+    cursor.execute(
+        """
+        SELECT *
+        FROM atividades
+        WHERE id=%s
+        """,
+        (id,)
+    )
+
     atividade = cursor.fetchone()
+
+    if not atividade:
+        return "Atividade não encontrada"
 
     arquivo = f"atividade_{id}.docx"
 
     gerar_docx_atividade(
-    titulo=f"{atividade[1]} - {atividade[2]}",
-    conteudo=atividade[5],
-    caminho_saida=arquivo
-)
+        titulo=f"{atividade[1]} - {atividade[2]}",
+        conteudo=atividade[5],
+        caminho_saida=arquivo
+    )
 
     return send_file(
         arquivo,
-    as_attachment=True
-)
+        as_attachment=True
+    )
 
 
 # =========================
@@ -409,6 +430,7 @@ def gerar_word(id):
 # =========================
 @app.route("/regenerar/<int:id>")
 def regenerar(id):
+
     if not pode_acessar_atividade(id):
         return "Acesso negado"
 
@@ -417,21 +439,29 @@ def regenerar(id):
         SELECT conteudo, dificuldade
         FROM atividades
         WHERE id=%s
-    """,
-        (id,),
+        """,
+        (id,)
     )
 
     atividade = cursor.fetchone()
 
-    nova = gerar_atividade(atividade[0], atividade[1])
+    if not atividade:
+        return "Atividade não encontrada"
+
+    nova = gerar_atividade(
+        atividade[0],
+        atividade[1],
+        "objetiva",
+        5
+    )
 
     cursor.execute(
         """
         UPDATE atividades
         SET atividade_gerada=%s
         WHERE id=%s
-    """,
-        (nova, id),
+        """,
+        (nova, id)
     )
 
     conexao.commit()
@@ -445,20 +475,26 @@ def regenerar(id):
 @app.route("/dashboard")
 def dashboard():
 
-    cursor.execute("""
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    cursor.execute(
+        """
         SELECT
             curso,
             COUNT(*)
         FROM atividades
         GROUP BY curso
         ORDER BY curso
-    """)
+        """
+    )
 
     cursos = cursor.fetchall()
 
-    return render_template("dashboard.html", cursos=cursos)
-
-
+    return render_template(
+        "dashboard.html",
+        cursos=cursos
+    )
 # =========================
 # PLANOS DE AULA
 # =========================
@@ -478,31 +514,21 @@ def planos():
         nome_arquivo = secure_filename(arquivo.filename)
 
         pasta_upload = "uploads"
-        if not os.path.exists(pasta_upload):
-            os.makedirs(pasta_upload)
+        os.makedirs(pasta_upload, exist_ok=True)
 
         caminho = os.path.join(pasta_upload, nome_arquivo)
         arquivo.save(caminho)
 
-        print("PDF salvo!")
-
-        # =========================
-        # EXTRAÇÃO DE TEXTO
-        # =========================
         reader = PdfReader(caminho)
 
         texto = ""
+
         for pagina in reader.pages:
             conteudo = pagina.extract_text()
+
             if conteudo:
                 texto += conteudo + "\n"
 
-        print("Texto extraído!")
-        print("Quantidade de caracteres:", len(texto))
-
-        # =========================
-        # SALVAR CURSO
-        # =========================
         cursor.execute(
             """
             INSERT INTO cursos_plano (
@@ -523,38 +549,21 @@ def planos():
         )
 
         curso_id = cursor.fetchone()[0]
+
         conexao.commit()
 
-        print("Curso salvo!")
-
-        # =========================
-        # IMPORTS (CORRETO AQUI)
-        # =========================
-        from utils.docx_generator import gerar_docx_plano
-        from utils.pdf_generator import gerar_pdf_plano
-        from utils.plano_padrao import formatar_plano
-
-        # =========================
-        # GERAR PLANOS
-        # =========================
         total_dias = carga_horaria // aulas_por_dia
-
-        print(f"Total de dias: {total_dias}")
 
         planos_completos = ""
 
         for dia in range(1, total_dias + 1):
 
-            print(f"Gerando plano do dia {dia}...")
-
-            plano_bruto = gerar_plano_aula(
+            plano = gerar_plano_aula(
                 texto,
                 carga_horaria,
                 aulas_por_dia,
                 dia
             )
-
-            plano = formatar_plano(plano_bruto)
 
             planos_completos += f"\n\nDIA {dia}\n\n{plano}"
 
@@ -578,41 +587,30 @@ def planos():
                 )
             )
 
-            conexao.commit()
+        conexao.commit()
 
-            print(f"Plano do dia {dia} salvo!")
+        os.makedirs("outputs", exist_ok=True)
 
-        print("Todos os planos foram gerados e salvos!")
-        print(os.path.abspath("static/img/logo.jpg"))
-        print(os.path.exists("static/img/logo.jpg"))
+        arquivo_docx = f"outputs/plano_{curso_id}.docx"
+        arquivo_pdf = f"outputs/plano_{curso_id}.pdf"
 
-        # =========================
-        # OUTPUT WORD
-        # =========================
         gerar_docx_plano(
             titulo="PLANO DE AULA",
             subtitulo=f"Curso: {nome_curso}",
             conteudo=planos_completos,
-            caminho_saida=f"outputs/plano_{curso_id}.docx",
-            logo_path="static/img/logo.jpg"
-        )   
-        print("Word gerado com sucesso!")
-
-        # =========================
-        # OUTPUT PDF
-        # =========================
-        gerar_pdf_plano(
-            titulo="PLANO DE AULA",
-            subtitulo=f"Curso: {nome_curso}",
-            conteudo=planos_completos,
-            caminho_saida=f"outputs/plano_{curso_id}.pdf",
-            logo_path="static/img/logo.jpg"
+            caminho_saida=arquivo_docx
         )
-        print("PDF gerado com sucesso!")
+
+        gerar_pdf_plano(
+            arquivo_docx,
+            arquivo_pdf
+        )
 
         return redirect("/listar_cursos")
 
     return render_template("planos.html")
+
+
 # =========================
 # LISTAR PLANOS
 # =========================
@@ -624,11 +622,13 @@ def listar_planos():
 
     if session["perfil"] == "admin":
 
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT *
             FROM planos_aula
             ORDER BY id DESC
-        """)
+            """
+        )
 
     else:
 
@@ -638,20 +638,21 @@ def listar_planos():
             FROM planos_aula
             WHERE usuario_id = %s
             ORDER BY id DESC
-        """,
+            """,
             (session["usuario_id"],),
         )
 
     planos = cursor.fetchall()
 
-    return render_template("listar_planos.html", planos=planos)
+    return render_template(
+        "listar_planos.html",
+        planos=planos
+    )
 
 
 # =========================
-# VISUALIZAR PLANOS
+# VISUALIZAR PLANO
 # =========================
-
-
 @app.route("/plano/<int:plano_id>")
 def visualizar_plano(plano_id):
 
@@ -660,17 +661,19 @@ def visualizar_plano(plano_id):
         SELECT *
         FROM planos_aula
         WHERE id = %s
-    """,
+        """,
         (plano_id,),
     )
 
     plano = cursor.fetchone()
 
-    print("PLANO:", plano)  # DEBUG IMPORTANTE
+    if not plano:
+        return "Plano não encontrado"
 
-    return render_template("visualizar_plano.html", plano=plano)
-
-
+    return render_template(
+        "visualizar_plano.html",
+        plano=plano
+    )
 # =========================
 # LISTAR CURSOS
 # =========================
@@ -682,11 +685,13 @@ def listar_cursos():
 
     if session["perfil"] == "admin":
 
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT *
             FROM cursos_plano
             ORDER BY id DESC
-        """)
+            """
+        )
 
     else:
 
@@ -696,13 +701,16 @@ def listar_cursos():
             FROM cursos_plano
             WHERE usuario_id = %s
             ORDER BY id DESC
-        """,
+            """,
             (session["usuario_id"],),
         )
 
     cursos = cursor.fetchall()
 
-    return render_template("listar_cursos.html", cursos=cursos)
+    return render_template(
+        "listar_cursos.html",
+        cursos=cursos
+    )
 
 
 # =========================
@@ -711,26 +719,36 @@ def listar_cursos():
 @app.route("/curso/<int:curso_id>")
 def visualizar_curso(curso_id):
 
+    if "usuario_id" not in session:
+        return redirect("/login")
+
     cursor.execute(
         """
         SELECT *
         FROM planos_aula
         WHERE curso_id = %s
         ORDER BY dia
-    """,
+        """,
         (curso_id,),
     )
 
     planos = cursor.fetchall()
 
-    return render_template("planos_curso.html", planos=planos, curso_id=curso_id)
+    return render_template(
+        "planos_curso.html",
+        planos=planos,
+        curso_id=curso_id
+    )
 
 
 # =========================
-# plano pdf
+# PLANO PDF
 # =========================
 @app.route("/plano_pdf/<int:id>")
 def plano_pdf(id):
+
+    if "usuario_id" not in session:
+        return redirect("/login")
 
     cursor.execute(
         """
@@ -766,11 +784,15 @@ def plano_pdf(id):
         as_attachment=True
     )
 
+
 # =========================
-# plano word
+# PLANO WORD
 # =========================
 @app.route("/plano_word/<int:id>")
 def plano_word(id):
+
+    if "usuario_id" not in session:
+        return redirect("/login")
 
     cursor.execute(
         """
@@ -802,13 +824,30 @@ def plano_word(id):
 
 
 # =========================
-# plano gerar atividade
+# GERAR ATIVIDADE DO PLANO
 # =========================
-@app.route("/gerar_atividade_plano/<int:id>")
+# =========================
+# GERAR ATIVIDADE DO PLANO
+# =========================
+@app.route("/gerar_atividade_plano/<int:id>", methods=["GET"])
 def gerar_atividade_plano(id):
 
+    if "usuario_id" not in session:
+        return redirect("/login")
+
     tipo = request.args.get("tipo", "objetiva")
-    quantidade = request.args.get("quantidade", 5)
+    quantidade_str = request.args.get("quantidade", "5")
+    dificuldade = request.args.get("dificuldade", "médio")
+
+    # Validar quantidade
+    try:
+        quantidade = int(quantidade_str)
+        if quantidade < 1:
+            quantidade = 5
+        if quantidade > 50:
+            quantidade = 50
+    except ValueError:
+        quantidade = 5
 
     # =========================
     # BUSCAR PLANO
@@ -818,7 +857,7 @@ def gerar_atividade_plano(id):
         SELECT *
         FROM planos_aula
         WHERE id = %s
-    """,
+        """,
         (id,),
     )
 
@@ -838,18 +877,26 @@ def gerar_atividade_plano(id):
         SELECT nome_curso
         FROM cursos_plano
         WHERE id = %s
-    """,
+        """,
         (curso_id,),
     )
 
     curso = cursor.fetchone()
 
-    nome_curso = curso[0] if curso else "Curso não encontrado"
+    if curso:
+        nome_curso = curso[0]
+    else:
+        nome_curso = "Curso não encontrado"
 
     # =========================
-    # GERAR ATIVIDADE IA
+    # GERAR ATIVIDADE COM IA
     # =========================
-    atividade = gerar_atividade(conteudo, "médio", tipo, quantidade)
+    atividade = gerar_atividade(
+        conteudo,
+        dificuldade,
+        tipo,
+        quantidade
+    )
 
     # =========================
     # SALVAR NO BANCO
@@ -865,14 +912,14 @@ def gerar_atividade_plano(id):
             usuario_id
         )
         VALUES (%s,%s,%s,%s,%s,%s)
-    """,
+        """,
         (
             nome_curso,
             "Plano de Aula",
             conteudo[:200],
-            "médio",
+            dificuldade,
             atividade,
-            session["usuario_id"],
+            session["usuario_id"]
         ),
     )
 
@@ -881,16 +928,22 @@ def gerar_atividade_plano(id):
     return redirect("/atividades")
 
 # =========================
-# download plano
+# DOWNLOAD PLANO
 # =========================
 @app.route("/baixar_plano/<int:plano_id>")
 def baixar_plano(plano_id):
 
-    cursor.execute("""
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    cursor.execute(
+        """
         SELECT *
         FROM planos_aula
         WHERE id=%s
-    """, (plano_id,))
+        """,
+        (plano_id,)
+    )
 
     plano = cursor.fetchone()
 
@@ -899,18 +952,21 @@ def baixar_plano(plano_id):
 
     arquivo = f"temp/plano_{plano_id}.docx"
 
+    os.makedirs("temp", exist_ok=True)
+
     gerar_docx_plano(
         titulo="PLANO DE AULA",
         subtitulo=f"Dia {plano[2]}",
         conteudo=plano[4],
-        caminho_saida=arquivo,
-        logo_path="static/img/logo.jpg"
+        caminho_saida=arquivo
     )
 
     return send_file(
         arquivo,
         as_attachment=True
     )
+
+
 # =========================
 # START
 # =========================

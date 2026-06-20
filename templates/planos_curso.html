@@ -25,17 +25,87 @@
             <tr>
 
                 <td>
-                    <strong>Dia {{ plano[2] }}</strong><br>
-                    <pre style="white-space: pre-wrap;">{{ plano[3] }}</pre>
+                    <strong>Dia {{ plano[2] }}</strong>
                 </td>
 
-                <td>{{ plano[3] }}</td>
+                <td>
+                    {{ plano[3] }}
+                </td>
 
                 <td>
 
-                    <a href="/plano/{{ plano[0] }}" class="btn btn-success btn-sm">
+                    <a href="/plano/{{ plano[0] }}" class="btn btn-success btn-sm mb-2">
                         Visualizar
                     </a>
+
+                    <form action="/gerar_atividade_plano/{{ plano[0] }}" method="GET">
+
+                        <div class="mb-2">
+
+                            <label class="form-label">
+                                Tipo da atividade
+                            </label>
+
+                            <select name="tipo" class="form-select form-select-sm">
+
+                                <option value="objetiva">
+                                    Objetiva
+                                </option>
+
+                                <option value="discursiva">
+                                    Discursiva
+                                </option>
+
+                                <option value="mista">
+                                    Mista
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                        <div class="mb-2">
+
+                            <label class="form-label">
+                                Quantidade de questões
+                            </label>
+
+                            <input type="number" name="quantidade" class="form-control form-control-sm" value="5"
+                                min="1" max="50">
+
+                        </div>
+
+                        <div class="mb-2">
+
+                            <label class="form-label">
+                                Dificuldade
+                            </label>
+
+                            <select name="dificuldade" class="form-select form-select-sm">
+
+                                <option value="fácil">
+                                    Fácil
+                                </option>
+
+                                <option value="médio" selected>
+                                    Médio
+                                </option>
+
+                                <option value="difícil">
+                                    Difícil
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                        <button type="submit" class="btn btn-danger btn-sm">
+
+                            TESTE GERAR ATIVIDADE
+
+                        </button>
+
+                        </form>
 
                 </td>
 
