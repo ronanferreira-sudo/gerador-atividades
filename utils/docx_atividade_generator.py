@@ -5,7 +5,8 @@ import os
 def gerar_docx_atividade(
     titulo,
     conteudo,
-    caminho_saida
+    caminho_saida,
+    subtitulo=""
 ):
 
     doc = DocxTemplate(
@@ -14,6 +15,7 @@ def gerar_docx_atividade(
 
     contexto = {
         "titulo": titulo,
+        "subtitulo": subtitulo,
         "conteudo": conteudo
     }
 

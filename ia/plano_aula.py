@@ -1,30 +1,30 @@
 import requests
 import hashlib
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 cache_planos = {}
 
 
 def gerar_hash_plano(texto_pdf, carga_horaria, aulas_por_dia, dia):
-    base = f"{texto_pdf[:800]}-{carga_horaria}-{aulas_por_dia}-{dia}"
+    base = f"{texto_pdf[:600]}-{carga_horaria}-{aulas_por_dia}-{dia}"
     return hashlib.md5(base.encode()).hexdigest()
 
 
 def preprocessar_texto(texto):
     texto = texto.replace("\n", " ")
     texto = " ".join(texto.split())
-    return texto[:800]
+    return texto[:600]
 
 
 def gerar_plano_aula(texto_pdf, carga_horaria, aulas_por_dia, dia):
 
     key = gerar_hash_plano(texto_pdf, carga_horaria, aulas_por_dia, dia)
 
-    # 🔥 CACHE
     if key in cache_planos:
-        print("CACHE PLANO HIT - resposta instantânea")
-        return cache_planos[key]
+        print(f"CACHE PLANO DIA {dia} HIT")
+        return (dia, cache_planos[key])
 
-    print("Chamando Ollama...")
+    print(f"Chamando Ollama - DIA {dia}...")
 
     prompt = f"""
 Crie o plano de aula do DIA {dia}.
@@ -32,7 +32,7 @@ Crie o plano de aula do DIA {dia}.
 Conteúdo base:
 {preprocessar_texto(texto_pdf)}
 
-Gere APENAS o plano de aula com a estrutura abaixo, em texto puro, sem formatação markdown, sem símbolos especiais, sem asteriscos, sem negrito, sem itálico:
+Gere APENAS o plano de aula em texto puro:
 
 1. Identificação:
 2. Objetivos:
@@ -41,7 +41,7 @@ Gere APENAS o plano de aula com a estrutura abaixo, em texto puro, sem formataç
 5. Recursos Didáticos:
 6. Avaliação:
 
-Não escreva introduções, não escreva explicações, não use markdown. Comece diretamente com "1. Identificação:".
+Comece diretamente com "1. Identificação:".
 """
 
     try:
@@ -52,23 +52,51 @@ Não escreva introduções, não escreva explicações, não use markdown. Comec
                 "prompt": prompt,
                 "stream": False,
                 "options": {
-                    "num_predict": 500
+                    "num_predict": 400,
+                    "temperature": 0.1
                 }
             },
-            timeout=1200
+            timeout=60
         )
 
         if resposta.status_code != 200:
-            return "Erro ao gerar plano"
+            return (dia, "Erro ao gerar plano")
 
         data = resposta.json()
         plano = data.get("response", "")
 
-        # 🔥 salva no cache
         cache_planos[key] = plano
+        print(f"DIA {dia} OK ({len(plano)} chars)")
 
-        return plano
+        return (dia, plano)
 
     except Exception as e:
-        print("Erro na IA:", e)
-        return "Erro ao conectar com a IA"
+        print(f"Erro na IA DIA {dia}:", e)
+        return (dia, "Erro ao conectar com a IA")
+
+
+def gerar_todos_planos(texto_pdf, carga_horaria, aulas_por_dia, total_dias, max_workers=4):
+
+    print(f"📅 Total de dias a gerar: {total_dias}")
+    print(f"⚡ Workers paralelos: {max_workers}")
+    print("-" * 40)
+
+    resultados = {}
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {
+            executor.submit(
+                gerar_plano_aula, texto_pdf, carga_horaria, aulas_por_dia, dia
+            ): dia for dia in range(1, total_dias + 1)
+        }
+        concluidos = 0
+        for future in as_completed(futures):
+            dia, plano = future.result()
+            resultados[dia] = plano
+            concluidos += 1
+            print(f"📊 Progresso: {concluidos}/{total_dias} dias concluídos")
+
+    print("-" * 40)
+    print(f"✅ Geração de planos finalizada! {total_dias} dias gerados.")
+    print("=" * 60)
+
+    return [resultados[dia] for dia in sorted(resultados.keys())]

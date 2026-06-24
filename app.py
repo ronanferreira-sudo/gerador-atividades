@@ -14,7 +14,7 @@ from PyPDF2 import PdfReader
 from database.conexao import conexao, cursor
 
 from ia.gerador import gerar_atividade
-from ia.plano_aula import gerar_plano_aula
+from ia.plano_aula import gerar_todos_planos, gerar_plano_aula
 
 from utils.docx_generator import gerar_docx_plano
 from utils.pdf_generator import gerar_pdf_plano
@@ -22,6 +22,7 @@ from utils.pdf_generator import gerar_pdf_plano
 from utils.docx_atividade_generator import gerar_docx_atividade
 from utils.pdf_atividade_generator import gerar_pdf_atividade
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 
 
@@ -365,6 +366,7 @@ def gerar_pdf(id):
 
     gerar_docx_atividade(
         titulo=f"{atividade[1]} - {atividade[2]}",
+        subtitulo=atividade[1],
         conteudo=atividade[5],
         caminho_saida=arquivo_docx
     )
@@ -415,6 +417,7 @@ def gerar_word(id):
 
     gerar_docx_atividade(
         titulo=f"{atividade[1]} - {atividade[2]}",
+        subtitulo=atividade[1],
         conteudo=atividade[5],
         caminho_saida=arquivo
     )
@@ -478,16 +481,33 @@ def dashboard():
     if "usuario_id" not in session:
         return redirect("/login")
 
-    cursor.execute(
-        """
-        SELECT
-            curso,
-            COUNT(*)
-        FROM atividades
-        GROUP BY curso
-        ORDER BY curso
-        """
-    )
+    if session["perfil"] == "admin":
+
+        cursor.execute(
+            """
+            SELECT
+                curso,
+                COUNT(*)
+            FROM atividades
+            GROUP BY curso
+            ORDER BY curso
+            """
+        )
+
+    else:
+
+        cursor.execute(
+            """
+            SELECT
+                curso,
+                COUNT(*)
+            FROM atividades
+            WHERE usuario_id = %s
+            GROUP BY curso
+            ORDER BY curso
+            """,
+            (session["usuario_id"],),
+        )
 
     cursos = cursor.fetchall()
 
@@ -509,6 +529,13 @@ def planos():
         nome_curso = request.form["nome_curso"]
         carga_horaria = int(request.form["carga_horaria"])
         aulas_por_dia = int(request.form["aulas_por_dia"])
+
+        print("=" * 60)
+        print(f"📚 INICIANDO GERAÇÃO DE PLANOS")
+        print(f"   Curso: {nome_curso}")
+        print(f"   Carga Horária: {carga_horaria}h")
+        print(f"   Aulas por dia: {aulas_por_dia}h")
+        print("=" * 60)
 
         arquivo = request.files["arquivo_pdf"]
         nome_arquivo = secure_filename(arquivo.filename)
@@ -554,16 +581,18 @@ def planos():
 
         total_dias = carga_horaria // aulas_por_dia
 
+        # 🔥 GERA TODOS OS PLANOS EM PARALELO
+        planos = gerar_todos_planos(
+            texto,
+            carga_horaria,
+            aulas_por_dia,
+            total_dias,
+            max_workers=4
+        )
+
         planos_completos = ""
 
-        for dia in range(1, total_dias + 1):
-
-            plano = gerar_plano_aula(
-                texto,
-                carga_horaria,
-                aulas_por_dia,
-                dia
-            )
+        for dia, plano in enumerate(planos, start=1):
 
             planos_completos += f"\n\nDIA {dia}\n\n{plano}"
 
@@ -658,9 +687,10 @@ def visualizar_plano(plano_id):
 
     cursor.execute(
         """
-        SELECT *
-        FROM planos_aula
-        WHERE id = %s
+        SELECT pa.*, cp.nome_curso, cp.carga_horaria
+        FROM planos_aula pa
+        LEFT JOIN cursos_plano cp ON cp.id = pa.curso_id
+        WHERE pa.id = %s
         """,
         (plano_id,),
     )
@@ -725,6 +755,17 @@ def visualizar_curso(curso_id):
     cursor.execute(
         """
         SELECT *
+        FROM cursos_plano
+        WHERE id = %s
+        """,
+        (curso_id,),
+    )
+
+    curso = cursor.fetchone()
+
+    cursor.execute(
+        """
+        SELECT *
         FROM planos_aula
         WHERE curso_id = %s
         ORDER BY dia
@@ -737,7 +778,8 @@ def visualizar_curso(curso_id):
     return render_template(
         "planos_curso.html",
         planos=planos,
-        curso_id=curso_id
+        curso_id=curso_id,
+        curso=curso
     )
 
 
@@ -891,12 +933,18 @@ def gerar_atividade_plano(id):
     # =========================
     # GERAR ATIVIDADE COM IA
     # =========================
+    print(f"🤖 Gerando atividade a partir do Plano #{id}")
+    print(f"   Curso: {nome_curso} | Tipo: {tipo} | Dificuldade: {dificuldade} | Qtd: {quantidade}")
+
     atividade = gerar_atividade(
         conteudo,
         dificuldade,
         tipo,
         quantidade
     )
+
+    print(f"✅ Atividade gerada com sucesso ({len(atividade)} caracteres)")
+    print("=" * 60)
 
     # =========================
     # SALVAR NO BANCO

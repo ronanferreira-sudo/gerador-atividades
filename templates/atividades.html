@@ -1,103 +1,110 @@
-<!DOCTYPE html>
-<html lang="pt-br">
+{% extends 'base.html' %}
 
-<head>
-    <meta charset="UTF-8">
-    <title>Atividades Geradas</title>
+{% block titulo %}Atividades Geradas{% endblock %}
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+{% block conteudo %}
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
+<div class="container-fluid mt-4">
 
-<body>
+    <!-- Cabeçalho com busca -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Atividades Geradas pela IA</h2>
 
-    {% include 'menu.html' %}
-
-    <div class="container-fluid mt-4">
-
-        <h1 class="text-center mb-4">
-            Atividades Geradas pela IA
-        </h1>
-
-        <div class="table-responsive">
-
-            <table class="table table-striped table-hover align-middle">
-
-                <thead class="table-dark">
-
-                    <tr>
-                        <th>Curso</th>
-                        <th>Disciplina</th>
-                        <th>Conteúdo</th>
-                        <th>Dificuldade</th>
-                        <th>Atividade Gerada</th>
-                        <th></th>
-                    </tr>
-
-                </thead>
-
-                <tbody>
-
-                    {% for atividade in atividades %}
-
-                    <tr>
-
-                        <td>{{ atividade[1] }}</td>
-
-                        <td>{{ atividade[2] }}</td>
-
-                        <td>{{ atividade[3] }}</td>
-
-                        <td>{{ atividade[4] }}</td>
-
-                        <td class="atividade">
-
-                            {% if atividade[5]|length > 120 %}
-                            {{ atividade[5][:120] }}...
-                            {% else %}
-                            {{ atividade[5] }}
-                            {% endif %}
-
-                        </td>
-
-                        <td class="acoes">
-
-                            <a class="btn btn-warning btn-sm" href="/editar/{{ atividade[0] }}">
-                                Editar
-                            </a>
-
-                            <a class="btn btn-danger btn-sm" href="/pdf/{{ atividade[0] }}">
-                                PDF
-                            </a>
-
-                            <a class="btn btn-primary btn-sm" href="/word/{{ atividade[0] }}">
-                                Word
-                            </a>
-
-                            <a class="btn btn-success btn-sm" href="/regenerar/{{ atividade[0] }}">
-                                IA
-                            </a>
-
-                            <a class="btn btn-dark btn-sm" href="/deletar/{{ atividade[0] }}"
-                                onclick="return confirm('Deseja excluir esta atividade?')">
-                                Excluir
-                            </a>
-
-                        </td>
-
-                    </tr>
-
-                    {% endfor %}
-
-                </tbody>
-
-            </table>
-
-        </div>
-
+        <form action="/atividades" method="GET" class="d-flex gap-2">
+            <input type="text"
+                   name="busca"
+                   class="form-control"
+                   placeholder="Buscar por curso, disciplina ou conteudo..."
+                   value="{{ request.args.get('busca', '') }}"
+                   style="min-width: 300px;">
+            <button type="submit" class="btn btn-primary">Buscar</button>
+            {% if request.args.get('busca') %}
+            <a href="/atividades" class="btn btn-outline-secondary">Limpar</a>
+            {% endif %}
+        </form>
     </div>
 
-</body>
+    <!-- Feedback de filtro -->
+    {% if request.args.get('busca') %}
+    <div class="alert alert-info d-flex justify-content-between align-items-center py-2">
+        <span>
+            Filtrando por: <strong>"{{ request.args.get('busca') }}"</strong>
+            &mdash; {{ atividades|length }} resultado(s) encontrado(s)
+        </span>
+        <a href="/atividades" class="btn btn-sm btn-outline-info">Limpar filtro</a>
+    </div>
+    {% endif %}
 
-</html>
+    {% if atividades %}
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Curso</th>
+                    <th>Disciplina</th>
+                    <th>Conteudo</th>
+                    <th>Dificuldade</th>
+                    <th>Atividade Gerada</th>
+                    <th class="text-center" style="width: 280px;">Acoes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for atividade in atividades %}
+                <tr>
+                    <td>{{ atividade[1] }}</td>
+                    <td>{{ atividade[2] }}</td>
+                    <td class="atividade">
+                        {% if atividade[3]|length > 80 %}
+                            {{ atividade[3][:80] }}...
+                        {% else %}
+                            {{ atividade[3] }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if atividade[4] == 'fácil' %}
+                            <span class="badge bg-success">Facil</span>
+                        {% elif atividade[4] == 'médio' %}
+                            <span class="badge bg-warning text-dark">Medio</span>
+                        {% elif atividade[4] == 'difícil' %}
+                            <span class="badge bg-danger">Dificil</span>
+                        {% else %}
+                            {{ atividade[4] }}
+                        {% endif %}
+                    </td>
+                    <td class="atividade">
+                        {% if atividade[5]|length > 120 %}
+                            {{ atividade[5][:120] }}...
+                        {% else %}
+                            {{ atividade[5] }}
+                        {% endif %}
+                    </td>
+                    <td class="acoes text-center" style="white-space: nowrap;">
+                        <a class="btn btn-warning btn-sm" href="/editar/{{ atividade[0] }}" title="Editar">Editar</a>
+                        <a class="btn btn-danger btn-sm" href="/pdf/{{ atividade[0] }}" title="Baixar PDF">PDF</a>
+                        <a class="btn btn-primary btn-sm" href="/word/{{ atividade[0] }}" title="Baixar Word">Word</a>
+                        <a class="btn btn-success btn-sm" href="/regenerar/{{ atividade[0] }}" title="Regenerar com IA">IA</a>
+                        <a class="btn btn-dark btn-sm" href="/deletar/{{ atividade[0] }}"
+                           onclick="return confirm('Deseja excluir esta atividade?')" title="Excluir">Excluir</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-warning text-center py-5">
+        <h4 class="mb-3">Nenhuma atividade encontrada</h4>
+        <p class="mb-0">
+            {% if request.args.get('busca') %}
+                Nenhum resultado para <strong>"{{ request.args.get('busca') }}"</strong>.
+                <a href="/atividades" class="alert-link">Limpar filtro</a>
+            {% else %}
+                <a href="/" class="btn btn-primary">Criar nova atividade</a>
+            {% endif %}
+        </p>
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}

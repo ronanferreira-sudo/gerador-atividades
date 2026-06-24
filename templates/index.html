@@ -1,95 +1,75 @@
-<!DOCTYPE html>
-<html lang="pt-br">
+{% extends 'base.html' %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% block titulo %}Gerar Atividade{% endblock %}
 
-    <title>Gerador de Atividades</title>
+{% block conteudo %}
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+<div class="row justify-content-center mt-4">
+    <div class="col-md-8 col-lg-7">
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+        <div class="card shadow border-0">
+            <div class="card-body p-4">
 
-<body>
-    {% include 'menu.html' %}
-    <nav class="navbar navbar-dark bg-dark">
-        <div class="container-fluid">
-            <span class="navbar-brand mb-0 h1">
-                Sistema Gerador de Atividades
-            </span>
-        </div>
-    </nav>
-
-    <div class="container mt-5">
-
-        <div class="card shadow p-4">
-
-            <h2 class="mb-4">
-                Gerar Nova Atividade
-            </h2>
-
-            <form method="POST">
-
-                <div class="mb-3">
-                    <label class="form-label">Curso</label>
-
-                    <input type="text" name="curso" class="form-control">
+                <div class="text-center mb-4">
+                    <h2 class="fw-bold">Gerar Nova Atividade</h2>
+                    <p class="text-muted">Preencha os dados abaixo para gerar uma atividade personalizada com IA</p>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Disciplina</label>
+                <form method="POST">
 
-                    <input type="text" name="disciplina" class="form-control">
-                </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Curso</label>
+                            <input type="text" name="curso" class="form-control form-control-lg"
+                                   placeholder="Ex: Informática" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Disciplina</label>
+                            <input type="text" name="disciplina" class="form-control form-control-lg"
+                                   placeholder="Ex: Programação" required>
+                        </div>
+                    </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Conteúdo</label>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Conteudo / Descricao</label>
+                        <textarea name="conteudo" class="form-control form-control-lg" rows="4"
+                                  placeholder="Descreva o conteudo que sera abordado na atividade..." required></textarea>
+                    </div>
 
-                    <textarea name="conteudo" class="form-control" rows="4"></textarea>
-                </div>
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Dificuldade</label>
+                            <select name="dificuldade" class="form-select form-select-lg">
+                                <option value="fácil">Facil</option>
+                                <option value="médio" selected>Medio</option>
+                                <option value="difícil">Dificil</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Tipo</label>
+                            <select name="tipo" class="form-select form-select-lg">
+                                <option value="objetiva">Objetiva</option>
+                                <option value="discursiva">Discursiva</option>
+                                <option value="mista">Mista</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Questoes</label>
+                            <input type="number" name="quantidade" class="form-control form-control-lg"
+                                   value="5" min="1" max="50">
+                        </div>
+                    </div>
 
-                <div class="mb-3">
-                    <label class="form-label">
-                        Nível de dificuldade
-                    </label>
+                    <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold">
+                        Gerar Atividade com IA
+                    </button>
 
-                    <select name="dificuldade" class="form-select">
-                        <option>Baixo</option>
-                        <option>Médio</option>
-                        <option>Alto</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">
-                        Tipo de atividade
-                    </label>
+                </form>
 
-                    <select name="tipo" class="form-select">
-                        <option value="objetiva">Objetiva</option>
-                        <option value="discursiva">Discursiva</option>
-                        <option value="mista">Mista</option>
-                    </select>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">
-                        Quantidade de questões
-                    </label>
-
-                    <input type="number" name="quantidade" class="form-control" value="5" min="1" max="50">
-                </div>
-
-                <button type="submit" class="btn btn-primary">
-                    Gerar Atividade
-                </button>
-
-            </form>
-
+            </div>
         </div>
 
     </div>
+</div>
 
-</body>
-
-</html>
+{% endblock %}

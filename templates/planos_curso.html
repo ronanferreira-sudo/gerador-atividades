@@ -1,121 +1,118 @@
 {% extends 'base.html' %}
 
+{% block titulo %}Planos do Curso{% endblock %}
+
 {% block conteudo %}
 
 <div class="container mt-4">
 
-    <h2>Planos de Aula</h2>
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/listar_cursos">Cursos</a></li>
+            <li class="breadcrumb-item active" aria-current="page">
+                {% if curso %}{{ curso[1] }}{% else %}Curso #{{ curso_id }}{% endif %}
+            </li>
+        </ol>
+    </nav>
 
-    <table class="table table-bordered">
+    <!-- Cabecalho -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">
+                {% if curso %}{{ curso[1] }}{% else %}Curso #{{ curso_id }}{% endif %}
+            </h2>
+            <p class="text-muted mb-0">
+                <span class="badge bg-info me-2">{{ planos|length }} aulas</span>
+                {% if curso %}
+                    <span class="badge bg-secondary">{{ curso[2] }}h</span>
+                {% endif %}
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/curso_pdf/{{ curso_id }}" class="btn btn-danger">PDF Completo</a>
+            <a href="/curso_word/{{ curso_id }}" class="btn btn-primary">Word Completo</a>
+        </div>
+    </div>
 
-        <thead>
-
-            <tr>
-                <th>Dia</th>
-                <th>Tema</th>
-                <th>Ações</th>
-            </tr>
-
-        </thead>
-
-        <tbody>
-
-            {% for plano in planos %}
-
-            <tr>
-
-                <td>
-                    <strong>Dia {{ plano[2] }}</strong>
-                </td>
-
-                <td>
-                    {{ plano[3] }}
-                </td>
-
-                <td>
-
-                    <a href="/plano/{{ plano[0] }}" class="btn btn-success btn-sm mb-2">
-                        Visualizar
-                    </a>
-
-                    <form action="/gerar_atividade_plano/{{ plano[0] }}" method="GET">
-
-                        <div class="mb-2">
-
-                            <label class="form-label">
-                                Tipo da atividade
-                            </label>
-
-                            <select name="tipo" class="form-select form-select-sm">
-
-                                <option value="objetiva">
-                                    Objetiva
-                                </option>
-
-                                <option value="discursiva">
-                                    Discursiva
-                                </option>
-
-                                <option value="mista">
-                                    Mista
-                                </option>
-
-                            </select>
-
-                        </div>
-
-                        <div class="mb-2">
-
-                            <label class="form-label">
-                                Quantidade de questões
-                            </label>
-
-                            <input type="number" name="quantidade" class="form-control form-control-sm" value="5"
-                                min="1" max="50">
-
-                        </div>
-
-                        <div class="mb-2">
-
-                            <label class="form-label">
-                                Dificuldade
-                            </label>
-
-                            <select name="dificuldade" class="form-select form-select-sm">
-
-                                <option value="fácil">
-                                    Fácil
-                                </option>
-
-                                <option value="médio" selected>
-                                    Médio
-                                </option>
-
-                                <option value="difícil">
-                                    Difícil
-                                </option>
-
-                            </select>
-
-                        </div>
-
-                        <button type="submit" class="btn btn-danger btn-sm">
-
-                            TESTE GERAR ATIVIDADE
-
+    <!-- Cards de Planos -->
+    <div class="row">
+        {% for plano in planos %}
+        <div class="col-12 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center bg-light">
+                    <h5 class="mb-0">
+                        <span class="badge bg-dark me-2">Dia {{ plano[2] }}</span>
+                        {{ plano[3] }}
+                    </h5>
+                    <div class="d-flex gap-2">
+                        <a href="/plano/{{ plano[0] }}" class="btn btn-outline-success btn-sm">Visualizar</a>
+                        <button class="btn btn-outline-danger btn-sm"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#gerarAtividade{{ plano[0] }}"
+                                aria-expanded="false">
+                            Gerar Atividade
                         </button>
+                    </div>
+                </div>
 
+                <!-- Formulario de geracao de atividade (colapsavel) -->
+                <div class="collapse" id="gerarAtividade{{ plano[0] }}">
+                    <div class="card-body border-bottom">
+                        <form action="/gerar_atividade_plano/{{ plano[0] }}" method="GET" class="row g-2 align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label small mb-1">Tipo</label>
+                                <select name="tipo" class="form-select form-select-sm">
+                                    <option value="objetiva">Objetiva</option>
+                                    <option value="discursiva">Discursiva</option>
+                                    <option value="mista">Mista</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small mb-1">Questoes</label>
+                                <input type="number" name="quantidade" class="form-control form-control-sm"
+                                       value="5" min="1" max="50">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small mb-1">Dificuldade</label>
+                                <select name="dificuldade" class="form-select form-select-sm">
+                                    <option value="fácil">Facil</option>
+                                    <option value="médio" selected>Medio</option>
+                                    <option value="difícil">Dificil</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-danger btn-sm w-100">Gerar</button>
+                            </div>
                         </form>
+                    </div>
+                </div>
 
-                </td>
-
-            </tr>
-
-            {% endfor %}
-
-        </tbody>
-
-    </table>
+                <!-- Previa do plano -->
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <p class="card-text text-muted small mb-0">
+                                {{ plano[4][:300] }}{% if plano[4]|length > 300 %}...{% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <a href="/plano_pdf/{{ plano[0] }}" class="btn btn-outline-danger btn-sm me-1" title="Baixar PDF">PDF</a>
+                            <a href="/plano_word/{{ plano[0] }}" class="btn btn-outline-primary btn-sm" title="Baixar Word">Word</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="alert alert-warning text-center">
+                Nenhum plano de aula encontrado para este curso.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 
 </div>
 

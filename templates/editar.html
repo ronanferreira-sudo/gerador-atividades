@@ -1,50 +1,72 @@
-<!DOCTYPE html>
-<html>
+{% extends 'base.html' %}
 
-<head>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+{% block titulo %}Editar Atividade{% endblock %}
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <meta charset="utf-8">
-    <title>Editar Atividade</title>
-</head>
+{% block conteudo %}
 
-<body>
-    {% include 'menu.html' %}
-    <h1>Editar Atividade</h1>
+<div class="row justify-content-center mt-4">
+    <div class="col-md-10 col-lg-8">
 
-    <form method="POST">
+        <div class="card shadow border-0">
+            <div class="card-body p-4">
 
-        <p>Curso</p>
-        <input type="text" name="curso" value="{{ atividade[1] }}">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="fw-bold mb-1">Editar Atividade</h2>
+                        <p class="text-muted mb-0">ID: {{ atividade[0] }}</p>
+                    </div>
+                    <a href="/atividades" class="btn btn-outline-secondary">Voltar</a>
+                </div>
 
-        <p>Disciplina</p>
-        <input type="text" name="disciplina" value="{{ atividade[2] }}">
+                <form method="POST">
 
-        <p>Conteúdo</p>
-        <input type="text" name="conteudo" value="{{ atividade[3] }}">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Curso</label>
+                            <input type="text" name="curso" class="form-control form-control-lg"
+                                   value="{{ atividade[1] }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Disciplina</label>
+                            <input type="text" name="disciplina" class="form-control form-control-lg"
+                                   value="{{ atividade[2] }}" required>
+                        </div>
+                    </div>
 
-        <p>Dificuldade</p>
-        <input type="text" name="dificuldade" value="{{ atividade[4] }}">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Conteudo</label>
+                        <input type="text" name="conteudo" class="form-control form-control-lg"
+                               value="{{ atividade[3] }}" required>
+                    </div>
 
-        <p>Atividade Gerada</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Dificuldade</label>
+                        <select name="dificuldade" class="form-select form-select-lg">
+                            <option value="fácil" {% if atividade[4] == 'fácil' %}selected{% endif %}>Facil</option>
+                            <option value="médio" {% if atividade[4] == 'médio' %}selected{% endif %}>Medio</option>
+                            <option value="difícil" {% if atividade[4] == 'difícil' %}selected{% endif %}>Dificil</option>
+                        </select>
+                    </div>
 
-        <textarea name="atividade_gerada" rows="20" cols="100">{{ atividade[5] }}</textarea>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Atividade Gerada</label>
+                        <textarea name="atividade_gerada" class="form-control" rows="20"
+                                  style="font-family: monospace; font-size: 14px;" required>{{ atividade[5] }}</textarea>
+                    </div>
 
-        <br><br>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg flex-grow-1 fw-bold">
+                            Salvar Alteracoes
+                        </button>
+                        <a href="/atividades" class="btn btn-outline-danger btn-lg">Cancelar</a>
+                    </div>
 
-        <button type="submit">
-            Salvar
-        </button>
+                </form>
 
-    </form>
+            </div>
+        </div>
 
-    <br>
+    </div>
+</div>
 
-    <a href="/atividades">
-        Voltar
-    </a>
-
-</body>
-
-</html>
+{% endblock %}

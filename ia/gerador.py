@@ -8,7 +8,7 @@ cache_atividades = {}
 def preprocessar_texto(texto):
     texto = texto.replace("\n", " ")
     texto = " ".join(texto.split())
-    return texto[:3000]
+    return texto[:1500]
 
 
 def gerar_hash(texto_pdf, dificuldade, tipo, quantidade):
@@ -36,54 +36,18 @@ def gerar_atividade(texto_pdf, dificuldade, tipo="objetiva", quantidade=5):
     print("Chamando Ollama...")
 
     prompt = f"""
-Você é um professor especialista em elaboração de avaliações.
-
-CONTEÚDO PARA AS QUESTÕES:
+Crie {quantidade} questoes {tipo} nivel {dificuldade} com base no conteudo:
 
 {preprocessar_texto(texto_pdf)}
 
-INSTRUÇÕES:
-
-1. Gere EXATAMENTE {quantidade} questões.
-
-2. Todas as questões devem ser elaboradas SOMENTE com base no conteúdo fornecido.
-
-3. Não invente assuntos que não estejam presentes no conteúdo.
-
-4. Não faça perguntas sobre:
-- carga horária;
-- professor;
-- objetivos;
-- metodologia;
-- avaliação;
-- recursos didáticos.
-
-5. Nível de dificuldade:
-{dificuldade}
-
-6. Tipo da atividade:
-{tipo}
-
-REGRAS:
-
-SE O TIPO FOR "objetiva":
-- faça questões de múltipla escolha;
-- alternativas A), B), C) e D);
-- NÃO coloque gabarito, NÃO coloque respostas.
-
-SE O TIPO FOR "discursiva":
-- faça perguntas abertas;
-- não coloque alternativas.
-
-SE O TIPO FOR "mista":
-- misture questões objetivas e discursivas.
-
-IMPORTANTE:
-
-- Numere as questões de 1 até {quantidade}.
-- Gere exatamente {quantidade} questões.
-- Gere APENAS as questões, sem introduções, sem explicações, sem gabarito, sem respostas.
-- Comece diretamente na questão 1.
+Regras:
+- Apenas as questoes, sem introducoes ou respostas
+- Objetivas: multipla escolha A) B) C) D) sem gabarito
+- Discursivas: abertas
+- Mistas: misture as duas
+- Nao invente assuntos fora do conteudo
+- Nao pergunte sobre carga horaria, professor, objetivos, metodologia, avaliacao ou recursos
+- Comece direto na questao 1
 """
 
     try:
@@ -95,11 +59,11 @@ IMPORTANTE:
                 "prompt": prompt,
                 "stream": False,
                 "options": {
-                    "temperature": 0.3,
-                    "num_predict": 2000
+                    "temperature": 0.1,
+                    "num_predict": 1500
                 }
             },
-            timeout=300
+            timeout=60
         )
 
         if resposta.status_code != 200:

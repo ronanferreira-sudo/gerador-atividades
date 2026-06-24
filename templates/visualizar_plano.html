@@ -1,73 +1,122 @@
 {% extends 'base.html' %}
 
+{% block titulo %}Plano de Aula - Dia {{ plano[2] }}{% endblock %}
+
 {% block conteudo %}
-<hr>
 
 <div class="container mt-4">
 
-    <h2>Plano de Aula</h2>
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/listar_cursos">Cursos</a></li>
+            <li class="breadcrumb-item">
+                <a href="/curso/{{ plano[1] }}">
+                    {% if plano[6] %}{{ plano[6] }}{% else %}Curso #{{ plano[1] }}{% endif %}
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                Dia {{ plano[2] }}
+            </li>
+        </ol>
+    </nav>
 
-    <hr>
+    <!-- Cabecalho do Plano -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="mb-0">
+                    <span class="badge bg-light text-dark me-2">Dia {{ plano[2] }}</span>
+                    {{ plano[3] }}
+                </h3>
+                {% if plano[6] %}
+                <small class="text-white-50">
+                    {{ plano[6] }}{% if plano[7] %} &middot; {{ plano[7] }}h{% endif %}
+                </small>
+                {% endif %}
+            </div>
+            <div class="d-flex gap-2">
+                <a href="/plano_pdf/{{ plano[0] }}" class="btn btn-light btn-sm">PDF</a>
+                <a href="/plano_word/{{ plano[0] }}" class="btn btn-light btn-sm">Word</a>
+            </div>
+        </div>
 
-    <p><strong>ID:</strong> {{ plano[0] }}</p>
-    <p><strong>Curso ID:</strong> {{ plano[1] }}</p>
-    <p><strong>Dia:</strong> {{ plano[2] }}</p>
-    <p><strong>Tema:</strong> {{ plano[3] }}</p>
+        <!-- Conteudo formatado do Plano -->
+        <div class="card-body">
+            <div class="plano-conteudo">
+                {% set linhas = plano[4].split('\n') %}
+                {% for linha in linhas %}
+                    {% if linha.startswith('1.') or linha.startswith('2.') or linha.startswith('3.') or
+                          linha.startswith('4.') or linha.startswith('5.') or linha.startswith('6.') or
+                          linha.startswith('7.') or linha.startswith('8.') or linha.startswith('9.') or
+                          linha.startswith('10.') or linha.startswith('1 –') or linha.startswith('2 –') or
+                          linha.startswith('3 –') or linha.startswith('4 –') or linha.startswith('5 –') or
+                          linha.startswith('6 –') or linha.startswith('1:') or linha.startswith('2:') or
+                          linha.startswith('3:') or linha.startswith('4:') or linha.startswith('5:') or
+                          linha.startswith('6:') or linha.startswith('Identificação') or
+                          linha.startswith('Objetivos') or linha.startswith('Conteudo Programático') or
+                          linha.startswith('Conteúdo Programático') or linha.startswith('Estrategia') or
+                          linha.startswith('Estratégia') or linha.startswith('Recursos') or
+                          linha.startswith('Avaliação') or linha.startswith('Avaliacao') or
+                          linha.startswith('Metodologia') or linha.startswith('Titulo') or
+                          linha.startswith('Título') or linha.startswith('Introdução') or
+                          linha.startswith('Introducao') or linha.startswith('Desenvolvimento') or
+                          linha.startswith('Conclusão') or linha.startswith('Conclusao') or
+                          linha.startswith('DIA') or linha.startswith('PLANO') %}
+                        <h5 class="text-primary mt-3 mb-2 border-bottom pb-1">{{ linha }}</h5>
+                    {% elif linha.strip() == '' %}
+                        <br>
+                    {% elif linha.strip().startswith('-') or linha.strip().startswith('•') or
+                          linha.strip().startswith('*') %}
+                        <p class="mb-1 ps-3 text-muted">{{ linha }}</p>
+                    {% else %}
+                        <p class="mb-1">{{ linha }}</p>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 
-    <hr>
-
-    <pre style="white-space: pre-wrap; font-size: 14px;">
-{{ plano[4] }}
-    </pre>
+    <!-- Secao: Gerar Atividade -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Gerar Atividade a partir deste Plano</h5>
+        </div>
+        <div class="card-body">
+            <form action="/gerar_atividade_plano/{{ plano[0] }}" method="GET" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Tipo da Atividade</label>
+                    <select name="tipo" class="form-select">
+                        <option value="objetiva">Objetiva</option>
+                        <option value="discursiva">Discursiva</option>
+                        <option value="mista">Mista</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Questoes</label>
+                    <input type="number" name="quantidade" class="form-control"
+                           value="5" min="1" max="50">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Dificuldade</label>
+                    <select name="dificuldade" class="form-select">
+                        <option value="fácil">Facil</option>
+                        <option value="médio" selected>Medio</option>
+                        <option value="difícil">Dificil</option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-success flex-grow-1">
+                        Gerar Atividade
+                    </button>
+                    <a href="/curso/{{ plano[1] }}" class="btn btn-outline-secondary">
+                        Voltar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
 
 </div>
-<hr>
 
-<h4>Gerar atividade a partir deste plano</h4>
-
-<form action="/gerar_atividade_plano/{{ plano[0] }}" method="GET">
-
-    <div class="mb-2">
-        <label>Tipo da atividade</label>
-        <select name="tipo" class="form-control">
-            <option value="objetiva">Objetiva</option>
-            <option value="discursiva">Discursiva</option>
-            <option value="mista">Mista</option>
-        </select>
-    </div>
-
-    <div class="mb-2">
-        <label>Quantidade de questões</label>
-        <input type="number" name="quantidade" class="form-control" value="5" min="1" max="50">
-    </div>
-
-    <div class="mb-2">
-        <label>Dificuldade</label>
-        <select name="dificuldade" class="form-control">
-            <option value="fácil">Fácil</option>
-            <option value="médio" selected>Médio</option>
-            <option value="difícil">Difícil</option>
-        </select>
-    </div>
-
-    <div class="d-flex gap-2">
-
-        <!-- PDF -->
-        <a href="/plano_pdf/{{ plano[0] }}" class="btn btn-danger">
-            📄 PDF
-        </a>
-
-        <!-- WORD -->
-        <a href="/plano_word/{{ plano[0] }}" class="btn btn-primary">
-            📝 Word
-        </a>
-
-        <!-- GERAR ATIVIDADE -->
-        <button type="submit" class="btn btn-success">
-            🤖 Gerar Atividade
-        </button>
-
-    </div>
-
-</form>
 {% endblock %}
