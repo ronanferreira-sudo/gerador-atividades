@@ -5,8 +5,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 cache_planos = {}
 
 
-def gerar_hash_plano(texto_pdf, carga_horaria, aulas_por_dia, dia):
-    base = f"{texto_pdf[:600]}-{carga_horaria}-{aulas_por_dia}-{dia}"
+def gerar_hash_plano(texto_base, carga_horaria, aulas_por_dia, dia):
+    base = f"{texto_base[:600]}-{carga_horaria}-{aulas_por_dia}-{dia}"
     return hashlib.md5(base.encode()).hexdigest()
 
 
@@ -16,9 +16,9 @@ def preprocessar_texto(texto):
     return texto[:600]
 
 
-def gerar_plano_aula(texto_pdf, carga_horaria, aulas_por_dia, dia):
+def gerar_plano_aula(texto_base, carga_horaria, aulas_por_dia, dia):
 
-    key = gerar_hash_plano(texto_pdf, carga_horaria, aulas_por_dia, dia)
+    key = gerar_hash_plano(texto_base, carga_horaria, aulas_por_dia, dia)
 
     if key in cache_planos:
         print(f"CACHE PLANO DIA {dia} HIT")
@@ -29,8 +29,11 @@ def gerar_plano_aula(texto_pdf, carga_horaria, aulas_por_dia, dia):
     prompt = f"""
 Crie o plano de aula do DIA {dia}.
 
-Conteúdo base:
-{preprocessar_texto(texto_pdf)}
+Conteúdo base (Matriz de Referência):
+{preprocessar_texto(texto_base)}
+
+Com base nos itens da Matriz de Referência acima, distribua os conteúdos ao longo dos dias do curso.
+Para o DIA {dia}, selecione os itens mais adequados e crie o plano de aula.
 
 Gere APENAS o plano de aula em texto puro:
 

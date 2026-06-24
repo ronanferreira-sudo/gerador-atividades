@@ -23,6 +23,7 @@ from utils.docx_atividade_generator import gerar_docx_atividade
 from utils.pdf_atividade_generator import gerar_pdf_atividade
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from utils.excel_reader import extrair_dados_excel, formatar_dados_para_prompt, contar_itens
 import os
 
 
@@ -546,15 +547,22 @@ def planos():
         caminho = os.path.join(pasta_upload, nome_arquivo)
         arquivo.save(caminho)
 
-        reader = PdfReader(caminho)
+        # Detecta se é Excel (.xlsx) ou PDF
+        is_excel = nome_arquivo.lower().endswith(('.xlsx', '.xls'))
 
-        texto = ""
-
-        for pagina in reader.pages:
-            conteudo = pagina.extract_text()
-
-            if conteudo:
-                texto += conteudo + "\n"
+        if is_excel:
+            print("📊 Arquivo Excel detectado! Extraindo dados da Matriz de Referência...")
+            dados_excel = extrair_dados_excel(caminho)
+            texto = formatar_dados_para_prompt(dados_excel)
+            print(f"📊 Dados extraídos: {len(dados_excel)} itens encontrados")
+        else:
+            print("📄 Arquivo PDF detectado! Extraindo texto...")
+            reader = PdfReader(caminho)
+            texto = ""
+            for pagina in reader.pages:
+                conteudo = pagina.extract_text()
+                if conteudo:
+                    texto += conteudo + "\n"
 
         cursor.execute(
             """
@@ -630,10 +638,13 @@ def planos():
             caminho_saida=arquivo_docx
         )
 
-        gerar_pdf_plano(
+        resultado_pdf = gerar_pdf_plano(
             arquivo_docx,
             arquivo_pdf
         )
+
+        if not resultado_pdf:
+            print("⚠️ PDF não foi gerado (apenas DOCX foi salvo)")
 
         return redirect("/listar_cursos")
 

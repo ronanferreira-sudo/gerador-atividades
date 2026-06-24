@@ -18,7 +18,7 @@
                 <form method="POST" enctype="multipart/form-data">
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Nome do Curso</label>
+                        <label class="form-label fw-semibold">Unidade Curricular</label>
                         <input type="text" name="nome_curso" class="form-control form-control-lg"
                                placeholder="Ex: Informatica Basica" required>
                     </div>
@@ -37,14 +37,19 @@
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label fw-semibold">PDF do Plano de Curso</label>
+                        <label class="form-label fw-semibold">Arquivo do Plano de Curso</label>
                         <input type="file" name="arquivo_pdf" class="form-control form-control-lg"
-                               accept=".pdf" required>
-                        <div class="form-text">Envie o PDF com a ementa/conteudo programatico do curso</div>
+                               accept=".pdf,.xlsx,.xls" required>
+                        <div class="form-text">
+                            Envie o PDF com a ementa/conteudo programatico do curso
+                            <strong>OU</strong> a planilha Excel (.xlsx) com a Matriz de Referencia SAEP
+                            (colunas: Identificacao, Subfuncao, Capacidade, Conhecimento)
+                        </div>
                     </div>
 
                     <button class="btn btn-primary btn-lg w-100 fw-bold">
-                        Ler PDF e Gerar Planos
+                        <span id="btn-text">Ler Arquivo e Gerar Planos</span>
+                        <span id="btn-spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
                     </button>
 
                 </form>
