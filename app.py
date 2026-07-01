@@ -11,7 +11,7 @@ from werkzeug.utils import secure_filename
 
 from PyPDF2 import PdfReader
 
-from database.conexao import conexao, cursor
+from database.conexao import get_cursor, release_cursor
 
 from ia.gerador import gerar_atividade
 from ia.plano_aula import gerar_todos_planos, gerar_plano_aula
@@ -31,29 +31,30 @@ app = Flask(__name__)
 app.secret_key = "gerador_atividades_2026"
 
 
-def pode_acessar_atividade(id):
+def pode_acessar_atividade(id, usuario_id, perfil):
 
-    if "usuario_id" not in session:
-        return False
-
-    if session.get("perfil") == "admin":
+    if perfil == "admin":
         return True
 
-    cursor.execute(
-        """
-        SELECT usuario_id
-        FROM atividades
-        WHERE id = %s
-    """,
-        (id,),
-    )
+    conn, cursor = get_cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT usuario_id
+            FROM atividades
+            WHERE id = %s
+        """,
+            (id,),
+        )
 
-    atividade = cursor.fetchone()
+        atividade = cursor.fetchone()
 
-    if not atividade:
-        return False
+        if not atividade:
+            return False
 
-    return atividade[0] == session["usuario_id"]
+        return atividade[0] == usuario_id
+    finally:
+        release_cursor(conn, cursor)
 
 
 # =========================
@@ -68,20 +69,24 @@ def cadastro():
         email = request.form["email"]
         senha = request.form["senha"]
 
-        cursor.execute(
-            """
-            INSERT INTO usuarios (
-                nome,
-                email,
-                senha,
-                perfil
+        conn, cursor = get_cursor()
+        try:
+            cursor.execute(
+                """
+                INSERT INTO usuarios (
+                    nome,
+                    email,
+                    senha,
+                    perfil
+                )
+                VALUES (%s,%s,%s,%s)
+                """,
+                (nome, email, senha, "professor"),
             )
-            VALUES (%s,%s,%s,%s)
-            """,
-            (nome, email, senha, "professor"),
-        )
 
-        conexao.commit()
+            conn.commit()
+        finally:
+            release_cursor(conn, cursor)
 
         return redirect("/login")
 
@@ -96,16 +101,20 @@ def login():
         email = request.form["email"]
         senha = request.form["senha"]
 
-        cursor.execute(
-            """
-            SELECT id, nome, email, perfil
-            FROM usuarios
-            WHERE email=%s AND senha=%s
-            """,
-            (email, senha),
-        )
+        conn, cursor = get_cursor()
+        try:
+            cursor.execute(
+                """
+                SELECT id, nome, email, perfil
+                FROM usuarios
+                WHERE email=%s AND senha=%s
+                """,
+                (email, senha),
+            )
 
-        usuario = cursor.fetchone()
+            usuario = cursor.fetchone()
+        finally:
+            release_cursor(conn, cursor)
 
         if usuario:
             session["usuario_id"] = usuario[0]
@@ -152,29 +161,33 @@ def index():
             quantidade
         )
 
-        cursor.execute(
-            """
-            INSERT INTO atividades (
-                curso,
-                disciplina,
-                conteudo,
-                dificuldade,
-                atividade_gerada,
-                usuario_id
+        conn, cursor = get_cursor()
+        try:
+            cursor.execute(
+                """
+                INSERT INTO atividades (
+                    curso,
+                    disciplina,
+                    conteudo,
+                    dificuldade,
+                    atividade_gerada,
+                    usuario_id
+                )
+                VALUES (%s,%s,%s,%s,%s,%s)
+                """,
+                (
+                    curso,
+                    disciplina,
+                    conteudo,
+                    dificuldade,
+                    atividade_gerada,
+                    session["usuario_id"]
+                ),
             )
-            VALUES (%s,%s,%s,%s,%s,%s)
-            """,
-            (
-                curso,
-                disciplina,
-                conteudo,
-                dificuldade,
-                atividade_gerada,
-                session["usuario_id"]
-            ),
-        )
 
-        conexao.commit()
+            conn.commit()
+        finally:
+            release_cursor(conn, cursor)
 
         return redirect("/atividades")
 
@@ -192,69 +205,73 @@ def atividades():
 
     busca = request.args.get("busca")
 
-    if session["perfil"] == "admin":
+    conn, cursor = get_cursor()
+    try:
+        if session["perfil"] == "admin":
 
-        if busca:
+            if busca:
 
-            cursor.execute(
-                """
-                SELECT *
-                FROM atividades
-                WHERE curso ILIKE %s
-                   OR disciplina ILIKE %s
-                   OR conteudo ILIKE %s
-                ORDER BY id DESC
-                """,
-                (f"%{busca}%", f"%{busca}%", f"%{busca}%"),
-            )
+                cursor.execute(
+                    """
+                    SELECT *
+                    FROM atividades
+                    WHERE curso ILIKE %s
+                       OR disciplina ILIKE %s
+                       OR conteudo ILIKE %s
+                    ORDER BY id DESC
+                    """,
+                    (f"%{busca}%", f"%{busca}%", f"%{busca}%"),
+                )
 
-        else:
+            else:
 
-            cursor.execute(
-                """
-                SELECT *
-                FROM atividades
-                ORDER BY id DESC
-                """
-            )
-
-    else:
-
-        if busca:
-
-            cursor.execute(
-                """
-                SELECT *
-                FROM atividades
-                WHERE usuario_id = %s
-                  AND (
-                        curso ILIKE %s
-                     OR disciplina ILIKE %s
-                     OR conteudo ILIKE %s
-                  )
-                ORDER BY id DESC
-                """,
-                (
-                    session["usuario_id"],
-                    f"%{busca}%",
-                    f"%{busca}%",
-                    f"%{busca}%"
-                ),
-            )
+                cursor.execute(
+                    """
+                    SELECT *
+                    FROM atividades
+                    ORDER BY id DESC
+                    """
+                )
 
         else:
 
-            cursor.execute(
-                """
-                SELECT *
-                FROM atividades
-                WHERE usuario_id = %s
-                ORDER BY id DESC
-                """,
-                (session["usuario_id"],),
-            )
+            if busca:
 
-    dados = cursor.fetchall()
+                cursor.execute(
+                    """
+                    SELECT *
+                    FROM atividades
+                    WHERE usuario_id = %s
+                      AND (
+                            curso ILIKE %s
+                         OR disciplina ILIKE %s
+                         OR conteudo ILIKE %s
+                      )
+                    ORDER BY id DESC
+                    """,
+                    (
+                        session["usuario_id"],
+                        f"%{busca}%",
+                        f"%{busca}%",
+                        f"%{busca}%"
+                    ),
+                )
+
+            else:
+
+                cursor.execute(
+                    """
+                    SELECT *
+                    FROM atividades
+                    WHERE usuario_id = %s
+                    ORDER BY id DESC
+                    """,
+                    (session["usuario_id"],),
+                )
+
+        dados = cursor.fetchall()
+    finally:
+        release_cursor(conn, cursor)
 
     return render_template(
         "atividades.html",
@@ -268,15 +285,22 @@ def atividades():
 @app.route("/deletar/<int:id>")
 def deletar(id):
 
-    if not pode_acessar_atividade(id):
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    if not pode_acessar_atividade(id, session["usuario_id"], session.get("perfil")):
         return "Acesso negado"
 
-    cursor.execute(
-        "DELETE FROM atividades WHERE id=%s",
-        (id,)
-    )
+    conn, cursor = get_cursor()
+    try:
+        cursor.execute(
+            "DELETE FROM atividades WHERE id=%s",
+            (id,)
+        )
 
-    conexao.commit()
+        conn.commit()
+    finally:
+        release_cursor(conn, cursor)
 
     return redirect("/atividades")
 
@@ -287,7 +311,10 @@ def deletar(id):
 @app.route("/editar/<int:id>", methods=["GET", "POST"])
 def editar(id):
 
-    if not pode_acessar_atividade(id):
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    if not pode_acessar_atividade(id, session["usuario_id"], session.get("perfil")):
         return "Acesso negado"
 
     if request.method == "POST":
@@ -298,36 +325,44 @@ def editar(id):
         dificuldade = request.form["dificuldade"]
         atividade_gerada = request.form["atividade_gerada"]
 
-        cursor.execute(
-            """
-            UPDATE atividades
-            SET curso=%s,
-                disciplina=%s,
-                conteudo=%s,
-                dificuldade=%s,
-                atividade_gerada=%s
-            WHERE id=%s
-            """,
-            (
-                curso,
-                disciplina,
-                conteudo,
-                dificuldade,
-                atividade_gerada,
-                id
-            ),
-        )
+        conn, cursor = get_cursor()
+        try:
+            cursor.execute(
+                """
+                UPDATE atividades
+                SET curso=%s,
+                    disciplina=%s,
+                    conteudo=%s,
+                    dificuldade=%s,
+                    atividade_gerada=%s
+                WHERE id=%s
+                """,
+                (
+                    curso,
+                    disciplina,
+                    conteudo,
+                    dificuldade,
+                    atividade_gerada,
+                    id
+                ),
+            )
 
-        conexao.commit()
+            conn.commit()
+        finally:
+            release_cursor(conn, cursor)
 
         return redirect("/atividades")
 
-    cursor.execute(
-        "SELECT * FROM atividades WHERE id=%s",
-        (id,)
-    )
+    conn, cursor = get_cursor()
+    try:
+        cursor.execute(
+            "SELECT * FROM atividades WHERE id=%s",
+            (id,)
+        )
 
-    atividade = cursor.fetchone()
+        atividade = cursor.fetchone()
+    finally:
+        release_cursor(conn, cursor)
 
     if not atividade:
         return "Atividade não encontrada"
@@ -336,28 +371,34 @@ def editar(id):
         "editar.html",
         atividade=atividade
     )
-# =========================
-# PDF
-# =========================
+
+
 # =========================
 # PDF
 # =========================
 @app.route("/pdf/<int:id>")
 def gerar_pdf(id):
 
-    if not pode_acessar_atividade(id):
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    if not pode_acessar_atividade(id, session["usuario_id"], session.get("perfil")):
         return "Acesso negado"
 
-    cursor.execute(
-        """
-        SELECT *
-        FROM atividades
-        WHERE id=%s
-        """,
-        (id,)
-    )
+    conn, cursor = get_cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT *
+            FROM atividades
+            WHERE id=%s
+            """,
+            (id,)
+        )
 
-    atividade = cursor.fetchone()
+        atividade = cursor.fetchone()
+    finally:
+        release_cursor(conn, cursor)
 
     if not atividade:
         return "Atividade não encontrada"
@@ -397,19 +438,26 @@ def gerar_pdf(id):
 @app.route("/word/<int:id>")
 def gerar_word(id):
 
-    if not pode_acessar_atividade(id):
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    if not pode_acessar_atividade(id, session["usuario_id"], session.get("perfil")):
         return "Acesso negado"
 
-    cursor.execute(
-        """
-        SELECT *
-        FROM atividades
-        WHERE id=%s
-        """,
-        (id,)
-    )
+    conn, cursor = get_cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT *
+            FROM atividades
+            WHERE id=%s
+            """,
+            (id,)
+        )
 
-    atividade = cursor.fetchone()
+        atividade = cursor.fetchone()
+    finally:
+        release_cursor(conn, cursor)
 
     if not atividade:
         return "Atividade não encontrada"
@@ -435,19 +483,26 @@ def gerar_word(id):
 @app.route("/regenerar/<int:id>")
 def regenerar(id):
 
-    if not pode_acessar_atividade(id):
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    if not pode_acessar_atividade(id, session["usuario_id"], session.get("perfil")):
         return "Acesso negado"
 
-    cursor.execute(
-        """
-        SELECT conteudo, dificuldade
-        FROM atividades
-        WHERE id=%s
-        """,
-        (id,)
-    )
+    conn, cursor = get_cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT conteudo, dificuldade
+            FROM atividades
+            WHERE id=%s
+            """,
+            (id,)
+        )
 
-    atividade = cursor.fetchone()
+        atividade = cursor.fetchone()
+    finally:
+        release_cursor(conn, cursor)
 
     if not atividade:
         return "Atividade não encontrada"
@@ -459,16 +514,20 @@ def regenerar(id):
         5
     )
 
-    cursor.execute(
-        """
-        UPDATE atividades
-        SET atividade_gerada=%s
-        WHERE id=%s
-        """,
-        (nova, id)
-    )
+    conn, cursor = get_cursor()
+    try:
+        cursor.execute(
+            """
+            UPDATE atividades
+            SET atividade_gerada=%s
+            WHERE id=%s
+            """,
+            (nova, id)
+        )
 
-    conexao.commit()
+        conn.commit()
+    finally:
+        release_cursor(conn, cursor)
 
     return redirect("/atividades")
 
@@ -482,40 +541,46 @@ def dashboard():
     if "usuario_id" not in session:
         return redirect("/login")
 
-    if session["perfil"] == "admin":
+    conn, cursor = get_cursor()
+    try:
+        if session["perfil"] == "admin":
 
-        cursor.execute(
-            """
-            SELECT
-                curso,
-                COUNT(*)
-            FROM atividades
-            GROUP BY curso
-            ORDER BY curso
-            """
-        )
+            cursor.execute(
+                """
+                SELECT
+                    curso,
+                    COUNT(*)
+                FROM atividades
+                GROUP BY curso
+                ORDER BY curso
+                """
+            )
 
-    else:
+        else:
 
-        cursor.execute(
-            """
-            SELECT
-                curso,
-                COUNT(*)
-            FROM atividades
-            WHERE usuario_id = %s
-            GROUP BY curso
-            ORDER BY curso
-            """,
-            (session["usuario_id"],),
-        )
+            cursor.execute(
+                """
+                SELECT
+                    curso,
+                    COUNT(*)
+                FROM atividades
+                WHERE usuario_id = %s
+                GROUP BY curso
+                ORDER BY curso
+                """,
+                (session["usuario_id"],),
+            )
 
-    cursos = cursor.fetchall()
+        cursos = cursor.fetchall()
+    finally:
+        release_cursor(conn, cursor)
 
     return render_template(
         "dashboard.html",
         cursos=cursos
     )
+
+
 # =========================
 # PLANOS DE AULA
 # =========================
@@ -564,28 +629,32 @@ def planos():
                 if conteudo:
                     texto += conteudo + "\n"
 
-        cursor.execute(
-            """
-            INSERT INTO cursos_plano (
-                nome_curso,
-                carga_horaria,
-                aulas_por_dia,
-                usuario_id
+        conn, cursor = get_cursor()
+        try:
+            cursor.execute(
+                """
+                INSERT INTO cursos_plano (
+                    nome_curso,
+                    carga_horaria,
+                    aulas_por_dia,
+                    usuario_id
+                )
+                VALUES (%s,%s,%s,%s)
+                RETURNING id
+                """,
+                (
+                    nome_curso,
+                    carga_horaria,
+                    aulas_por_dia,
+                    session["usuario_id"]
+                )
             )
-            VALUES (%s,%s,%s,%s)
-            RETURNING id
-            """,
-            (
-                nome_curso,
-                carga_horaria,
-                aulas_por_dia,
-                session["usuario_id"]
-            )
-        )
 
-        curso_id = cursor.fetchone()[0]
+            curso_id = cursor.fetchone()[0]
 
-        conexao.commit()
+            conn.commit()
+        finally:
+            release_cursor(conn, cursor)
 
         total_dias = carga_horaria // aulas_por_dia
 
@@ -595,36 +664,40 @@ def planos():
             carga_horaria,
             aulas_por_dia,
             total_dias,
-            max_workers=4
+            max_workers=2
         )
 
         planos_completos = ""
 
-        for dia, plano in enumerate(planos, start=1):
+        conn, cursor = get_cursor()
+        try:
+            for dia, plano in enumerate(planos, start=1):
 
-            planos_completos += f"\n\nDIA {dia}\n\n{plano}"
+                planos_completos += f"\n\nDIA {dia}\n\n{plano}"
 
-            cursor.execute(
-                """
-                INSERT INTO planos_aula (
-                    curso_id,
-                    dia,
-                    tema,
-                    plano_gerado,
-                    usuario_id
+                cursor.execute(
+                    """
+                    INSERT INTO planos_aula (
+                        curso_id,
+                        dia,
+                        tema,
+                        plano_gerado,
+                        usuario_id
+                    )
+                    VALUES (%s,%s,%s,%s,%s)
+                    """,
+                    (
+                        curso_id,
+                        dia,
+                        f"Plano Dia {dia}",
+                        plano,
+                        session["usuario_id"]
+                    )
                 )
-                VALUES (%s,%s,%s,%s,%s)
-                """,
-                (
-                    curso_id,
-                    dia,
-                    f"Plano Dia {dia}",
-                    plano,
-                    session["usuario_id"]
-                )
-            )
 
-        conexao.commit()
+            conn.commit()
+        finally:
+            release_cursor(conn, cursor)
 
         os.makedirs("outputs", exist_ok=True)
 
@@ -660,29 +733,33 @@ def listar_planos():
     if "usuario_id" not in session:
         return redirect("/login")
 
-    if session["perfil"] == "admin":
+    conn, cursor = get_cursor()
+    try:
+        if session["perfil"] == "admin":
 
-        cursor.execute(
-            """
-            SELECT *
-            FROM planos_aula
-            ORDER BY id DESC
-            """
-        )
+            cursor.execute(
+                """
+                SELECT *
+                FROM planos_aula
+                ORDER BY id DESC
+                """
+            )
 
-    else:
+        else:
 
-        cursor.execute(
-            """
-            SELECT *
-            FROM planos_aula
-            WHERE usuario_id = %s
-            ORDER BY id DESC
-            """,
-            (session["usuario_id"],),
-        )
+            cursor.execute(
+                """
+                SELECT *
+                FROM planos_aula
+                WHERE usuario_id = %s
+                ORDER BY id DESC
+                """,
+                (session["usuario_id"],),
+            )
 
-    planos = cursor.fetchall()
+        planos = cursor.fetchall()
+    finally:
+        release_cursor(conn, cursor)
 
     return render_template(
         "listar_planos.html",
@@ -696,17 +773,21 @@ def listar_planos():
 @app.route("/plano/<int:plano_id>")
 def visualizar_plano(plano_id):
 
-    cursor.execute(
-        """
-        SELECT pa.*, cp.nome_curso, cp.carga_horaria
-        FROM planos_aula pa
-        LEFT JOIN cursos_plano cp ON cp.id = pa.curso_id
-        WHERE pa.id = %s
-        """,
-        (plano_id,),
-    )
+    conn, cursor = get_cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT pa.*, cp.nome_curso, cp.carga_horaria
+            FROM planos_aula pa
+            LEFT JOIN cursos_plano cp ON cp.id = pa.curso_id
+            WHERE pa.id = %s
+            """,
+            (plano_id,),
+        )
 
-    plano = cursor.fetchone()
+        plano = cursor.fetchone()
+    finally:
+        release_cursor(conn, cursor)
 
     if not plano:
         return "Plano não encontrado"
@@ -715,6 +796,8 @@ def visualizar_plano(plano_id):
         "visualizar_plano.html",
         plano=plano
     )
+
+
 # =========================
 # LISTAR CURSOS
 # =========================
@@ -724,29 +807,33 @@ def listar_cursos():
     if "usuario_id" not in session:
         return redirect("/login")
 
-    if session["perfil"] == "admin":
+    conn, cursor = get_cursor()
+    try:
+        if session["perfil"] == "admin":
 
-        cursor.execute(
-            """
-            SELECT *
-            FROM cursos_plano
-            ORDER BY id DESC
-            """
-        )
+            cursor.execute(
+                """
+                SELECT *
+                FROM cursos_plano
+                ORDER BY id DESC
+                """
+            )
 
-    else:
+        else:
 
-        cursor.execute(
-            """
-            SELECT *
-            FROM cursos_plano
-            WHERE usuario_id = %s
-            ORDER BY id DESC
-            """,
-            (session["usuario_id"],),
-        )
+            cursor.execute(
+                """
+                SELECT *
+                FROM cursos_plano
+                WHERE usuario_id = %s
+                ORDER BY id DESC
+                """,
+                (session["usuario_id"],),
+            )
 
-    cursos = cursor.fetchall()
+        cursos = cursor.fetchall()
+    finally:
+        release_cursor(conn, cursor)
 
     return render_template(
         "listar_cursos.html",
@@ -763,28 +850,32 @@ def visualizar_curso(curso_id):
     if "usuario_id" not in session:
         return redirect("/login")
 
-    cursor.execute(
-        """
-        SELECT *
-        FROM cursos_plano
-        WHERE id = %s
-        """,
-        (curso_id,),
-    )
+    conn, cursor = get_cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT *
+            FROM cursos_plano
+            WHERE id = %s
+            """,
+            (curso_id,),
+        )
 
-    curso = cursor.fetchone()
+        curso = cursor.fetchone()
 
-    cursor.execute(
-        """
-        SELECT *
-        FROM planos_aula
-        WHERE curso_id = %s
-        ORDER BY dia
-        """,
-        (curso_id,),
-    )
+        cursor.execute(
+            """
+            SELECT *
+            FROM planos_aula
+            WHERE curso_id = %s
+            ORDER BY dia
+            """,
+            (curso_id,),
+        )
 
-    planos = cursor.fetchall()
+        planos = cursor.fetchall()
+    finally:
+        release_cursor(conn, cursor)
 
     return render_template(
         "planos_curso.html",
@@ -803,16 +894,20 @@ def plano_pdf(id):
     if "usuario_id" not in session:
         return redirect("/login")
 
-    cursor.execute(
-        """
-        SELECT *
-        FROM planos_aula
-        WHERE id=%s
-        """,
-        (id,)
-    )
+    conn, cursor = get_cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT *
+            FROM planos_aula
+            WHERE id=%s
+            """,
+            (id,)
+        )
 
-    plano = cursor.fetchone()
+        plano = cursor.fetchone()
+    finally:
+        release_cursor(conn, cursor)
 
     if not plano:
         return "Plano não encontrado"
@@ -847,16 +942,20 @@ def plano_word(id):
     if "usuario_id" not in session:
         return redirect("/login")
 
-    cursor.execute(
-        """
-        SELECT *
-        FROM planos_aula
-        WHERE id=%s
-        """,
-        (id,)
-    )
+    conn, cursor = get_cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT *
+            FROM planos_aula
+            WHERE id=%s
+            """,
+            (id,)
+        )
 
-    plano = cursor.fetchone()
+        plano = cursor.fetchone()
+    finally:
+        release_cursor(conn, cursor)
 
     if not plano:
         return "Plano não encontrado"
@@ -876,9 +975,6 @@ def plano_word(id):
     )
 
 
-# =========================
-# GERAR ATIVIDADE DO PLANO
-# =========================
 # =========================
 # GERAR ATIVIDADE DO PLANO
 # =========================
@@ -905,16 +1001,20 @@ def gerar_atividade_plano(id):
     # =========================
     # BUSCAR PLANO
     # =========================
-    cursor.execute(
-        """
-        SELECT *
-        FROM planos_aula
-        WHERE id = %s
-        """,
-        (id,),
-    )
+    conn, cursor = get_cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT *
+            FROM planos_aula
+            WHERE id = %s
+            """,
+            (id,),
+        )
 
-    plano = cursor.fetchone()
+        plano = cursor.fetchone()
+    finally:
+        release_cursor(conn, cursor)
 
     if not plano:
         return "Plano não encontrado"
@@ -925,16 +1025,20 @@ def gerar_atividade_plano(id):
     # =========================
     # BUSCAR NOME DO CURSO
     # =========================
-    cursor.execute(
-        """
-        SELECT nome_curso
-        FROM cursos_plano
-        WHERE id = %s
-        """,
-        (curso_id,),
-    )
+    conn, cursor = get_cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT nome_curso
+            FROM cursos_plano
+            WHERE id = %s
+            """,
+            (curso_id,),
+        )
 
-    curso = cursor.fetchone()
+        curso = cursor.fetchone()
+    finally:
+        release_cursor(conn, cursor)
 
     if curso:
         nome_curso = curso[0]
@@ -960,31 +1064,36 @@ def gerar_atividade_plano(id):
     # =========================
     # SALVAR NO BANCO
     # =========================
-    cursor.execute(
-        """
-        INSERT INTO atividades (
-            curso,
-            disciplina,
-            conteudo,
-            dificuldade,
-            atividade_gerada,
-            usuario_id
+    conn, cursor = get_cursor()
+    try:
+        cursor.execute(
+            """
+            INSERT INTO atividades (
+                curso,
+                disciplina,
+                conteudo,
+                dificuldade,
+                atividade_gerada,
+                usuario_id
+            )
+            VALUES (%s,%s,%s,%s,%s,%s)
+            """,
+            (
+                nome_curso,
+                "Plano de Aula",
+                conteudo[:200],
+                dificuldade,
+                atividade,
+                session["usuario_id"]
+            ),
         )
-        VALUES (%s,%s,%s,%s,%s,%s)
-        """,
-        (
-            nome_curso,
-            "Plano de Aula",
-            conteudo[:200],
-            dificuldade,
-            atividade,
-            session["usuario_id"]
-        ),
-    )
 
-    conexao.commit()
+        conn.commit()
+    finally:
+        release_cursor(conn, cursor)
 
     return redirect("/atividades")
+
 
 # =========================
 # DOWNLOAD PLANO
@@ -995,16 +1104,20 @@ def baixar_plano(plano_id):
     if "usuario_id" not in session:
         return redirect("/login")
 
-    cursor.execute(
-        """
-        SELECT *
-        FROM planos_aula
-        WHERE id=%s
-        """,
-        (plano_id,)
-    )
+    conn, cursor = get_cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT *
+            FROM planos_aula
+            WHERE id=%s
+            """,
+            (plano_id,)
+        )
 
-    plano = cursor.fetchone()
+        plano = cursor.fetchone()
+    finally:
+        release_cursor(conn, cursor)
 
     if not plano:
         return "Plano não encontrado"
@@ -1030,4 +1143,9 @@ def baixar_plano(plano_id):
 # START
 # =========================
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(
+        host="0.0.0.0",
+        port=5000,
+        debug=False,
+        threaded=True
+    )

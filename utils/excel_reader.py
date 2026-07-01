@@ -16,7 +16,7 @@ def encontrar_linha_cabecalho(ws):
     Varre as primeiras linhas da planilha para encontrar os cabeçalhos.
     Retorna o número da linha onde os cabeçalhos principais estão.
     """
-    for row in ws.iter_rows(min_row=1, max_row=10, max_col=ws.max_column):
+    for row in ws.iter_rows(min_row=1, max_row=20, max_col=ws.max_column):
         for cell in row:
             if cell.value and isinstance(cell.value, str):
                 valor = cell.value.strip().upper()
@@ -38,12 +38,13 @@ def encontrar_colunas(ws, linha_cabecalho):
         "subfuncao": None,
         "capacidade": None,
         "conhecimento": None,
+        "cruzamento": None,  # Coluna que contém o cruzamento completo
     }
 
     # Procura nas linhas de cabeçalho (até 5 linhas a partir da linha do cabeçalho principal)
     for row in ws.iter_rows(
-        min_row=max(1, linha_cabecalho - 2),
-        max_row=linha_cabecalho + 3,
+        min_row=max(1, linha_cabecalho - 5),
+        max_row=linha_cabecalho + 5,
         max_col=ws.max_column,
     ):
         for cell in row:
@@ -67,7 +68,52 @@ def encontrar_colunas(ws, linha_cabecalho):
                 if "CONHECIMENTO" in valor:
                     colunas["conhecimento"] = cell.column
 
+                # Coluna de cruzamento (subfunção + capacidade + conhecimento juntos)
+                if "CRUZAMENTO" in valor or ("SUB" in valor and "CAP" in valor and "CONHEC" in valor):
+                    if colunas["cruzamento"] is None:
+                        colunas["cruzamento"] = cell.column
+
     return colunas
+
+
+def extrair_texto_celulas_mescladas(ws):
+    """
+    Para planilhas com células mescladas (formato PLANEJAMENTO DOCENTE),
+    extrai o texto das células mescladas que contêm o conteúdo programático.
+    """
+    dados = []
+    merged_ranges = list(ws.merged_cells.ranges)
+
+    # Procura por linhas que contêm conteúdo na coluna A (ou colunas mescladas A:C)
+    # Pula as primeiras linhas (cabeçalho) - começa da linha 13
+    numero_aula = 1
+    for row_idx in range(13, ws.max_row + 1):
+        celula_a = ws.cell(row=row_idx, column=1)
+        if celula_a.value and isinstance(celula_a.value, str) and len(celula_a.value.strip()) > 30:
+            texto = celula_a.value.strip()
+
+            # Ignora linhas que são cabeçalho (contém "Cruzamento de:" ou "O que?")
+            texto_upper = texto.upper()
+            if "CRUZAMENTO DE" in texto_upper or "O QUE?" in texto_upper:
+                continue
+
+            # Verifica se a célula está mesclada (formato PLANEJAMENTO DOCENTE)
+            is_merged = any(
+                celula_a.coordinate in merged_range
+                for merged_range in merged_ranges
+            )
+
+            registro = {
+                "identificacao": f"Aula {numero_aula}",
+                "subfuncao": "",
+                "capacidade": "",
+                "conhecimento": texto,
+                "tipo_planilha": "planejamento_docente",
+            }
+            dados.append(registro)
+            numero_aula += 1
+
+    return dados
 
 
 def extrair_dados_excel(caminho_arquivo):
@@ -91,10 +137,31 @@ def extrair_dados_excel(caminho_arquivo):
     print(f"📋 Linha do cabeçalho encontrada: {linha_cabecalho}")
     print(f"📋 Colunas encontradas: {colunas}")
 
-    # Se nenhuma coluna foi encontrada, tenta uma abordagem mais flexível
+    # Se nenhuma coluna foi encontrada, tenta abordagens alternativas
     if not any(colunas.values()):
-        print("⚠️  Nenhuma coluna específica encontrada. Usando abordagem genérica...")
-        return _extrair_generico(ws, linha_cabecalho)
+        print("⚠️  Nenhuma coluna específica encontrada. Tentando formato PLANEJAMENTO DOCENTE...")
+        dados = extrair_texto_celulas_mescladas(ws)
+        if dados:
+            wb.close()
+            print(f"✅ Extraídos {len(dados)} itens no formato PLANEJAMENTO DOCENTE")
+            return dados
+
+        print("⚠️  Usando abordagem genérica...")
+        dados = _extrair_generico(ws, linha_cabecalho)
+        wb.close()
+        return dados
+
+    # Verifica se o conteúdo real está em células mescladas (ex: A13:C15)
+    # Caso as colunas encontradas não tenham dados reais
+    if colunas["subfuncao"] == colunas["capacidade"] == colunas["conhecimento"]:
+        # Provavelmente é uma planilha com células mescladas onde tudo está na mesma coluna
+        print("⚠️  Colunas de Subfunção, Capacidade e Conhecimento apontam para a mesma coluna.")
+        print("⚠️  Tentando extrair como formato PLANEJAMENTO DOCENTE...")
+        dados = extrair_texto_celulas_mescladas(ws)
+        if dados:
+            wb.close()
+            print(f"✅ Extraídos {len(dados)} itens no formato PLANEJAMENTO DOCENTE")
+            return dados
 
     dados = []
     linha_inicio = linha_cabecalho + 2  # Pular linha do cabeçalho e possivelmente uma linha em branco
@@ -169,10 +236,21 @@ def formatar_dados_para_prompt(dados):
     """
     Formata os dados extraídos do Excel em um texto estruturado
     para ser usado como contexto no prompt da IA.
-    Extrai apenas os Conhecimentos (ignora Identificação, Subfunção e Capacidade).
+    Extrai os Conhecimentos, ou o texto completo quando não há separação.
     """
     if not dados:
         return "Nenhum dado encontrado no arquivo Excel."
+
+    # Verifica se os dados são do formato PLANEJAMENTO DOCENTE
+    if dados[0].get("tipo_planilha") == "planejamento_docente":
+        linhas = []
+        linhas.append("CONTEÚDO PROGRAMÁTICO DO CURSO")
+        linhas.append("=" * 60)
+        for i, registro in enumerate(dados, start=1):
+            if registro.get("conhecimento") and registro["conhecimento"].strip():
+                linhas.append(f"\n--- AULA {i} ---")
+                linhas.append(registro["conhecimento"].strip())
+        return "\n".join(linhas)
 
     conhecimentos = []
     for registro in dados:
@@ -180,7 +258,19 @@ def formatar_dados_para_prompt(dados):
             conhecimentos.append(registro["conhecimento"].strip())
 
     if not conhecimentos:
-        return "Nenhum conhecimento encontrado no arquivo Excel."
+        # Se não encontrou conhecimentos separados, tenta juntar todo o texto disponível
+        linhas = []
+        linhas.append("CONTEÚDO DO CURSO")
+        linhas.append("=" * 60)
+        for i, registro in enumerate(dados, start=1):
+            partes = []
+            for campo in ["identificacao", "subfuncao", "capacidade", "conhecimento"]:
+                if registro.get(campo) and registro[campo].strip():
+                    partes.append(registro[campo].strip())
+            if partes:
+                linhas.append(f"\nItem {i}:")
+                linhas.extend(partes)
+        return "\n".join(linhas)
 
     linhas = []
     linhas.append("CONHECIMENTOS DO CURSO")
@@ -194,6 +284,13 @@ def formatar_dados_para_prompt(dados):
 
 def contar_itens(dados):
     """Retorna a quantidade de Conhecimentos extraídos."""
+    if not dados:
+        return 0
+    
+    # Para formato PLANEJAMENTO DOCENTE, conta os itens com conhecimento
+    if dados[0].get("tipo_planilha") == "planejamento_docente":
+        return len([r for r in dados if r.get("conhecimento") and r["conhecimento"].strip()])
+    
     conhecimentos = [r for r in dados if r.get("conhecimento") and r["conhecimento"].strip()]
     return len(conhecimentos)
 
@@ -205,4 +302,8 @@ if __name__ == "__main__":
         caminho = sys.argv[1]
         dados = extrair_dados_excel(caminho)
         print(f"\n📊 Total de itens extraídos: {len(dados)}")
-        print("\n" + formatar_dados_para_prompt(dados))
+        print(f"📊 Total de conhecimentos: {contar_itens(dados)}")
+        print("\n" + "=" * 60)
+        print("TEXTO FORMATADO PARA IA:")
+        print("=" * 60)
+        print(formatar_dados_para_prompt(dados))

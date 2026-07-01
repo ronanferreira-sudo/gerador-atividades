@@ -1,8 +1,9 @@
 import requests
 import hashlib
+import threading
 
-# Cache limpo a cada reinício — garante que parâmetros alterados gerem novas respostas
-cache_atividades = {}
+# Cache thread-safe — cada usuário tem seu próprio cache isolado
+cache_atividades = threading.local()
 
 
 def preprocessar_texto(texto):
@@ -27,11 +28,14 @@ def gerar_atividade(texto_pdf, dificuldade, tipo="objetiva", quantidade=5):
     key = gerar_hash(texto_pdf, dificuldade, tipo, quantidade)
 
     # =========================
-    # CACHE
+    # CACHE THREAD-SAFE
     # =========================
-    if key in cache_atividades:
+    if not hasattr(cache_atividades, 'dados'):
+        cache_atividades.dados = {}
+
+    if key in cache_atividades.dados:
         print("CACHE HIT")
-        return cache_atividades[key]
+        return cache_atividades.dados[key]
 
     print("Chamando Ollama...")
 
@@ -50,34 +54,46 @@ Regras:
 - Comece direto na questao 1
 """
 
-    try:
+    tentativas = 0
+    max_tentativas = 3
+    while tentativas < max_tentativas:
+        try:
+            resposta = requests.post(
+                "http://localhost:11434/api/generate",
+                json={
+                    "model": "llama3.1:8b",
+                    "prompt": prompt,
+                    "stream": False,
+                    "options": {
+                        "temperature": 0.1,
+                        "num_predict": 2000
+                    }
+                },
+                timeout=300
+            )
 
-        resposta = requests.post(
-            "http://localhost:11434/api/generate",
-            json={
-                "model": "llama3.1:8b",
-                "prompt": prompt,
-                "stream": False,
-                "options": {
-                    "temperature": 0.1,
-                    "num_predict": 1500
-                }
-            },
-            timeout=60
-        )
+            if resposta.status_code != 200:
+                tentativas += 1
+                print(f"Erro Ollama (tentativa {tentativas}/{max_tentativas}): {resposta.status_code}")
+                continue
 
-        if resposta.status_code != 200:
-            print("Erro Ollama:", resposta.text)
-            return "Erro ao gerar atividade"
+            dados = resposta.json()
+            atividade = dados.get("response", "").strip()
 
-        dados = resposta.json()
+            if len(atividade) < 20:
+                tentativas += 1
+                print(f"Resposta muito curta (tentativa {tentativas}/{max_tentativas}): {len(atividade)} chars")
+                continue
 
-        atividade = dados.get("response", "").strip()
+            cache_atividades.dados[key] = atividade
+            return atividade
 
-        cache_atividades[key] = atividade
+        except Exception as erro:
+            tentativas += 1
+            print(f"Erro (tentativa {tentativas}/{max_tentativas}):", erro)
+            if tentativas >= max_tentativas:
+                return "Erro ao conectar com a IA"
+            import time
+            time.sleep(5)
 
-        return atividade
-
-    except Exception as erro:
-        print("Erro:", erro)
-        return "Erro ao conectar com a IA"
+    return "Erro ao conectar com a IA"

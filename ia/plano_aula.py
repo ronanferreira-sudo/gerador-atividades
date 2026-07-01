@@ -1,28 +1,34 @@
 import requests
 import hashlib
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-cache_planos = {}
+# Cache thread-safe — isolado por thread
+cache_planos = threading.local()
 
 
 def gerar_hash_plano(texto_base, carga_horaria, aulas_por_dia, dia):
-    base = f"{texto_base[:600]}-{carga_horaria}-{aulas_por_dia}-{dia}"
+    base = f"{texto_base[:3000]}-{carga_horaria}-{aulas_por_dia}-{dia}"
     return hashlib.md5(base.encode()).hexdigest()
 
 
 def preprocessar_texto(texto):
     texto = texto.replace("\n", " ")
     texto = " ".join(texto.split())
-    return texto[:600]
+    return texto[:3000]
 
 
 def gerar_plano_aula(texto_base, carga_horaria, aulas_por_dia, dia):
 
     key = gerar_hash_plano(texto_base, carga_horaria, aulas_por_dia, dia)
 
-    if key in cache_planos:
+    # Cache thread-safe
+    if not hasattr(cache_planos, 'dados'):
+        cache_planos.dados = {}
+
+    if key in cache_planos.dados:
         print(f"CACHE PLANO DIA {dia} HIT")
-        return (dia, cache_planos[key])
+        return (dia, cache_planos.dados[key])
 
     print(f"Chamando Ollama - DIA {dia}...")
 
@@ -47,35 +53,51 @@ Gere APENAS o plano de aula em texto puro:
 Comece diretamente com "1. Identificação:".
 """
 
-    try:
-        resposta = requests.post(
-            "http://localhost:11434/api/generate",
-            json={
-                "model": "llama3.1:8b",
-                "prompt": prompt,
-                "stream": False,
-                "options": {
-                    "num_predict": 400,
-                    "temperature": 0.1
-                }
-            },
-            timeout=60
-        )
+    tentativas = 0
+    max_tentativas = 3
+    while tentativas < max_tentativas:
+        try:
+            resposta = requests.post(
+                "http://localhost:11434/api/generate",
+                json={
+                    "model": "llama3.1:8b",
+                    "prompt": prompt,
+                    "stream": False,
+                    "options": {
+                        "num_predict": 2000,
+                        "temperature": 0.1
+                    }
+                },
+                timeout=300
+            )
 
-        if resposta.status_code != 200:
-            return (dia, "Erro ao gerar plano")
+            if resposta.status_code != 200:
+                tentativas += 1
+                print(f"Erro Ollama DIA {dia} (tentativa {tentativas}/{max_tentativas}): {resposta.status_code}")
+                continue
 
-        data = resposta.json()
-        plano = data.get("response", "")
+            data = resposta.json()
+            plano = data.get("response", "")
 
-        cache_planos[key] = plano
-        print(f"DIA {dia} OK ({len(plano)} chars)")
+            if len(plano) < 50:
+                tentativas += 1
+                print(f"Resposta muito curta DIA {dia} (tentativa {tentativas}/{max_tentativas}): {len(plano)} chars")
+                continue
 
-        return (dia, plano)
+            cache_planos.dados[key] = plano
+            print(f"DIA {dia} OK ({len(plano)} chars)")
 
-    except Exception as e:
-        print(f"Erro na IA DIA {dia}:", e)
-        return (dia, "Erro ao conectar com a IA")
+            return (dia, plano)
+
+        except Exception as e:
+            tentativas += 1
+            print(f"Erro na IA DIA {dia} (tentativa {tentativas}/{max_tentativas}):", e)
+            if tentativas >= max_tentativas:
+                return (dia, "Erro ao conectar com a IA")
+            import time
+            time.sleep(5)
+    
+    return (dia, "Erro ao conectar com a IA")
 
 
 def gerar_todos_planos(texto_pdf, carga_horaria, aulas_por_dia, total_dias, max_workers=4):
