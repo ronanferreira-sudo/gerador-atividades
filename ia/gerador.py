@@ -39,19 +39,27 @@ def gerar_atividade(texto_pdf, dificuldade, tipo="objetiva", quantidade=5):
 
     print("Chamando Ollama...")
 
+    if tipo == "objetiva":
+        instrucao_tipo = "TODAS as questoes devem ser OBJETIVAS de multipla escolha com 4 alternativas A) B) C) D). Nao misture com discursivas."
+    elif tipo == "discursiva":
+        instrucao_tipo = "TODAS as questoes devem ser DISCURSIVAS (abertas para resposta dissertativa). Nao misture com objetivas."
+    else:
+        instrucao_tipo = "MISTURE questoes objetivas (multipla escolha) e discursivas (abertas)."
+
     prompt = f"""
-Crie {quantidade} questoes {tipo} nivel {dificuldade} com base no conteudo:
+INSTRUCAO: Crie {quantidade} questoes nivel {dificuldade} com base NO CONTEUDO ABAIXO.
 
 {preprocessar_texto(texto_pdf)}
 
-Regras:
-- Apenas as questoes, sem introducoes ou respostas
-- Objetivas: multipla escolha A) B) C) D) sem gabarito
-- Discursivas: abertas
-- Mistas: misture as duas
+{instrucao_tipo}
+
+REGRAS ABSOLUTAS:
+- VA DIRETO PARA "Questao 1:" - SEM introducao, sem "Aqui estao", sem frases iniciais
+- SEMPRE comeca exatamente com "Questao 1:"
 - Nao invente assuntos fora do conteudo
 - Nao pergunte sobre carga horaria, professor, objetivos, metodologia, avaliacao ou recursos
-- Comece direto na questao 1
+- NAO use asteriscos, negrito ou qualquer formatacao
+- NAO coloque o tipo da questao (Objetiva/Discursiva) no enunciado
 """
 
     tentativas = 0

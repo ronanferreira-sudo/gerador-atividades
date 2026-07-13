@@ -100,7 +100,7 @@ Comece diretamente com "1. Identificação:".
     return (dia, "Erro ao conectar com a IA")
 
 
-def gerar_todos_planos(texto_pdf, carga_horaria, aulas_por_dia, total_dias, max_workers=4):
+def gerar_todos_planos(texto_pdf, carga_horaria, aulas_por_dia, total_dias, max_workers=1):
 
     print(f"📅 Total de dias a gerar: {total_dias}")
     print(f"⚡ Workers paralelos: {max_workers}")

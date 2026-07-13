@@ -99,7 +99,9 @@
                         </div>
                         <div class="col-md-4 text-end">
                             <a href="/plano_pdf/{{ plano[0] }}" class="btn btn-outline-danger btn-sm me-1" title="Baixar PDF">PDF</a>
-                            <a href="/plano_word/{{ plano[0] }}" class="btn btn-outline-primary btn-sm" title="Baixar Word">Word</a>
+                            <a href="/plano_word/{{ plano[0] }}" class="btn btn-outline-primary btn-sm me-1" title="Baixar Word">Word</a>
+                            <a href="/deletar_plano/{{ plano[0] }}" class="btn btn-outline-dark btn-sm"
+                               onclick="return confirm('Excluir este plano do Dia {{ plano[2] }}?')">Excluir</a>
                         </div>
                     </div>
                 </div>

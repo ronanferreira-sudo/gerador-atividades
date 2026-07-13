@@ -842,6 +842,53 @@ def listar_cursos():
 
 
 # =========================
+# DELETAR CURSO
+# =========================
+@app.route("/deletar_curso/<int:curso_id>")
+def deletar_curso(curso_id):
+
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    conn, cursor = get_cursor()
+    try:
+        # Verifica se o curso pertence ao usuario (ou se é admin)
+        if session["perfil"] == "admin":
+            cursor.execute(
+                "SELECT id FROM cursos_plano WHERE id = %s",
+                (curso_id,)
+            )
+        else:
+            cursor.execute(
+                "SELECT id FROM cursos_plano WHERE id = %s AND usuario_id = %s",
+                (curso_id, session["usuario_id"])
+            )
+
+        curso = cursor.fetchone()
+        if not curso:
+            return "Curso não encontrado", 404
+
+        # Deleta os planos de aula associados primeiro
+        cursor.execute(
+            "DELETE FROM planos_aula WHERE curso_id = %s",
+            (curso_id,)
+        )
+
+        # Deleta o curso
+        cursor.execute(
+            "DELETE FROM cursos_plano WHERE id = %s",
+            (curso_id,)
+        )
+
+        conn.commit()
+        print(f"🗑️ Curso #{curso_id} e seus planos deletados")
+    finally:
+        release_cursor(conn, cursor)
+
+    return redirect("/listar_cursos")
+
+
+# =========================
 # VISUALIZAR CURSO
 # =========================
 @app.route("/curso/<int:curso_id>")
@@ -1093,6 +1140,47 @@ def gerar_atividade_plano(id):
         release_cursor(conn, cursor)
 
     return redirect("/atividades")
+
+
+# =========================
+# DELETAR PLANO INDIVIDUAL
+# =========================
+@app.route("/deletar_plano/<int:plano_id>")
+def deletar_plano(plano_id):
+
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    conn, cursor = get_cursor()
+    try:
+        # Busca o plano para saber o curso_id (para redirecionar)
+        cursor.execute(
+            "SELECT curso_id, usuario_id FROM planos_aula WHERE id = %s",
+            (plano_id,)
+        )
+        plano = cursor.fetchone()
+
+        if not plano:
+            return "Plano não encontrado", 404
+
+        curso_id = plano[0]
+        dono_id = plano[1]
+
+        # Verifica permissão: admin ou dono
+        if session["perfil"] != "admin" and dono_id != session["usuario_id"]:
+            return "Acesso negado", 403
+
+        # Deleta o plano
+        cursor.execute(
+            "DELETE FROM planos_aula WHERE id = %s",
+            (plano_id,)
+        )
+        conn.commit()
+        print(f"🗑️ Plano #{plano_id} deletado")
+    finally:
+        release_cursor(conn, cursor)
+
+    return redirect(f"/curso/{curso_id}")
 
 
 # =========================
