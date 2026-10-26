@@ -1,53 +1,73 @@
 {% extends 'base.html' %}
 
 {% block titulo %}
-Cursos Gerados
+Planos de Aula
 {% endblock %}
 
 {% block conteudo %}
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>
-        Cursos Gerados
-    </h2>
+<div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+    <div>
+        <h2 class="fw-bold mb-1">
+            <i class="bi bi-journal-bookmark-fill text-primary me-2"></i>Planos de Aula
+        </h2>
+        <p class="text-muted mb-0">Cursos cadastrados e seus respectivos planos de aula diários</p>
+    </div>
 
-    <a href="/planos" class="btn btn-success">
-        Novo Curso
+    <a href="/planos" class="btn btn-success fw-bold">
+        <i class="bi bi-plus-circle me-1"></i>+ Novo Plano de Aula
     </a>
 </div>
 
-<table class="table table-bordered table-hover">
-    <thead class="table-dark">
-        <tr>
-            <th>ID</th>
-            <th>Curso</th>
-            <th>Carga Horária</th>
-            <th>Aulas por Dia</th>
-            <th>Data</th>
-            <th width="180">Ações</th>
-        </tr>
-    </thead>
+{% if not cursos %}
+    <div class="card border-0 shadow-sm p-5 text-center my-4">
+        <div class="fs-1 text-muted mb-3">📚</div>
+        <h4>Nenhum Plano de Aula cadastrado ainda.</h4>
+        <p class="text-muted">Cadastre o curso, carga horária e faça o upload do conteúdo para gerar os planos de aula diários com IA.</p>
+        <div>
+            <a href="/planos" class="btn btn-primary fw-bold">
+                <i class="bi bi-plus-circle me-1"></i>Gerar Primeiro Plano
+            </a>
+        </div>
+    </div>
+{% else %}
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th class="text-center" width="70">ID</th>
+                    <th>Curso</th>
+                    <th class="text-center">Carga Horária</th>
+                    <th class="text-center">Aulas por Dia</th>
+                    <th class="text-center">Data de Criação</th>
+                    <th class="text-center" width="220">Ações</th>
+                </tr>
+            </thead>
 
-    <tbody>
-        {% for curso in cursos %}
-        <tr>
-            <td>{{ curso[0] }}</td>
-            <td>{{ curso[1] }}</td>
-            <td>{{ curso[2] }}h</td>
-            <td>{{ curso[3] }}h</td>
-            <td>{{ curso[5] }}</td>
-            <td>
-                <a href="{{ url_for('visualizar_curso', curso_id=curso[0]) }}" class="btn btn-primary btn-sm">
-                    Ver Planos
-                </a>
-                <a href="/deletar_curso/{{ curso[0] }}" class="btn btn-danger btn-sm"
-                   onclick="return confirm('Tem certeza que deseja excluir este curso e todos os seus planos?')">
-                    Excluir
-                </a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+            <tbody>
+                {% for curso in cursos %}
+                <tr>
+                    <td class="text-center fw-bold text-muted">{{ curso[0] }}</td>
+                    <td class="fw-semibold">{{ curso[1] }}</td>
+                    <td class="text-center"><span class="badge bg-secondary">{{ curso[2] }}h</span></td>
+                    <td class="text-center"><span class="badge bg-light text-dark border">{{ curso[3] }}h/dia</span></td>
+                    <td class="text-center text-muted small">{{ curso[5] }}</td>
+                    <td class="text-center">
+                        <a href="{{ url_for('visualizar_curso', curso_id=curso[0]) }}" class="btn btn-primary btn-sm fw-semibold">
+                            <i class="bi bi-eye me-1"></i>Ver Planos
+                        </a>
+                        <a href="/deletar_curso/{{ curso[0] }}" class="btn btn-outline-danger btn-sm"
+                           onclick="return confirm('Tem certeza que deseja excluir este curso e todos os seus planos?')">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
 
 {% endblock %}

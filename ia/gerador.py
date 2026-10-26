@@ -1,9 +1,15 @@
+import os
 import requests
 import hashlib
 import threading
 
-# Cache thread-safe — cada usuário tem seu próprio cache isolado
-cache_atividades = threading.local()
+# Cache global thread-safe com Lock
+# Chaveado por hash do conteúdo — sem risco de cruzar dados entre usuários
+_cache_lock = threading.Lock()
+_cache_atividades = {}
+
+# URL do Ollama configurável via .env
+OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 
 
 def preprocessar_texto(texto):
@@ -28,14 +34,12 @@ def gerar_atividade(texto_pdf, dificuldade, tipo="objetiva", quantidade=5):
     key = gerar_hash(texto_pdf, dificuldade, tipo, quantidade)
 
     # =========================
-    # CACHE THREAD-SAFE
+    # CACHE GLOBAL THREAD-SAFE
     # =========================
-    if not hasattr(cache_atividades, 'dados'):
-        cache_atividades.dados = {}
-
-    if key in cache_atividades.dados:
-        print("CACHE HIT")
-        return cache_atividades.dados[key]
+    with _cache_lock:
+        if key in _cache_atividades:
+            print("CACHE HIT")
+            return _cache_atividades[key]
 
     print("Chamando Ollama...")
 
@@ -67,17 +71,17 @@ REGRAS ABSOLUTAS:
     while tentativas < max_tentativas:
         try:
             resposta = requests.post(
-                "http://localhost:11434/api/generate",
+                f"{OLLAMA_URL}/api/generate",
                 json={
                     "model": "llama3.1:8b",
                     "prompt": prompt,
                     "stream": False,
                     "options": {
                         "temperature": 0.1,
-                        "num_predict": 2000
+                        "num_predict": 900
                     }
                 },
-                timeout=300
+                timeout=120
             )
 
             if resposta.status_code != 200:
@@ -93,7 +97,8 @@ REGRAS ABSOLUTAS:
                 print(f"Resposta muito curta (tentativa {tentativas}/{max_tentativas}): {len(atividade)} chars")
                 continue
 
-            cache_atividades.dados[key] = atividade
+            with _cache_lock:
+                _cache_atividades[key] = atividade
             return atividade
 
         except Exception as erro:

@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block titulo %}Planejamentos Docentes Gerados{% endblock %}
+
+{% block conteudo %}
+
+<div class="d-flex justify-content-between align-items-center mb-4 mt-3">
+    <div>
+        <h2 class="fw-bold mb-1">Planejamentos Docentes (Excel)</h2>
+        <p class="text-muted mb-0">Planilhas oficiais geradas com Taxonomia de Bloom e divisão cronológica</p>
+    </div>
+
+    <a href="/planejamento_docente" class="btn btn-success fw-bold">
+        + Novo Planejamento
+    </a>
+</div>
+
+{% if not planejamentos %}
+    <div class="card border-0 shadow-sm p-5 text-center my-4">
+        <div class="fs-1 text-muted mb-3">📊</div>
+        <h4>Nenhum Planejamento Docente gerado ainda.</h4>
+        <p class="text-muted">Cadastre o curso, UC, carga horária e faça o upload do plano para gerar a planilha Excel.</p>
+        <div>
+            <a href="/planejamento_docente" class="btn btn-primary fw-bold">
+                Criar Primeiro Planejamento
+            </a>
+        </div>
+    </div>
+{% else %}
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="text-center" width="60">#</th>
+                        <th>Curso</th>
+                        <th>Unidade Curricular (UC)</th>
+                        <th class="text-center">Carga Horária</th>
+                        <th class="text-center">Aulas</th>
+                        <th class="text-center">Período</th>
+                        <th class="text-center">Data de Criação</th>
+                        <th class="text-center" width="220">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in planejamentos %}
+                    <tr>
+                        <td class="text-center fw-bold text-muted">{{ p[0] }}</td>
+                        <td class="fw-semibold">{{ p[1] }}</td>
+                        <td>
+                            <span class="badge bg-light text-dark border px-2 py-1 fs-6">
+                                {{ p[2] }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <strong>{{ p[5] }}h</strong>
+                            <small class="text-muted d-block">{{ p[6] }}h/dia</small>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-primary rounded-pill px-3 py-2">
+                                {{ p[9] }} aulas
+                            </span>
+                        </td>
+                        <td class="text-center small">
+                            {% if p[7] and p[8] %}
+                                {{ p[7].strftime('%d/%m/%Y') if p[7].strftime else p[7] }} <br>
+                                até {{ p[8].strftime('%d/%m/%Y') if p[8].strftime else p[8] }}
+                            {% elif p[7] %}
+                                A partir de {{ p[7].strftime('%d/%m/%Y') if p[7].strftime else p[7] }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="text-center small text-muted">
+                            {{ p[12].strftime('%d/%m/%Y %H:%M') if p[12].strftime else p[12] }}
+                        </td>
+                        <td class="text-center">
+                            {% if p[13] %}
+                                <a href="/curso/{{ p[13] }}" class="btn btn-primary btn-sm fw-bold me-1" title="Ver Planos de Aula gerados a partir deste planejamento">
+                                    📖 Ver Planos
+                                </a>
+                            {% else %}
+                                <a href="/gerar_planos_planejamento/{{ p[0] }}" class="btn btn-warning btn-sm fw-bold me-1" title="Gerar os planos de aula para este planejamento">
+                                    ⚡ Gerar Planos
+                                </a>
+                            {% endif %}
+                            <a href="/baixar_planejamento/{{ p[0] }}" class="btn btn-success btn-sm fw-bold me-1" title="Baixar arquivo Excel preenchido">
+                                📥 Excel
+                            </a>
+                            <a href="/deletar_planejamento/{{ p[0] }}" class="btn btn-outline-danger btn-sm"
+                               onclick="return confirm('Deseja realmente excluir este planejamento docente e arquivos associados?')" title="Excluir">
+                                🗑️
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endif %}
+
+{% endblock %}

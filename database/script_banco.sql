@@ -85,6 +85,29 @@ CREATE INDEX IF NOT EXISTS idx_planos_aula_usuario ON planos_aula(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_planos_aula_dia ON planos_aula(curso_id, dia);
 
 -- ============================================================
+
+-- ============================================================
+-- TABELA: planejamentos_docente
+-- ============================================================
+CREATE TABLE IF NOT EXISTS planejamentos_docente (
+    id                  SERIAL PRIMARY KEY,
+    nome_curso          VARCHAR(255) NOT NULL,
+    unidade_curricular  VARCHAR(255) NOT NULL,
+    turma               VARCHAR(100),
+    unidade_escolar     VARCHAR(255),
+    carga_horaria       INTEGER NOT NULL,
+    horas_por_dia       INTEGER NOT NULL,
+    data_inicio         DATE,
+    data_fim            DATE,
+    total_aulas         INTEGER NOT NULL,
+    arquivo_excel       VARCHAR(255),
+    usuario_id          INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+    data_criacao        TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_planejamentos_usuario ON planejamentos_docente(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_planejamentos_data ON planejamentos_docente(data_criacao DESC);
+
 -- SEQUENCES (criadas automaticamente pelo SERIAL, apenas para referência)
 -- ============================================================
 -- SELECT setval('usuarios_id_seq', COALESCE((SELECT MAX(id) FROM usuarios), 1));

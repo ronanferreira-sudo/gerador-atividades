@@ -1,56 +1,75 @@
 {% extends 'base.html' %}
 
-{% block titulo %}Importar Plano de Curso{% endblock %}
+{% block titulo %}Gerar Planos de Aula{% endblock %}
 
 {% block conteudo %}
 
-<div class="row justify-content-center mt-4">
-    <div class="col-md-8 col-lg-6">
+<div class="row justify-content-center mt-4 mb-5">
+    <div class="col-md-9 col-lg-7">
 
-        <div class="card shadow border-0">
-            <div class="card-body p-4">
+        <div class="card shadow border-0 rounded-4">
+            <div class="card-header bg-dark text-white p-4 rounded-top-4">
+                <div class="d-flex align-items-center">
+                    <div class="me-3 fs-1">📖</div>
+                    <div>
+                        <h3 class="mb-1 fw-bold">Gerar Planos de Aula</h3>
+                        <p class="mb-0 opacity-75">
+                            Crie planos de aula individuais e estruturados para cada dia do curso.
+                        </p>
+                    </div>
+                </div>
+            </div>
 
-                <div class="text-center mb-4">
-                    <h2 class="fw-bold">Importar Plano de Curso</h2>
-                    <p class="text-muted">Faca upload do PDF do plano de curso para gerar os planos de aula automaticamente</p>
+            <div class="card-body p-4 p-md-5">
+
+                <div class="alert alert-light border shadow-sm p-3 mb-4 rounded-3">
+                    <div class="d-flex align-items-start">
+                        <span class="fs-4 me-3">💡</span>
+                        <div>
+                            <strong class="d-block text-dark">Origem dos Planos de Aula:</strong>
+                            <span class="text-muted small">
+                                Você pode enviar o arquivo <strong>Excel (.xlsx) do Planejamento Docente</strong> que você gerou, ou enviar o PDF do Plano de Curso. Se enviar o Excel do Planejamento Docente, as capacidades e a Taxonomia de Bloom de cada dia serão aplicadas com precisão em cada aula!
+                            </span>
+                        </div>
+                    </div>
                 </div>
 
-                <form method="POST" enctype="multipart/form-data">
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Unidade Curricular</label>
-                        <input type="text" name="nome_curso" class="form-control form-control-lg"
-                               placeholder="Ex: Informatica Basica" required>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Carga Horaria Total</label>
-                            <input type="number" name="carga_horaria" class="form-control form-control-lg"
-                                   placeholder="Ex: 60" min="1" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Aulas por Dia</label>
-                            <input type="number" name="aulas_por_dia" class="form-control form-control-lg"
-                                   placeholder="Ex: 4" min="1" required>
-                        </div>
-                    </div>
+                <form method="POST" enctype="multipart/form-data" id="formPlanos">
 
                     <div class="mb-4">
-                        <label class="form-label fw-semibold">Arquivo do Plano de Curso</label>
-                        <input type="file" name="arquivo_pdf" class="form-control form-control-lg"
-                               accept=".pdf,.xlsx,.xls" required>
-                        <div class="form-text">
-                            Envie o PDF com a ementa/conteudo programatico do curso
-                            <strong>OU</strong> a planilha Excel (.xlsx) com a Matriz de Referencia SAEP
-                            (colunas: Identificacao, Subfuncao, Capacidade, Conhecimento)
+                        <label class="form-label fw-bold">Arquivo de Referência <span class="text-danger">*</span></label>
+                        <input type="file" name="arquivo_pdf" id="arquivo_input" class="form-control form-control-lg"
+                               accept=".xlsx,.xls,.pdf" required onchange="aoSelecionarArquivo(this)">
+                        <div class="form-text mt-2 text-muted">
+                            Selecione a <strong>planilha Excel do Planejamento Docente (.xlsx)</strong> baixada anteriormente <em>OU</em> o PDF do Plano de Curso.
                         </div>
                     </div>
 
-                    <button class="btn btn-primary btn-lg w-100 fw-bold">
-                        <span id="btn-text">Ler Arquivo e Gerar Planos</span>
-                        <span id="btn-spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
-                    </button>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nome do Curso / Unidade Curricular</label>
+                        <input type="text" name="nome_curso" id="campo_curso" class="form-control form-control-lg"
+                               placeholder="Opcional se enviar o Excel do Planejamento Docente">
+                        <div class="form-text small">Preenchido automaticamente se enviar o Excel do Planejamento Docente.</div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Carga Horária Total (Horas)</label>
+                            <input type="number" name="carga_horaria" id="campo_ch" class="form-control form-control-lg"
+                                   placeholder="Ex: 40" min="1">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Aulas por Dia (Horas/dia)</label>
+                            <input type="number" name="aulas_por_dia" id="campo_hd" class="form-control form-control-lg"
+                                   value="4" min="1">
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg fw-bold py-3 shadow-sm" id="btnGerarPlanos">
+                            🚀 Gerar Planos de Aula
+                        </button>
+                    </div>
 
                 </form>
 
@@ -59,5 +78,23 @@
 
     </div>
 </div>
+
+<script>
+function aoSelecionarArquivo(input) {
+    if (input.files && input.files[0]) {
+        const nome = input.files[0].name.toLowerCase();
+        const cursoEl = document.getElementById('campo_curso');
+        const chEl = document.getElementById('campo_ch');
+
+        if (nome.endsWith('.xlsx') || nome.endsWith('.xls')) {
+            cursoEl.placeholder = 'Detectado do Excel do Planejamento Docente';
+            chEl.placeholder = 'Detectado do Excel do Planejamento Docente';
+        } else {
+            cursoEl.placeholder = 'Ex: Informática Básica';
+            chEl.placeholder = 'Ex: 40';
+        }
+    }
+}
+</script>
 
 {% endblock %}

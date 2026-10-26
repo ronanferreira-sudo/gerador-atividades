@@ -1,4 +1,4 @@
-from flask import (
+﻿from flask import (
     Flask,
     render_template,
     request,
@@ -14,7 +14,8 @@ from PyPDF2 import PdfReader
 from database.conexao import get_cursor, release_cursor
 
 from ia.gerador import gerar_atividade
-from ia.plano_aula import gerar_todos_planos, gerar_plano_aula
+from ia.plano_aula import gerar_todos_planos, gerar_plano_aula, gerar_todos_planos_de_planejamento
+from ia.planejamento_bloom import gerar_planejamento_ia, calcular_datas_aulas
 
 from utils.docx_generator import gerar_docx_plano
 from utils.pdf_generator import gerar_pdf_plano
@@ -22,13 +23,18 @@ from utils.pdf_generator import gerar_pdf_plano
 from utils.docx_atividade_generator import gerar_docx_atividade
 from utils.pdf_atividade_generator import gerar_pdf_atividade
 
+from utils.excel_planejamento_generator import gerar_excel_planejamento
+from utils.pdf_plano_reader import estruturar_dados_plano_pdf
+from utils.matriz_saep_reader import ler_matriz_saep
+from utils.planejamento_docente_reader import ler_excel_planejamento_docente
+
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from utils.excel_reader import extrair_dados_excel, formatar_dados_para_prompt, contar_itens
 import os
 
 
 app = Flask(__name__)
-app.secret_key = "gerador_atividades_2026"
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "gerador_atividades_2026")
 
 
 def pode_acessar_atividade(id, usuario_id, perfil):
@@ -123,7 +129,7 @@ def login():
 
             return redirect("/dashboard")
 
-        return "Login inválido"
+        return "Login invÃ¡lido"
 
     return render_template("login.html")
 
@@ -365,7 +371,7 @@ def editar(id):
         release_cursor(conn, cursor)
 
     if not atividade:
-        return "Atividade não encontrada"
+        return "Atividade nÃ£o encontrada"
 
     return render_template(
         "editar.html",
@@ -401,7 +407,7 @@ def gerar_pdf(id):
         release_cursor(conn, cursor)
 
     if not atividade:
-        return "Atividade não encontrada"
+        return "Atividade nÃ£o encontrada"
 
     arquivo_docx = f"outputs/atividade_{id}.docx"
     arquivo_pdf = f"outputs/atividade_{id}.pdf"
@@ -418,7 +424,7 @@ def gerar_pdf(id):
         arquivo_pdf
     )
 
-    # Se o PDF falhar (exemplo: Word não instalado), envia o DOCX como fallback
+    # Se o PDF falhar (exemplo: Word nÃ£o instalado), envia o DOCX como fallback
     if not resultado:
         return send_file(
             arquivo_docx,
@@ -460,7 +466,7 @@ def gerar_word(id):
         release_cursor(conn, cursor)
 
     if not atividade:
-        return "Atividade não encontrada"
+        return "Atividade nÃ£o encontrada"
 
     arquivo = f"outputs/atividade_{id}.docx"
 
@@ -505,7 +511,7 @@ def regenerar(id):
         release_cursor(conn, cursor)
 
     if not atividade:
-        return "Atividade não encontrada"
+        return "Atividade nÃ£o encontrada"
 
     nova = gerar_atividade(
         atividade[0],
@@ -555,8 +561,22 @@ def dashboard():
                 ORDER BY curso
                 """
             )
+            cursos = cursor.fetchall()
+
+            cursor.execute("SELECT COUNT(*) FROM atividades")
+            total_atividades = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM planejamentos_docente")
+            total_planejamentos = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM planos_aula")
+            total_planos = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM cursos_plano")
+            total_cursos_plano = cursor.fetchone()[0]
 
         else:
+            usuario_id = session["usuario_id"]
 
             cursor.execute(
                 """
@@ -568,18 +588,33 @@ def dashboard():
                 GROUP BY curso
                 ORDER BY curso
                 """,
-                (session["usuario_id"],),
+                (usuario_id,),
             )
+            cursos = cursor.fetchall()
 
-        cursos = cursor.fetchall()
+            cursor.execute("SELECT COUNT(*) FROM atividades WHERE usuario_id = %s", (usuario_id,))
+            total_atividades = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM planejamentos_docente WHERE usuario_id = %s", (usuario_id,))
+            total_planejamentos = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM planos_aula WHERE usuario_id = %s", (usuario_id,))
+            total_planos = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM cursos_plano WHERE usuario_id = %s", (usuario_id,))
+            total_cursos_plano = cursor.fetchone()[0]
+
     finally:
         release_cursor(conn, cursor)
 
     return render_template(
         "dashboard.html",
-        cursos=cursos
+        cursos=cursos,
+        total_atividades=total_atividades,
+        total_planejamentos=total_planejamentos,
+        total_planos=total_planos,
+        total_cursos_plano=total_cursos_plano
     )
-
 
 # =========================
 # PLANOS DE AULA
@@ -592,16 +627,12 @@ def planos():
 
     if request.method == "POST":
 
-        nome_curso = request.form["nome_curso"]
-        carga_horaria = int(request.form["carga_horaria"])
-        aulas_por_dia = int(request.form["aulas_por_dia"])
+        nome_curso = request.form.get("nome_curso", "").strip()
+        carga_horaria_form = request.form.get("carga_horaria")
+        aulas_por_dia_form = request.form.get("aulas_por_dia")
 
-        print("=" * 60)
-        print(f"📚 INICIANDO GERAÇÃO DE PLANOS")
-        print(f"   Curso: {nome_curso}")
-        print(f"   Carga Horária: {carga_horaria}h")
-        print(f"   Aulas por dia: {aulas_por_dia}h")
-        print("=" * 60)
+        carga_horaria = int(carga_horaria_form) if carga_horaria_form else 0
+        aulas_por_dia = int(aulas_por_dia_form) if aulas_por_dia_form else 4
 
         arquivo = request.files["arquivo_pdf"]
         nome_arquivo = secure_filename(arquivo.filename)
@@ -612,95 +643,124 @@ def planos():
         caminho = os.path.join(pasta_upload, nome_arquivo)
         arquivo.save(caminho)
 
-        # Detecta se é Excel (.xlsx) ou PDF
-        is_excel = nome_arquivo.lower().endswith(('.xlsx', '.xls'))
+        is_excel = nome_arquivo.lower().endswith((".xlsx", ".xls"))
 
+        print("=" * 60)
+        print(f"📚 PROCESSANDO ARQUIVO PARA GERAR PLANOS DE AULA")
+        print(f"   Arquivo: {nome_arquivo} (Excel: {is_excel})")
+        print("=" * 60)
+
+        planos = []
+        curso_id = None
+        total_dias = 0
+
+        # Verifica se é um arquivo Excel de Planejamento Docente
         if is_excel:
-            print("📊 Arquivo Excel detectado! Extraindo dados da Matriz de Referência...")
-            dados_excel = extrair_dados_excel(caminho)
-            texto = formatar_dados_para_prompt(dados_excel)
-            print(f"📊 Dados extraídos: {len(dados_excel)} itens encontrados")
-        else:
-            print("📄 Arquivo PDF detectado! Extraindo texto...")
-            reader = PdfReader(caminho)
-            texto = ""
-            for pagina in reader.pages:
-                conteudo = pagina.extract_text()
-                if conteudo:
-                    texto += conteudo + "\n"
+            try:
+                dados_cabecalho, aulas_excel = ler_excel_planejamento_docente(caminho)
+                if aulas_excel and len(aulas_excel) > 0:
+                    print(f"📊 Arquivo reconhecido como Planejamento Docente ({len(aulas_excel)} aulas identificadas)!")
+                    if not nome_curso and dados_cabecalho.get("nome_curso"):
+                        nome_curso = dados_cabecalho["nome_curso"]
+                    if dados_cabecalho.get("unidade_curricular"):
+                        if nome_curso:
+                            nome_curso = f"{nome_curso} — {dados_cabecalho['unidade_curricular']}"
+                        else:
+                            nome_curso = dados_cabecalho["unidade_curricular"]
 
-        conn, cursor = get_cursor()
-        try:
-            cursor.execute(
-                """
-                INSERT INTO cursos_plano (
-                    nome_curso,
-                    carga_horaria,
-                    aulas_por_dia,
-                    usuario_id
+                    if carga_horaria <= 0:
+                        carga_horaria = dados_cabecalho.get("carga_horaria", 40)
+                    if aulas_por_dia <= 0:
+                        aulas_por_dia = dados_cabecalho.get("horas_por_dia", 4)
+
+                    total_dias = len(aulas_excel)
+
+                    # Cria o curso
+                    conn, cursor = get_cursor()
+                    try:
+                        cursor.execute(
+                            """
+                            INSERT INTO cursos_plano (nome_curso, carga_horaria, aulas_por_dia, usuario_id)
+                            VALUES (%s, %s, %s, %s)
+                            RETURNING id
+                            """,
+                            (nome_curso or "Curso Planejado", carga_horaria, aulas_por_dia, session["usuario_id"])
+                        )
+                        curso_id = cursor.fetchone()[0]
+                        conn.commit()
+                    finally:
+                        release_cursor(conn, cursor)
+
+                    # Gera planos de aula a partir das aulas estruturadas no Excel do planejamento
+                    planos = gerar_todos_planos_de_planejamento(
+                        aulas_excel,
+                        nome_curso,
+                        dados_cabecalho.get("unidade_curricular", ""),
+                        aulas_por_dia,
+                        max_workers=2
+                    )
+
+            except Exception as e:
+                print(f"Aviso ao ler como Planejamento Docente: {e}. Tentando fluxo padrão...")
+
+        # Fluxo alternativo: Matriz SAEP ou PDF de Plano de Curso
+        if not planos:
+            if is_excel:
+                print("📊 Extraindo dados de Matriz de Referência...")
+                dados_excel = extrair_dados_excel(caminho)
+                texto = formatar_dados_para_prompt(dados_excel)
+            else:
+                print("📄 Extraindo texto do PDF...")
+                reader = PdfReader(caminho)
+                texto = ""
+                for pagina in reader.pages:
+                    conteudo = pagina.extract_text()
+                    if conteudo:
+                        texto += conteudo + "\n"
+
+            if carga_horaria <= 0:
+                carga_horaria = 40
+            if aulas_por_dia <= 0:
+                aulas_por_dia = 4
+
+            total_dias = max(1, carga_horaria // aulas_por_dia)
+
+            conn, cursor = get_cursor()
+            try:
+                cursor.execute(
+                    """
+                    INSERT INTO cursos_plano (nome_curso, carga_horaria, aulas_por_dia, usuario_id)
+                    VALUES (%s, %s, %s, %s)
+                    RETURNING id
+                    """,
+                    (nome_curso or "Curso Sem Nome", carga_horaria, aulas_por_dia, session["usuario_id"])
                 )
-                VALUES (%s,%s,%s,%s)
-                RETURNING id
-                """,
-                (
-                    nome_curso,
-                    carga_horaria,
-                    aulas_por_dia,
-                    session["usuario_id"]
-                )
-            )
+                curso_id = cursor.fetchone()[0]
+                conn.commit()
+            finally:
+                release_cursor(conn, cursor)
 
-            curso_id = cursor.fetchone()[0]
+            planos = gerar_todos_planos(texto, carga_horaria, aulas_por_dia, total_dias, max_workers=2)
 
-            conn.commit()
-        finally:
-            release_cursor(conn, cursor)
-
-        total_dias = carga_horaria // aulas_por_dia
-
-        # 🔥 GERA TODOS OS PLANOS EM PARALELO
-        planos = gerar_todos_planos(
-            texto,
-            carga_horaria,
-            aulas_por_dia,
-            total_dias,
-            max_workers=2
-        )
-
+        # Salva os planos no banco
         planos_completos = ""
-
         conn, cursor = get_cursor()
         try:
             for dia, plano in enumerate(planos, start=1):
-
                 planos_completos += f"\n\nDIA {dia}\n\n{plano}"
-
                 cursor.execute(
                     """
-                    INSERT INTO planos_aula (
-                        curso_id,
-                        dia,
-                        tema,
-                        plano_gerado,
-                        usuario_id
-                    )
-                    VALUES (%s,%s,%s,%s,%s)
+                    INSERT INTO planos_aula (curso_id, dia, tema, plano_gerado, usuario_id)
+                    VALUES (%s, %s, %s, %s, %s)
                     """,
-                    (
-                        curso_id,
-                        dia,
-                        f"Plano Dia {dia}",
-                        plano,
-                        session["usuario_id"]
-                    )
+                    (curso_id, dia, f"Plano Dia {dia}", plano, session["usuario_id"])
                 )
-
             conn.commit()
         finally:
             release_cursor(conn, cursor)
 
+        # Gera o DOCX consolidado do curso
         os.makedirs("outputs", exist_ok=True)
-
         arquivo_docx = f"outputs/plano_{curso_id}.docx"
         arquivo_pdf = f"outputs/plano_{curso_id}.pdf"
 
@@ -710,16 +770,13 @@ def planos():
             conteudo=planos_completos,
             caminho_saida=arquivo_docx
         )
+        gerar_pdf_plano(arquivo_docx, arquivo_pdf)
 
-        resultado_pdf = gerar_pdf_plano(
-            arquivo_docx,
-            arquivo_pdf
-        )
+        print(f"✅ {len(planos)} Planos de aula gerados para o Curso #{curso_id}!")
+        print("=" * 60)
 
-        if not resultado_pdf:
-            print("⚠️ PDF não foi gerado (apenas DOCX foi salvo)")
-
-        return redirect("/listar_cursos")
+        # Redireciona para o curso onde cada plano tem o botão individual para gerar atividade
+        return redirect(f"/curso/{curso_id}")
 
     return render_template("planos.html")
 
@@ -729,42 +786,7 @@ def planos():
 # =========================
 @app.route("/listar_planos")
 def listar_planos():
-
-    if "usuario_id" not in session:
-        return redirect("/login")
-
-    conn, cursor = get_cursor()
-    try:
-        if session["perfil"] == "admin":
-
-            cursor.execute(
-                """
-                SELECT *
-                FROM planos_aula
-                ORDER BY id DESC
-                """
-            )
-
-        else:
-
-            cursor.execute(
-                """
-                SELECT *
-                FROM planos_aula
-                WHERE usuario_id = %s
-                ORDER BY id DESC
-                """,
-                (session["usuario_id"],),
-            )
-
-        planos = cursor.fetchall()
-    finally:
-        release_cursor(conn, cursor)
-
-    return render_template(
-        "listar_planos.html",
-        planos=planos
-    )
+    return redirect("/listar_cursos")
 
 
 # =========================
@@ -790,7 +812,7 @@ def visualizar_plano(plano_id):
         release_cursor(conn, cursor)
 
     if not plano:
-        return "Plano não encontrado"
+        return "Plano nÃ£o encontrado"
 
     return render_template(
         "visualizar_plano.html",
@@ -852,7 +874,7 @@ def deletar_curso(curso_id):
 
     conn, cursor = get_cursor()
     try:
-        # Verifica se o curso pertence ao usuario (ou se é admin)
+        # Verifica se o curso pertence ao usuario (ou se Ã© admin)
         if session["perfil"] == "admin":
             cursor.execute(
                 "SELECT id FROM cursos_plano WHERE id = %s",
@@ -866,7 +888,7 @@ def deletar_curso(curso_id):
 
         curso = cursor.fetchone()
         if not curso:
-            return "Curso não encontrado", 404
+            return "Curso nÃ£o encontrado", 404
 
         # Deleta os planos de aula associados primeiro
         cursor.execute(
@@ -881,7 +903,7 @@ def deletar_curso(curso_id):
         )
 
         conn.commit()
-        print(f"🗑️ Curso #{curso_id} e seus planos deletados")
+        print(f"ðŸ—‘ï¸ Curso #{curso_id} e seus planos deletados")
     finally:
         release_cursor(conn, cursor)
 
@@ -957,7 +979,7 @@ def plano_pdf(id):
         release_cursor(conn, cursor)
 
     if not plano:
-        return "Plano não encontrado"
+        return "Plano nÃ£o encontrado"
 
     arquivo_docx = f"outputs/plano_{id}.docx"
     arquivo_pdf = f"outputs/plano_{id}.pdf"
@@ -1005,7 +1027,7 @@ def plano_word(id):
         release_cursor(conn, cursor)
 
     if not plano:
-        return "Plano não encontrado"
+        return "Plano nÃ£o encontrado"
 
     arquivo = f"outputs/plano_{id}.docx"
 
@@ -1033,7 +1055,7 @@ def gerar_atividade_plano(id):
 
     tipo = request.args.get("tipo", "objetiva")
     quantidade_str = request.args.get("quantidade", "5")
-    dificuldade = request.args.get("dificuldade", "médio")
+    dificuldade = request.args.get("dificuldade", "mÃ©dio")
 
     # Validar quantidade
     try:
@@ -1064,7 +1086,7 @@ def gerar_atividade_plano(id):
         release_cursor(conn, cursor)
 
     if not plano:
-        return "Plano não encontrado"
+        return "Plano nÃ£o encontrado"
 
     conteudo = plano[4]
     curso_id = plano[1]
@@ -1090,12 +1112,12 @@ def gerar_atividade_plano(id):
     if curso:
         nome_curso = curso[0]
     else:
-        nome_curso = "Curso não encontrado"
+        nome_curso = "Curso nÃ£o encontrado"
 
     # =========================
     # GERAR ATIVIDADE COM IA
     # =========================
-    print(f"🤖 Gerando atividade a partir do Plano #{id}")
+    print(f"ðŸ¤– Gerando atividade a partir do Plano #{id}")
     print(f"   Curso: {nome_curso} | Tipo: {tipo} | Dificuldade: {dificuldade} | Qtd: {quantidade}")
 
     atividade = gerar_atividade(
@@ -1105,7 +1127,7 @@ def gerar_atividade_plano(id):
         quantidade
     )
 
-    print(f"✅ Atividade gerada com sucesso ({len(atividade)} caracteres)")
+    print(f"âœ… Atividade gerada com sucesso ({len(atividade)} caracteres)")
     print("=" * 60)
 
     # =========================
@@ -1161,12 +1183,12 @@ def deletar_plano(plano_id):
         plano = cursor.fetchone()
 
         if not plano:
-            return "Plano não encontrado", 404
+            return "Plano nÃ£o encontrado", 404
 
         curso_id = plano[0]
         dono_id = plano[1]
 
-        # Verifica permissão: admin ou dono
+        # Verifica permissÃ£o: admin ou dono
         if session["perfil"] != "admin" and dono_id != session["usuario_id"]:
             return "Acesso negado", 403
 
@@ -1176,7 +1198,7 @@ def deletar_plano(plano_id):
             (plano_id,)
         )
         conn.commit()
-        print(f"🗑️ Plano #{plano_id} deletado")
+        print(f"ðŸ—‘ï¸ Plano #{plano_id} deletado")
     finally:
         release_cursor(conn, cursor)
 
@@ -1208,7 +1230,7 @@ def baixar_plano(plano_id):
         release_cursor(conn, cursor)
 
     if not plano:
-        return "Plano não encontrado"
+        return "Plano nÃ£o encontrado"
 
     arquivo = f"temp/plano_{plano_id}.docx"
 
@@ -1225,6 +1247,390 @@ def baixar_plano(plano_id):
         arquivo,
         as_attachment=True
     )
+
+
+
+
+# =========================
+# PLANEJAMENTO DOCENTE
+# =========================
+@app.route("/planejamento_docente", methods=["GET", "POST"])
+def planejamento_docente():
+
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    if request.method == "POST":
+
+        nome_curso         = request.form["nome_curso"]
+        unidade_curricular = request.form["unidade_curricular"]
+        codigo_turma       = request.form.get("codigo_turma", "TEC.2026.1")
+        modalidade         = request.form.get("modalidade", "HABILITAÇÃO TÉCNICA")
+        unidade_escolar    = request.form.get("unidade_escolar", "")
+        carga_horaria      = int(request.form["carga_horaria"])
+        horas_por_dia      = int(request.form["horas_por_dia"])
+        data_inicio_str    = request.form.get("data_inicio", "")
+        data_fim_str       = request.form.get("data_fim", "")
+
+        total_aulas = -(-carga_horaria // horas_por_dia)  # Divisão com teto
+
+        print("=" * 60)
+        print(f"📊 GERANDO PLANEJAMENTO DOCENTE")
+        print(f"   Curso: {nome_curso} | UC: {unidade_curricular}")
+        print(f"   CH: {carga_horaria}h | {horas_por_dia}h/dia | {total_aulas} aulas")
+        print("=" * 60)
+
+        pasta_upload = "uploads"
+        os.makedirs(pasta_upload, exist_ok=True)
+
+        # ----------------------------------------------------------
+        # 1. Lê o PDF do Plano de Curso
+        # ----------------------------------------------------------
+        arquivo_plano = request.files.get("arquivo_plano_pdf")
+        dados_plano = {
+            "unidade_curricular": unidade_curricular,
+            "objetivo_geral": "",
+            "capacidades_tecnicas": [],
+            "conhecimentos": [],
+            "texto_bruto": ""
+        }
+
+        if arquivo_plano and arquivo_plano.filename:
+            nome_plano = secure_filename(arquivo_plano.filename)
+            caminho_plano = os.path.join(pasta_upload, nome_plano)
+            arquivo_plano.save(caminho_plano)
+            print(f"📄 Plano de Curso salvo: {caminho_plano}")
+            try:
+                dados_plano = estruturar_dados_plano_pdf(caminho_plano)
+                dados_plano["unidade_curricular"] = dados_plano.get("unidade_curricular") or unidade_curricular
+                print(f"✅ PDF lido: {len(dados_plano.get('conhecimentos', []))} conhecimentos extraídos")
+            except Exception as e:
+                print(f"⚠️ Erro ao ler PDF do plano: {e}")
+
+        # ----------------------------------------------------------
+        # 2. Lê a Matriz SAEP (opcional)
+        # ----------------------------------------------------------
+        arquivo_matriz = request.files.get("arquivo_matriz")
+        dados_matriz = []
+        if arquivo_matriz and arquivo_matriz.filename:
+            nome_matriz = secure_filename(arquivo_matriz.filename)
+            caminho_matriz = os.path.join(pasta_upload, nome_matriz)
+            arquivo_matriz.save(caminho_matriz)
+            print(f"📋 Matriz SAEP salva: {caminho_matriz}")
+            try:
+                dados_matriz = ler_matriz_saep(caminho_matriz)
+                print(f"✅ Matriz lida: {len(dados_matriz)} capacidades")
+            except Exception as e:
+                print(f"⚠️ Erro ao ler Matriz SAEP: {e}")
+
+        # ----------------------------------------------------------
+        # 3. Gera o Planejamento Docente (Taxonomia de Bloom)
+        # ----------------------------------------------------------
+        datas = calcular_datas_aulas(data_inicio_str, total_aulas)
+
+        aulas = gerar_planejamento_ia(
+            dados_plano,
+            dados_matriz,
+            total_aulas,
+            horas_por_dia,
+            datas
+        )
+
+        dados_cabecalho = {
+            "nome_curso":         nome_curso,
+            "unidade_curricular": unidade_curricular,
+            "codigo_turma":       codigo_turma,
+            "modalidade":         modalidade,
+            "unidade_escolar":    unidade_escolar,
+            "carga_horaria":      carga_horaria,
+            "horas_por_dia":      horas_por_dia,
+            "data_inicio":        data_inicio_str,
+            "data_fim":           data_fim_str,
+            "instrutor":          session.get("nome", "")
+        }
+
+        os.makedirs("outputs", exist_ok=True)
+        caminho_excel = gerar_excel_planejamento(dados_cabecalho, aulas)
+        nome_arquivo_excel = os.path.basename(caminho_excel)
+        print(f"✅ Excel do Planejamento Docente gerado com sucesso: {caminho_excel}")
+
+        # ----------------------------------------------------------
+        # 4. Salva o Planejamento Docente no banco de dados
+        # ----------------------------------------------------------
+        conn, cursor = get_cursor()
+        try:
+            cursor.execute(
+                """
+                INSERT INTO planejamentos_docente (
+                    nome_curso,
+                    unidade_curricular,
+                    turma,
+                    unidade_escolar,
+                    carga_horaria,
+                    horas_por_dia,
+                    data_inicio,
+                    data_fim,
+                    total_aulas,
+                    arquivo_excel,
+                    usuario_id
+                )
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                RETURNING id
+                """,
+                (
+                    nome_curso,
+                    unidade_curricular,
+                    codigo_turma,
+                    unidade_escolar,
+                    carga_horaria,
+                    horas_por_dia,
+                    data_inicio_str or None,
+                    data_fim_str or None,
+                    total_aulas,
+                    nome_arquivo_excel,
+                    session["usuario_id"]
+                )
+            )
+            planejamento_id = cursor.fetchone()[0]
+            conn.commit()
+        finally:
+            release_cursor(conn, cursor)
+
+        print(f"✅ Planejamento Docente salvo no banco: ID #{planejamento_id}")
+        print(f"📥 Disponibilizando arquivo Excel para download imediato...")
+        print("=" * 60)
+
+        # Entrega o arquivo Excel diretamente para download do usuário
+        return send_file(
+            caminho_excel,
+            as_attachment=True,
+            download_name=nome_arquivo_excel
+        )
+
+    return render_template("planejamento_docente.html")
+
+
+# =========================
+# LISTAR PLANEJAMENTOS DOCENTES
+# =========================
+@app.route("/listar_planejamentos")
+def listar_planejamentos():
+
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    conn, cursor = get_cursor()
+    try:
+        if session["perfil"] == "admin":
+            cursor.execute(
+                """
+                SELECT *
+                FROM planejamentos_docente
+                ORDER BY id DESC
+                """
+            )
+        else:
+            cursor.execute(
+                """
+                SELECT *
+                FROM planejamentos_docente
+                WHERE usuario_id = %s
+                ORDER BY id DESC
+                """,
+                (session["usuario_id"],)
+            )
+
+        planejamentos = cursor.fetchall()
+    finally:
+        release_cursor(conn, cursor)
+
+    return render_template(
+        "listar_planejamentos.html",
+        planejamentos=planejamentos
+    )
+
+
+# =========================
+# BAIXAR PLANEJAMENTO DOCENTE (EXCEL)
+# =========================
+@app.route("/baixar_planejamento/<int:planejamento_id>")
+def baixar_planejamento(planejamento_id):
+
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    conn, cursor = get_cursor()
+    try:
+        if session["perfil"] == "admin":
+            cursor.execute(
+                "SELECT * FROM planejamentos_docente WHERE id = %s",
+                (planejamento_id,)
+            )
+        else:
+            cursor.execute(
+                "SELECT * FROM planejamentos_docente WHERE id = %s AND usuario_id = %s",
+                (planejamento_id, session["usuario_id"])
+            )
+        planejamento = cursor.fetchone()
+    finally:
+        release_cursor(conn, cursor)
+
+    if not planejamento:
+        return "Planejamento não encontrado", 404
+
+    nome_arquivo = planejamento[10]  # coluna arquivo_excel
+    caminho = os.path.join("outputs", nome_arquivo)
+
+    if not os.path.exists(caminho):
+        return "Arquivo Excel não encontrado no servidor. Por favor, gere novamente.", 404
+
+    return send_file(
+        caminho,
+        as_attachment=True,
+        download_name=nome_arquivo
+    )
+
+
+# =========================
+# DELETAR PLANEJAMENTO DOCENTE
+# =========================
+@app.route("/deletar_planejamento/<int:planejamento_id>")
+def deletar_planejamento(planejamento_id):
+
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    conn, cursor = get_cursor()
+    try:
+        if session["perfil"] == "admin":
+            cursor.execute(
+                "SELECT id, arquivo_excel FROM planejamentos_docente WHERE id = %s",
+                (planejamento_id,)
+            )
+        else:
+            cursor.execute(
+                "SELECT id, arquivo_excel FROM planejamentos_docente WHERE id = %s AND usuario_id = %s",
+                (planejamento_id, session["usuario_id"])
+            )
+        planejamento = cursor.fetchone()
+
+        if not planejamento:
+            return "Planejamento não encontrado", 404
+
+        # Remove o arquivo Excel do disco, se existir
+        nome_arquivo = planejamento[1]
+        if nome_arquivo:
+            caminho = os.path.join("outputs", nome_arquivo)
+            if os.path.exists(caminho):
+                os.remove(caminho)
+                print(f"🗑️ Arquivo Excel removido: {caminho}")
+
+        cursor.execute(
+            "DELETE FROM planejamentos_docente WHERE id = %s",
+            (planejamento_id,)
+        )
+        conn.commit()
+        print(f"🗑️ Planejamento Docente #{planejamento_id} deletado")
+    finally:
+        release_cursor(conn, cursor)
+
+    return redirect("/listar_planejamentos")
+
+
+
+# =========================
+# GERAR PLANOS DE UM PLANEJAMENTO EXISTENTE
+# =========================
+@app.route("/gerar_planos_planejamento/<int:planejamento_id>")
+def gerar_planos_planejamento(planejamento_id):
+
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    conn, cursor = get_cursor()
+    try:
+        cursor.execute(
+            "SELECT * FROM planejamentos_docente WHERE id = %s",
+            (planejamento_id,)
+        )
+        plan = cursor.fetchone()
+    finally:
+        release_cursor(conn, cursor)
+
+    if not plan:
+        return "Planejamento não encontrado", 404
+
+    curso_id = plan[13] if len(plan) > 13 else None
+
+    # Se já tem planos gerados e curso_id vinculado, vai direto para o curso
+    if curso_id:
+        conn, cursor = get_cursor()
+        try:
+            cursor.execute("SELECT COUNT(*) FROM planos_aula WHERE curso_id = %s", (curso_id,))
+            qtd = cursor.fetchone()[0]
+            if qtd > 0:
+                return redirect(f"/curso/{curso_id}")
+        finally:
+            release_cursor(conn, cursor)
+
+    nome_curso = plan[1]
+    uc = plan[2]
+    ch = plan[5]
+    hd = plan[6]
+    nome_arquivo_excel = plan[10]
+
+    caminho_excel = os.path.join("outputs", nome_arquivo_excel) if nome_arquivo_excel else ""
+
+    aulas_excel = []
+    if caminho_excel and os.path.exists(caminho_excel):
+        try:
+            _, aulas_excel = ler_excel_planejamento_docente(caminho_excel)
+        except Exception as e:
+            print(f"Erro ao ler Excel do planejamento: {e}")
+
+    # Cria o curso
+    conn, cursor = get_cursor()
+    try:
+        cursor.execute(
+            """
+            INSERT INTO cursos_plano (nome_curso, carga_horaria, aulas_por_dia, usuario_id)
+            VALUES (%s, %s, %s, %s)
+            RETURNING id
+            """,
+            (f"{nome_curso} — {uc}", ch, hd, session["usuario_id"])
+        )
+        curso_id = cursor.fetchone()[0]
+
+        cursor.execute(
+            "UPDATE planejamentos_docente SET curso_id = %s WHERE id = %s",
+            (curso_id, planejamento_id)
+        )
+        conn.commit()
+    finally:
+        release_cursor(conn, cursor)
+
+    if not aulas_excel:
+        datas = calcular_datas_aulas(str(plan[7]) if plan[7] else None, plan[9])
+        dados_plano = {"unidade_curricular": uc, "conhecimentos": []}
+        aulas_excel = gerar_planejamento_ia(dados_plano, [], plan[9], hd, datas)
+
+    planos_gerados = gerar_todos_planos_de_planejamento(aulas_excel, nome_curso, uc, hd, max_workers=2)
+
+    conn, cursor = get_cursor()
+    try:
+        for dia, plano_texto in enumerate(planos_gerados, start=1):
+            cursor.execute(
+                """
+                INSERT INTO planos_aula (curso_id, dia, tema, plano_gerado, usuario_id, planejamento_id)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (curso_id, dia, f"Plano Dia {dia} — {uc}", plano_texto, session["usuario_id"], planejamento_id)
+            )
+        conn.commit()
+    finally:
+        release_cursor(conn, cursor)
+
+    return redirect(f"/curso/{curso_id}")
 
 
 # =========================
