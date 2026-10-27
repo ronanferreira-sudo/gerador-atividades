@@ -10,6 +10,7 @@ _cache_atividades = {}
 
 # URL do Ollama configurável via .env
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.1:8b")
 
 
 def preprocessar_texto(texto):
@@ -44,27 +45,64 @@ def gerar_atividade(texto_pdf, dificuldade, tipo="objetiva", quantidade=5):
     print("Chamando Ollama...")
 
     if tipo == "objetiva":
-        instrucao_tipo = "TODAS as questoes devem ser OBJETIVAS de multipla escolha com 4 alternativas A) B) C) D). Nao misture com discursivas."
+        instrucao_tipo = (
+            f"Gere EXATAMENTE {quantidade} questoes OBJETIVAS de multipla escolha, "
+            "cada uma com 4 alternativas A) B) C) D) e a Resposta correta identificada. "
+            "Nao misture com discursivas."
+        )
+        exemplo = (
+            "Questao 1: Enunciado da questao?\n"
+            "A) opcao\nB) opcao\nC) opcao\nD) opcao\n"
+            "Resposta correta: A\n\n"
+            "Questao 2: Enunciado da questao?\n"
+            "A) opcao\nB) opcao\nC) opcao\nD) opcao\n"
+            "Resposta correta: B"
+        )
     elif tipo == "discursiva":
-        instrucao_tipo = "TODAS as questoes devem ser DISCURSIVAS (abertas para resposta dissertativa). Nao misture com objetivas."
+        instrucao_tipo = (
+            f"Gere EXATAMENTE {quantidade} questoes DISCURSIVAS (abertas para resposta dissertativa). "
+            "Nao misture com objetivas."
+        )
+        exemplo = (
+            "Questao 1: Enunciado da questao discursiva?\n\n"
+            "Questao 2: Enunciado da questao discursiva?"
+        )
     else:
-        instrucao_tipo = "MISTURE questoes objetivas (multipla escolha) e discursivas (abertas)."
+        metade = quantidade // 2
+        resto = quantidade - metade
+        instrucao_tipo = (
+            f"Gere EXATAMENTE {quantidade} questoes: {metade} OBJETIVAS (com A B C D e Resposta correta) "
+            f"e {resto} DISCURSIVAS (abertas). Alterne entre os tipos."
+        )
+        exemplo = (
+            "Questao 1: Enunciado objetiva?\n"
+            "A) opcao\nB) opcao\nC) opcao\nD) opcao\n"
+            "Resposta correta: A\n\n"
+            "Questao 2: Enunciado discursiva?"
+        )
 
-    prompt = f"""
-INSTRUCAO: Crie {quantidade} questoes nivel {dificuldade} com base NO CONTEUDO ABAIXO.
+    # Tokens necessários: ~200 por questão objetiva, ~120 por discursiva — com margem de segurança
+    tokens_por_questao = 220 if tipo in ("objetiva", "mista") else 150
+    num_predict = max(800, quantidade * tokens_por_questao)
 
+    prompt = f"""Voce e um professor avaliador. Crie EXATAMENTE {quantidade} questoes de nivel {dificuldade} sobre o conteudo abaixo.
+
+CONTEUDO:
 {preprocessar_texto(texto_pdf)}
 
 {instrucao_tipo}
 
-REGRAS ABSOLUTAS:
-- VA DIRETO PARA "Questao 1:" - SEM introducao, sem "Aqui estao", sem frases iniciais
-- SEMPRE comeca exatamente com "Questao 1:"
-- Nao invente assuntos fora do conteudo
-- Nao pergunte sobre carga horaria, professor, objetivos, metodologia, avaliacao ou recursos
-- NAO use asteriscos, negrito ou qualquer formatacao
-- NAO coloque o tipo da questao (Objetiva/Discursiva) no enunciado
-"""
+REGRAS OBRIGATORIAS:
+- Comece DIRETAMENTE com "Questao 1:" sem nenhuma introducao ou frase antes
+- Numere todas as questoes de 1 ate {quantidade}: "Questao 1:", "Questao 2:", ..., "Questao {quantidade}:"
+- Nao use asteriscos, negrito ou markdown
+- Nao pergunte sobre carga horaria, objetivos, metodologia ou professor
+- Baseie-se APENAS no conteudo fornecido
+
+FORMATO ESPERADO:
+{exemplo}
+
+Gere as {quantidade} questoes agora:"""
 
     tentativas = 0
     max_tentativas = 3
@@ -73,15 +111,15 @@ REGRAS ABSOLUTAS:
             resposta = requests.post(
                 f"{OLLAMA_URL}/api/generate",
                 json={
-                    "model": "llama3.1:8b",
+                    "model": OLLAMA_MODEL,
                     "prompt": prompt,
                     "stream": False,
                     "options": {
                         "temperature": 0.1,
-                        "num_predict": 900
+                        "num_predict": num_predict
                     }
                 },
-                timeout=120
+                timeout=180
             )
 
             if resposta.status_code != 200:

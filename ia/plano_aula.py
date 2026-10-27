@@ -11,6 +11,7 @@ _cache_planos = {}
 
 # URL do Ollama configurável via .env
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.1:8b")
 
 
 def gerar_hash_plano(texto_base, carga_horaria, aulas_por_dia, dia):
@@ -64,7 +65,7 @@ Comece diretamente com "1. Identificação:".
             resposta = requests.post(
                 f"{OLLAMA_URL}/api/generate",
                 json={
-                    "model": "llama3.1:8b",
+                    "model": OLLAMA_MODEL,
                     "prompt": prompt,
                     "stream": False,
                     "options": {
@@ -199,21 +200,21 @@ Comece diretamente com "1. Identificacao:".
 """
 
     tentativas = 0
-    max_tentativas = 3
+    max_tentativas = 1
     while tentativas < max_tentativas:
         try:
             resposta = requests.post(
                 f"{OLLAMA_URL}/api/generate",
                 json={
-                    "model": "llama3.1:8b",
+                    "model": OLLAMA_MODEL,
                     "prompt": prompt,
                     "stream": False,
                     "options": {
-                        "num_predict": 900,
+                        "num_predict": 500,
                         "temperature": 0.2
                     }
                 },
-                timeout=120
+                timeout=35
             )
 
             if resposta.status_code == 200:

@@ -1,4 +1,4 @@
-﻿import os
+import os
 import json
 import re
 from datetime import datetime, timedelta
@@ -7,6 +7,7 @@ from utils.texto_utils import limpar_numeracao_item, limpar_numeracao_texto
 
 # URL do Ollama configurável via .env
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.1:8b")
 
 # Níveis da Taxonomia de Bloom e verbos correspondentes
 NIVEIS_BLOOM = {
@@ -89,10 +90,21 @@ def dividir_em_blocos(lista, n):
     return [lista[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n)]
 
 
+def limitar_texto_palavras_completas(texto, limite=100):
+    """Trunca um texto respeitando os limites de palavras completas."""
+    if not texto or len(texto) <= limite:
+        return texto
+    cortado = texto[:limite]
+    if " " in cortado:
+        cortado = cortado.rsplit(" ", 1)[0]
+    return cortado.strip()
+
+
 def gerar_planejamento_algoritmico(dados_plano, dados_matriz, total_aulas, horas_por_dia, datas):
     """
     Gera o planejamento docente completo garantindo a Taxonomia de Bloom
-    e a divisão exata dos conteúdos e horas por dia, SEM numerações de tópicos.
+    e a divisão exata dos conteúdos e horas por dia, SEM numerações de tópicos
+    e com palavras 100% completas.
     """
     conhecimentos_brutos = dados_plano.get("conhecimentos", [])
     conhecimentos = [limpar_numeracao_item(c) for c in conhecimentos_brutos if limpar_numeracao_item(c)]
@@ -128,14 +140,16 @@ def gerar_planejamento_algoritmico(dados_plano, dados_matriz, total_aulas, horas
 
         # Seleciona tópicos de conhecimento para o dia SEM números
         topicos_dia = [limpar_numeracao_item(t) for t in blocos_conhecimentos[dia - 1] if limpar_numeracao_item(t)]
-        texto_conhecimento = " • ".join(topicos_dia) if topicos_dia else "Fundamentos e práticas de hardware"
+        texto_conhecimento = " • ".join(topicos_dia) if topicos_dia else "Fundamentos e práticas profissionais"
 
         if capacidades_plano:
             idx_cap = min(dia - 1, len(capacidades_plano) - 1)
             cap_base = capacidades_plano[idx_cap]
         else:
             verbo = cfg_bloom["verbos"][dia % len(cfg_bloom["verbos"])]
-            cap_base = f"{verbo} os conceitos e procedimentos relativos a {texto_conhecimento[:60]}."
+            topico_ref = topicos_dia[0] if topicos_dia else texto_conhecimento
+            topico_limpo = limitar_texto_palavras_completas(topico_ref, 80)
+            cap_base = f"{verbo} os conceitos e procedimentos relativos a {topico_limpo}."
 
         cap_base = limpar_numeracao_texto(cap_base)
 
@@ -215,6 +229,7 @@ REQUISITOS PEDAGOGICOS OBRIGATORIOS:
    - estrategia: Estrategia de ensino (ex: AULA EXPOSITIVA DIALOGADA, ATIVIDADE PRATICA EM LABORATORIO, ATIVIDADE AVALIATIVA PRATICA)
    - criterios: Criterio de avaliacao claro
    - instrumentos: Instrumento de avaliacao (ex: PERGUNTAS ORAIS, CHECKLIST PRATICO, AVALIACAO PRATICA)
+5. REGRA DE INTEGRIDADE: Escreva sempre palavras completas e frases inteiras em portugues, nunca corte palavras pela metade e nunca termine sentencas com preposicoes ou termos incompletos.
 
 Responda ESTRITAMENTE em formato JSON valido, sem nenhum texto antes ou depois:
 {{
@@ -237,15 +252,15 @@ Responda ESTRITAMENTE em formato JSON valido, sem nenhum texto antes ou depois:
         resp = requests.post(
             f"{OLLAMA_URL}/api/generate",
             json={
-                "model": "llama3.1:8b",
+                "model": OLLAMA_MODEL,
                 "prompt": prompt,
                 "stream": False,
                 "options": {
                     "temperature": 0.2,
-                    "num_predict": 1200
+                    "num_predict": 4096
                 }
             },
-            timeout=20
+            timeout=45
         )
 
         if resp.status_code == 200:

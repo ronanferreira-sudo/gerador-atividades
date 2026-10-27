@@ -15,6 +15,17 @@
     </a>
 </div>
 
+{% if request.args.get('sucesso') %}
+<div class="alert alert-success alert-dismissible fade show shadow-sm mb-4 d-flex align-items-center" role="alert">
+    <div class="fs-4 me-3">✅</div>
+    <div>
+        <strong>Planejamento Docente gerado e salvo com sucesso!</strong>
+        <p class="mb-0 small text-muted">A planilha oficial do Excel foi preenchida e o download iniciou automaticamente.</p>
+    </div>
+    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+
 {% if not planejamentos %}
     <div class="card border-0 shadow-sm p-5 text-center my-4">
         <div class="fs-1 text-muted mb-3">📊</div>
@@ -99,5 +110,17 @@
         </div>
     </div>
 {% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const downloadId = urlParams.get('download');
+    if (downloadId) {
+        setTimeout(() => {
+            window.location.href = '/baixar_planejamento/' + downloadId;
+        }, 600);
+    }
+});
+</script>
 
 {% endblock %}

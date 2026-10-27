@@ -24,12 +24,19 @@ Configuração no novo computador (GPU):
 
 import os
 import sys
-from dotenv import load_dotenv
+import subprocess
 
 # Garante que o diretório do projeto está no path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
+
+# Se executado com o Python global, repassa automaticamente para o venv
+venv_python = os.path.join(BASE_DIR, "venv", "Scripts", "python.exe")
+if os.path.exists(venv_python) and os.path.abspath(sys.executable).lower() != os.path.abspath(venv_python).lower():
+    sys.exit(subprocess.call([venv_python] + sys.argv))
+
+from dotenv import load_dotenv
 
 # Carrega .env antes de importar o app
 load_dotenv(os.path.join(BASE_DIR, ".env"))

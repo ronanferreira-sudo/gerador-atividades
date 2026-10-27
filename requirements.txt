@@ -1,4 +1,4 @@
-﻿# ============================================================
+# ============================================================
 #  Gerador de Atividades e Planejamento Docente — SENAI
 #  Dependências do projeto
 #  Gerado em: 26/10/2026
@@ -14,9 +14,8 @@ Werkzeug==3.1.8
 waitress==3.0.2
 
 # --- Banco de Dados ---
-psycopg2-binary==2.9.12
-SQLAlchemy==2.0.50
-greenlet==3.5.1
+psycopg2-binary>=2.9.12
+SQLAlchemy>=2.0.0
 
 # --- Configuração ---
 python-dotenv==1.2.2

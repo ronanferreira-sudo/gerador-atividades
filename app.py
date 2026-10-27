@@ -1,4 +1,4 @@
-﻿from flask import (
+from flask import (
     Flask,
     render_template,
     request,
@@ -1301,7 +1301,7 @@ def planejamento_docente():
             arquivo_plano.save(caminho_plano)
             print(f"📄 Plano de Curso salvo: {caminho_plano}")
             try:
-                dados_plano = estruturar_dados_plano_pdf(caminho_plano)
+                dados_plano = estruturar_dados_plano_pdf(caminho_plano, unidade_curricular_alvo=unidade_curricular)
                 dados_plano["unidade_curricular"] = dados_plano.get("unidade_curricular") or unidade_curricular
                 print(f"✅ PDF lido: {len(dados_plano.get('conhecimentos', []))} conhecimentos extraídos")
             except Exception as e:
@@ -1400,12 +1400,8 @@ def planejamento_docente():
         print(f"📥 Disponibilizando arquivo Excel para download imediato...")
         print("=" * 60)
 
-        # Entrega o arquivo Excel diretamente para download do usuário
-        return send_file(
-            caminho_excel,
-            as_attachment=True,
-            download_name=nome_arquivo_excel
-        )
+        # Redireciona para a lista de planejamentos com feedback visual e download automático
+        return redirect(f"/listar_planejamentos?sucesso=1&download={planejamento_id}")
 
     return render_template("planejamento_docente.html")
 
