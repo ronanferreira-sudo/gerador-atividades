@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block titulo %}Gerar Atividade{% endblock %}
+
+{% block conteudo %}
+
+<div class="row justify-content-center mt-4">
+    <div class="col-md-8 col-lg-7">
+
+        <div class="card shadow border-0">
+            <div class="card-body p-4">
+
+                <div class="text-center mb-4">
+                    <h2 class="fw-bold">Gerar Nova Atividade</h2>
+                    <p class="text-muted">Preencha os dados abaixo para gerar uma atividade personalizada com IA</p>
+                </div>
+
+                <form method="POST">
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Curso</label>
+                            <input type="text" name="curso" class="form-control form-control-lg"
+                                   placeholder="Ex: Informática" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Disciplina</label>
+                            <input type="text" name="disciplina" class="form-control form-control-lg"
+                                   placeholder="Ex: Programação" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Conteudo / Descricao</label>
+                        <textarea name="conteudo" class="form-control form-control-lg" rows="4"
+                                  placeholder="Descreva o conteudo que sera abordado na atividade..." required></textarea>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Dificuldade</label>
+                            <select name="dificuldade" class="form-select form-select-lg">
+                                <option value="fácil">Facil</option>
+                                <option value="médio" selected>Medio</option>
+                                <option value="difícil">Dificil</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Tipo</label>
+                            <select name="tipo" class="form-select form-select-lg">
+                                <option value="objetiva">Objetiva</option>
+                                <option value="discursiva">Discursiva</option>
+                                <option value="mista">Mista</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Questoes</label>
+                            <input type="number" name="quantidade" class="form-control form-control-lg"
+                                   value="5" min="1" max="50">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold">
+                        Gerar Atividade com IA
+                    </button>
+
+                </form>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

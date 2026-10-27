@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block titulo %}Cadastro{% endblock %}
+
+{% block conteudo %}
+
+<div class="row justify-content-center mt-4">
+    <div class="col-md-6 col-lg-5">
+
+        <div class="card shadow border-0">
+            <div class="card-body p-4">
+
+                <div class="text-center mb-4">
+                    <h2 class="fw-bold">Criar Conta</h2>
+                    <p class="text-muted">Cadastre-se para usar o sistema</p>
+                </div>
+
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nome completo</label>
+                        <input type="text" name="nome" class="form-control form-control-lg" placeholder="Seu nome" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">E-mail</label>
+                        <input type="email" name="email" class="form-control form-control-lg" placeholder="seu@email.com" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Senha</label>
+                        <input type="password" name="senha" class="form-control form-control-lg" placeholder="Minimo 6 caracteres" required>
+                    </div>
+
+                    <button class="btn btn-success btn-lg w-100 fw-bold">
+                        Criar Conta
+                    </button>
+                </form>
+
+                <div class="text-center mt-3">
+                    <p class="text-muted mb-0">
+                        Ja tem conta?
+                        <a href="/login" class="fw-bold">Fazer login</a>
+                    </p>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

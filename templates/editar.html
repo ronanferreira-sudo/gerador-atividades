@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block titulo %}Editar Atividade{% endblock %}
+
+{% block conteudo %}
+
+<div class="row justify-content-center mt-4">
+    <div class="col-md-10 col-lg-8">
+
+        <div class="card shadow border-0">
+            <div class="card-body p-4">
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="fw-bold mb-1">Editar Atividade</h2>
+                        <p class="text-muted mb-0">ID: {{ atividade[0] }}</p>
+                    </div>
+                    <a href="/atividades" class="btn btn-outline-secondary">Voltar</a>
+                </div>
+
+                <form method="POST">
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Curso</label>
+                            <input type="text" name="curso" class="form-control form-control-lg"
+                                   value="{{ atividade[1] }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Disciplina</label>
+                            <input type="text" name="disciplina" class="form-control form-control-lg"
+                                   value="{{ atividade[2] }}" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Conteudo</label>
+                        <input type="text" name="conteudo" class="form-control form-control-lg"
+                               value="{{ atividade[3] }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Dificuldade</label>
+                        <select name="dificuldade" class="form-select form-select-lg">
+                            <option value="fácil" {% if atividade[4] == 'fácil' %}selected{% endif %}>Facil</option>
+                            <option value="médio" {% if atividade[4] == 'médio' %}selected{% endif %}>Medio</option>
+                            <option value="difícil" {% if atividade[4] == 'difícil' %}selected{% endif %}>Dificil</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Atividade Gerada</label>
+                        <textarea name="atividade_gerada" class="form-control" rows="20"
+                                  style="font-family: monospace; font-size: 14px;" required>{{ atividade[5] }}</textarea>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg flex-grow-1 fw-bold">
+                            Salvar Alteracoes
+                        </button>
+                        <a href="/atividades" class="btn btn-outline-danger btn-lg">Cancelar</a>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

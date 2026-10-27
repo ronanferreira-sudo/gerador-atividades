@@ -1,0 +1,404 @@
+body{
+    background:#f5f7fb;
+    margin:0;
+    padding:0;
+}
+
+.painel-esquerdo{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    background:#f5f7fb;
+    padding:40px;
+}
+
+.titulo-sistema{
+    font-size:55px;
+    font-weight:800;
+    color:#1d2b64;
+    text-align:center;
+}
+
+.subtitulo-sistema{
+    font-size:20px;
+    color:#666;
+    text-align:center;
+    max-width:600px;
+    margin-top:20px;
+}
+
+.imagem-login{
+    max-width:80%;
+    margin-top:30px;
+}
+
+.painel-direito{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:#f5f7fb;
+}
+
+.card-login{
+    background:white;
+    width:100%;
+    max-width:500px;
+    padding:40px;
+    border-radius:25px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.10);
+}
+
+.icone-login{
+    width:90px;
+    height:90px;
+    margin:0 auto 20px;
+    border-radius:50%;
+    background:#ece9ff;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:40px;
+}
+
+.card-login h2{
+    text-align:center;
+    color:#1d2b64;
+    font-weight:bold;
+}
+
+.texto-login{
+    text-align:center;
+    color:#666;
+    margin-bottom:30px;
+}
+
+.btn-login{
+    width:100%;
+    height:55px;
+    border:none;
+    border-radius:12px;
+    font-size:18px;
+    font-weight:bold;
+}
+
+.rodape-login{
+    text-align:center;
+    margin-top:25px;
+    color:#777;
+    font-size:14px;
+}
+
+/* RESPONSIVO */
+
+@media(max-width:768px){
+
+    .titulo-sistema{
+        font-size:35px;
+    }
+
+    .imagem-login{
+        max-width:60%;
+    }
+
+    .card-login{
+        margin:20px;
+    }
+
+}
+/* ===========================
+   DASHBOARD
+=========================== */
+
+.cards-dashboard{
+    display:flex;
+    flex-wrap:wrap;
+    gap:25px;
+    align-items: center; 
+}
+
+.card-curso{
+    width:300px;
+    min-height:180px;
+    padding:25px;
+    border-radius:18px;
+    color:white;
+    box-shadow:0 8px 20px rgba(0,0,0,.15);
+    transition:.3s;
+}
+
+.card-curso:hover{
+    transform:translateY(-5px);
+}
+
+.titulo-card{
+    font-size:22px;
+    font-weight:bold;
+}
+
+.numero-card{
+    font-size:60px;
+    font-weight:bold;
+    margin-top:15px;
+}
+
+.texto-card{
+    margin-top:10px;
+    opacity:.9;
+}
+
+.bg-info{
+    background:linear-gradient(135deg,#0d6efd,#4d94ff);
+}
+
+.bg-sucesso{
+    background:linear-gradient(135deg,#198754,#42c78a);
+}
+
+.bg-alerta{
+    background:linear-gradient(135deg,#fd7e14,#ffab5c);
+}
+
+.bg-roxo{
+    background:linear-gradient(135deg,#6f42c1,#9b6cff);
+}
+
+.bg-vermelho{
+    background:linear-gradient(135deg,#dc3545,#ff6b78);
+}
+/* ==========================
+   TABELA DE ATIVIDADES
+========================== */
+
+.atividade{
+    max-width:400px;
+}
+
+.acoes{
+    white-space:nowrap;
+    text-align:center;
+}
+
+.acoes .btn{
+    margin:2px;
+}
+
+.table td{
+    vertical-align:middle;
+}
+
+/* ==========================
+   LOADING OVERLAY
+========================== */
+
+.loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(4px);
+}
+
+.loading-overlay.active {
+    display: flex;
+}
+
+.loading-box {
+    background: white;
+    border-radius: 20px;
+    padding: 40px 50px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 450px;
+    width: 90%;
+}
+
+.loading-spinner {
+    width: 60px;
+    height: 60px;
+    border: 5px solid #e9ecef;
+    border-top: 5px solid #0d6efd;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-box h4 {
+    color: #1d2b64;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.loading-box p {
+    color: #666;
+    font-size: 15px;
+    margin-bottom: 5px;
+}
+
+.loading-progress {
+    margin-top: 20px;
+    height: 6px;
+    background: #e9ecef;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.loading-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #0d6efd, #4d94ff);
+    border-radius: 3px;
+    animation: progress-indeterminate 1.5s ease-in-out infinite;
+}
+
+@keyframes progress-indeterminate {
+    0% { width: 0%; margin-left: 0; }
+    50% { width: 50%; margin-left: 25%; }
+    100% { width: 0%; margin-left: 100%; }
+}
+
+.loading-steps {
+    margin-top: 15px;
+    text-align: left;
+}
+
+.loading-step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    color: #999;
+    font-size: 13px;
+}
+
+.loading-step.active {
+    color: #0d6efd;
+    font-weight: 600;
+}
+
+.loading-step.done {
+    color: #198754;
+}
+
+.loading-step-icon {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+}
+/* ==========================
+   TABELA DE PLANOS
+========================== */
+
+.plano{
+    max-width:400px;
+}
+
+.acoes{
+    white-space:nowrap;
+    text-align:center;
+}
+
+.acoes .btn{
+    margin:2px;
+}
+
+.table td{
+    vertical-align:middle;
+}
+
+
+/* ==========================
+   CARDS PRINCIPAIS DO DASHBOARD
+========================== */
+.dash-quadrado {
+    position: relative;
+    border: none;
+    border-radius: 20px;
+    color: white;
+    overflow: hidden;
+    transition: all 0.28s ease-in-out;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 260px;
+}
+
+.dash-quadrado:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 18px 38px rgba(0, 0, 0, 0.18);
+}
+
+.dash-card-planejamento {
+    background: linear-gradient(135deg, #4338ca 0%, #6366f1 50%, #818cf8 100%);
+}
+
+.dash-card-plano {
+    background: linear-gradient(135deg, #0369a1 0%, #0284c7 50%, #38bdf8 100%);
+}
+
+.dash-card-atividade {
+    background: linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%);
+}
+
+.dash-icon-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.22);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: #ffffff;
+    box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.15);
+}
+
+.dash-numero {
+    font-size: 3.2rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -1px;
+}
+
+.dash-action-bar {
+    background: rgba(0, 0, 0, 0.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: background 0.2s ease;
+}
+
+.dash-quadrado:hover .dash-action-bar {
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.dash-action-bar .arrow-icon {
+    transition: transform 0.2s ease;
+}
+
+.dash-quadrado:hover .dash-action-bar .arrow-icon {
+    transform: translateX(5px);
+}
+
+
+.hover-shadow {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hover-shadow:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+}
