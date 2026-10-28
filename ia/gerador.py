@@ -170,6 +170,28 @@ def extrair_conteudo_pedagogico(texto):
     return texto_limpo[:2500]
 
 
+def limpar_labels_questoes(texto):
+    """
+    Remove labels de tipo de questão geradas pela IA como '[Objetiva]', '[Discursiva]',
+    '[Objetiva]:', '[Dissertativa]', etc., deixando apenas o número e o enunciado.
+    Exemplo: 'Questão 1: [Objetiva] Qual é...' → 'Questão 1: Qual é...'
+    """
+    if not texto:
+        return texto
+    # Remove variações como [Objetiva], [Discursiva], [Dissertativa], (Objetiva), etc.
+    texto = re.sub(
+        r'(?i)(Quest[aã]o\s+\d+\s*:\s*)\[(?:Objetiva|Discursiva|Dissertativa|Mista)\]\s*',
+        r'\1',
+        texto
+    )
+    texto = re.sub(
+        r'(?i)(Quest[aã]o\s+\d+\s*:\s*)\((?:Objetiva|Discursiva|Dissertativa|Mista)\)\s*',
+        r'\1',
+        texto
+    )
+    return texto
+
+
 def preprocessar_texto(texto):
     if not texto:
         return ""
@@ -276,7 +298,7 @@ def gerar_atividade(texto_pdf, dificuldade, tipo="objetiva", quantidade=5):
             f"Crie EXATAMENTE {quantidade} questões de nível {dificuldade}: {metade} OBJETIVAS (com A, B, C, D e Resposta correta) "
             f"e {resto} DISCURSIVAS."
         )
-        formato = "Questão 1: [Objetiva]\nA) ...\nB) ...\nC) ...\nD) ...\nResposta correta: A\n\nQuestão 2: [Discursiva]"
+        formato = "Questão 1: [Enunciado objetiva]\nA) ...\nB) ...\nC) ...\nD) ...\nResposta correta: A\n\nQuestão 2: [Enunciado discursiva]"
         tokens_por_questao = 130
 
     # Dimensionamento otimizado de tokens para acelerar a geração
@@ -326,6 +348,7 @@ Gere as {quantidade} questões agora:"""
                 atividade = dados.get("response", "").strip()
 
                 if len(atividade) >= 30:
+                    atividade = limpar_labels_questoes(atividade)
                     with _cache_lock:
                         _cache_atividades[key] = atividade
                     print(f"[OK] Atividade gerada ({len(atividade)} chars)")
