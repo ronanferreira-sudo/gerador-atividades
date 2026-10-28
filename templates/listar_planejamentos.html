@@ -49,37 +49,37 @@
                         <th class="text-center">Carga Horária</th>
                         <th class="text-center">Aulas</th>
                         <th class="text-center">Período</th>
-                        <th class="text-center">Data de Criação</th>
-                        <th class="text-center" width="220">Ações</th>
+                        <th class="text-center">Data Geração</th>
+                        <th class="text-center" width="280">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for p in planejamentos %}
                     <tr>
                         <td class="text-center fw-bold text-muted">{{ p[0] }}</td>
-                        <td class="fw-semibold">{{ p[1] }}</td>
+                        <td class="fw-semibold">
+                            {{ p[1] }}
+                            <div class="small text-muted">Turma: {{ p[3] or 'N/I' }} | {{ p[4] or '' }}</div>
+                        </td>
                         <td>
-                            <span class="badge bg-light text-dark border px-2 py-1 fs-6">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
                                 {{ p[2] }}
                             </span>
                         </td>
                         <td class="text-center">
-                            <strong>{{ p[5] }}h</strong>
-                            <small class="text-muted d-block">{{ p[6] }}h/dia</small>
+                            <span class="fw-bold">{{ p[5] }}h</span>
+                            <div class="small text-muted">{{ p[6] }}h/dia</div>
                         </td>
                         <td class="text-center">
-                            <span class="badge bg-primary rounded-pill px-3 py-2">
-                                {{ p[9] }} aulas
-                            </span>
+                            <span class="badge bg-secondary">{{ p[9] }} aulas</span>
                         </td>
                         <td class="text-center small">
                             {% if p[7] and p[8] %}
-                                {{ p[7].strftime('%d/%m/%Y') if p[7].strftime else p[7] }} <br>
-                                até {{ p[8].strftime('%d/%m/%Y') if p[8].strftime else p[8] }}
+                                {{ p[7].strftime('%d/%m/%Y') if p[7].strftime else p[7] }} a {{ p[8].strftime('%d/%m/%Y') if p[8].strftime else p[8] }}
                             {% elif p[7] %}
-                                A partir de {{ p[7].strftime('%d/%m/%Y') if p[7].strftime else p[7] }}
+                                Início: {{ p[7].strftime('%d/%m/%Y') if p[7].strftime else p[7] }}
                             {% else %}
-                                -
+                                <span class="text-muted">—</span>
                             {% endif %}
                         </td>
                         <td class="text-center small text-muted">
@@ -91,7 +91,7 @@
                                     📖 Ver Planos
                                 </a>
                             {% else %}
-                                <a href="/gerar_planos_planejamento/{{ p[0] }}" class="btn btn-warning btn-sm fw-bold me-1" title="Gerar os planos de aula para este planejamento">
+                                <a href="/gerar_planos_planejamento/{{ p[0] }}" class="btn btn-warning btn-sm fw-bold me-1 btn-gerar-planos" title="Gerar os planos de aula para este planejamento">
                                     ⚡ Gerar Planos
                                 </a>
                             {% endif %}
@@ -120,6 +120,13 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = '/baixar_planejamento/' + downloadId;
         }, 600);
     }
+
+    document.querySelectorAll('.btn-gerar-planos').forEach(btn => {
+        btn.addEventListener('click', function() {
+            this.classList.add('disabled');
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Gerando...';
+        });
+    });
 });
 </script>
 

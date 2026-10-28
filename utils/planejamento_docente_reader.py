@@ -1,3 +1,4 @@
+from utils.texto_utils import limpar_numeracao_texto, limpar_numeracao_item
 import os
 import re
 import openpyxl
@@ -53,17 +54,18 @@ def ler_excel_planejamento_docente(caminho_excel):
         capacidade = ""
         conhecimento = ""
 
-        # Formato padrão: CAPACIDADE:\n...\nCONHECIMENTO\n...
-        if "CONHECIMENTO" in texto_bloco:
-            partes = re.split(r"CONHECIMENTO:?|\bCONHECIMENTO\b", texto_bloco, flags=re.IGNORECASE)
+        # Formato padrão: CAPACIDADE:\n...\nCONHECIMENTOS:\n...
+        if re.search(r"CONHECIMENTOS?", texto_bloco, flags=re.IGNORECASE):
+            partes = re.split(r"\s*CONHECIMENTOS?:?\s*|\bCONHECIMENTOS?\b", texto_bloco, flags=re.IGNORECASE)
             cap_part = partes[0]
             con_part = partes[1] if len(partes) > 1 else ""
 
-            # Remove prefixo "CAPACIDADE:"
-            capacidade = re.sub(r"^CAPACIDADE:\s*", "", cap_part, flags=re.IGNORECASE).strip()
-            conhecimento = con_part.strip()
+            # Remove prefixo "CAPACIDADE:" e limpa símbolos e numerações
+            capacidade = re.sub(r"^\s*CAPACIDADE:\s*", "", cap_part.strip(), flags=re.IGNORECASE).strip()
+            capacidade = limpar_numeracao_texto(capacidade)
+            conhecimento = limpar_numeracao_texto(con_part.strip(), separador="\n")
         else:
-            capacidade = texto_bloco
+            capacidade = limpar_numeracao_texto(texto_bloco)
             conhecimento = ""
 
         estrategia = str(ws.cell(row=linha, column=4).value or "").strip()

@@ -5,7 +5,7 @@
 ========================================================
 
 Como usar:
-  Duplo clique neste arquivo  OU  execute no terminal:
+  Duplo clique no iniciar.bat  OU  execute no terminal:
       python iniciar_servidor.py
 
 Acesso na rede local:
@@ -14,17 +14,24 @@ Acesso na rede local:
 Para saber o IP do servidor, execute no terminal:
   ipconfig
 
-Configuração no novo computador (GPU):
+Configuração do modelo de IA:
   Edite o arquivo .env na pasta do projeto.
-  Variáveis de ambiente adicionais do Ollama (Windows):
-    OLLAMA_NUM_PARALLEL = 4
-    OLLAMA_MAX_LOADED_MODELS = 1
 ========================================================
 """
 
 import os
 import sys
 import subprocess
+import time
+import requests
+
+try:
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    if hasattr(sys.stderr, 'reconfigure'):
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+except Exception:
+    pass
 
 # Garante que o diretório do projeto está no path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -41,22 +48,55 @@ from dotenv import load_dotenv
 # Carrega .env antes de importar o app
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
+def iniciar_ollama_se_necessario():
+    """Garante que o Ollama esteja em execução em segundo plano."""
+    ollama_url = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+    try:
+        r = requests.get(f"{ollama_url}/api/tags", timeout=1.5)
+        if r.status_code == 200:
+            print("  [IA] Servico Ollama ja esta em execucao.")
+            return True
+    except Exception:
+        pass
+
+    print("  [IA] Iniciando o servico Ollama em segundo plano...")
+    try:
+        flags = 0
+        if os.name == 'nt':
+            # DETACHED_PROCESS (0x00000008) + CREATE_NO_WINDOW (0x08000000)
+            flags = 0x00000008 | 0x08000000
+        subprocess.Popen(
+            ["ollama", "serve"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            creationflags=flags
+        )
+        time.sleep(2)
+        print("  [IA] Servico Ollama inicializado.")
+        return True
+    except Exception as e:
+        print(f"  [AVISO] Nao foi possivel iniciar o Ollama automaticamente: {e}")
+        return False
+
 from waitress import serve
 from app import app
 
 HOST    = os.environ.get("SERVER_HOST",    "0.0.0.0")
 PORT    = int(os.environ.get("SERVER_PORT",    "5000"))
 THREADS = int(os.environ.get("SERVER_THREADS", "4"))
+MODELO  = os.environ.get("OLLAMA_MODEL",   "llama3.2")
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("  🚀 GERADOR DE ATIVIDADES SENAI — Servidor Waitress")
+    print("  GERADOR DE ATIVIDADES SENAI — Servidor Waitress")
     print("=" * 60)
-    print(f"  ✅ Servidor iniciado em http://{HOST}:{PORT}")
-    print(f"  ✅ Threads: {THREADS} (conexões simultâneas)")
-    print(f"  ✅ Modo: PRODUÇÃO (Waitress WSGI)")
+    iniciar_ollama_se_necessario()
+    print(f"  [OK] Modelo de IA configurado: {MODELO} (Ultra rapido)")
+    print(f"  [OK] Servidor iniciado em http://{HOST}:{PORT}")
+    print(f"  [OK] Threads: {THREADS} (conexoes simultaneas)")
+    print(f"  [OK] Modo: PRODUCAO (Waitress WSGI)")
     print()
-    print("  📡 Compartilhe o endereço abaixo com os professores:")
+    print("  Compartilhe o endereco abaixo com os professores:")
     print(f"     http://<SEU-IP-LOCAL>:{PORT}")
     print()
     print("  Para descobrir seu IP: execute  ipconfig  no terminal")
@@ -68,8 +108,8 @@ if __name__ == "__main__":
         host=HOST,
         port=PORT,
         threads=THREADS,
-        channel_timeout=300,       # Aguarda até 5 min por requisição (geração de IA)
-        cleanup_interval=30,       # Limpeza de conexões a cada 30s
-        connection_limit=100,      # Máximo de conexões simultâneas
+        channel_timeout=300,
+        cleanup_interval=30,
+        connection_limit=100,
         asyncore_use_poll=True
     )

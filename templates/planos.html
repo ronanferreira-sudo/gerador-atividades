@@ -28,7 +28,7 @@
                         <div>
                             <strong class="d-block text-dark">Origem dos Planos de Aula:</strong>
                             <span class="text-muted small">
-                                Você pode enviar o arquivo <strong>Excel (.xlsx) do Planejamento Docente</strong> que você gerou, ou enviar o PDF do Plano de Curso. Se enviar o Excel do Planejamento Docente, as capacidades e a Taxonomia de Bloom de cada dia serão aplicadas com precisão em cada aula!
+                                Você pode enviar o arquivo <strong>Excel (.xlsx) do Planejamento Docente</strong> que você gerou, ou enviar o PDF do Plano de Curso. Se enviar o Excel do Planejamento Docente, as capacidades e a Taxonomia de Bloom de cada dia serão aplicadas com precisão instantaneamente em cada aula!
                             </span>
                         </div>
                     </div>
@@ -95,6 +95,13 @@ function aoSelecionarArquivo(input) {
         }
     }
 }
+
+document.getElementById('formPlanos').addEventListener('submit', function() {
+    const btn = document.getElementById('btnGerarPlanos');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processando e gerando planos de aula...';
+    this.submit();
+});
 </script>
 
 {% endblock %}

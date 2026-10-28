@@ -1,6 +1,6 @@
 import re
 import unicodedata
-from utils.texto_utils import limpar_numeracao_item, limpar_numeracao_texto
+from utils.texto_utils import limpar_numeracao_item, limpar_numeracao_texto, eh_linha_lixo
 
 # Tenta importar pdfplumber com fallback para PyPDF2
 try:
@@ -67,8 +67,13 @@ def limpar_texto_pdf(texto):
     if not texto:
         return ""
 
+    # Normaliza marcadores de bullet comuns para facilitar o reconhecimento
+    texto_norm = re.sub(r"[\uf0b7\uf0a7\u2022\u25aa\u25ab\u25cf\u25cb\u25a0\u25a1\u2023\u2043]", "• ", texto)
+
     # 1. Padrões comuns de rodapés e cabeçalhos em PDFs de planos de curso do SENAI
     padroes_lixo = [
+        r"(?m)^\s*Plano\s+de\s+Curso\b[^\n]*$",
+        r"(?m)^\s*Plano\s+de\s+Ensino\b[^\n]*$",
         r"Plano\s+de\s+Curso\s+Simplificado[^\n]*",
         r"P[aá]gina\s+\d+\s+de\s+\d+",
         r"FP\.EP\.[^\n]*",
@@ -77,7 +82,7 @@ def limpar_texto_pdf(texto):
         r"Departamento\s+Regional[^\n]*",
         r"Revis[aã]o\s+\d+[^\n]*"
     ]
-    texto_limpo = texto
+    texto_limpo = texto_norm
     for p in padroes_lixo:
         texto_limpo = re.sub(p, "", texto_limpo, flags=re.IGNORECASE)
 
@@ -175,7 +180,14 @@ def isolar_bloco_uc(texto, uc_alvo=None):
     # Fim do bloco da UC:
     if idx_atual + 1 < len(ucs_encontradas):
         # Termina exatamente onde começa a próxima UC
-        pos_fim = ucs_encontradas[idx_atual + 1]["pos_inicio"]
+        pos_fim_cand = ucs_encontradas[idx_atual + 1]["pos_inicio"]
+        # Retrocede se antes da próxima UC houver 'MÓDULO...', 'Carga Horária...', etc.
+        trecho_pre = texto[:pos_fim_cand]
+        match_pre = list(re.finditer(r"\n\s*(?:M[oó]dulo[^\n]*|Carga\s+Hor[aá]ria[^\n]*)\s*", trecho_pre[-350:], re.IGNORECASE))
+        if match_pre:
+            pos_fim = (pos_fim_cand - 350) + match_pre[0].start()
+        else:
+            pos_fim = pos_fim_cand
     else:
         # Se for a última UC, termina onde começam as seções gerais do curso ou no fim do arquivo
         padrao_final = re.compile(
@@ -243,7 +255,7 @@ def estruturar_dados_plano_pdf(caminho_pdf, unidade_curricular_alvo=None):
         # Normaliza espaços mantendo todas as palavras completas
         dados["objetivo_geral"] = " ".join(obj_texto.split()).strip()
 
-    # 4. Capacidades Técnicas (unindo frases multilinhas e preservando palavras inteiras)
+    # 4. Capacidades Técnicas (unindo frases multilinhas sem cortes de palavras)
     match_cap_tec = re.search(
         r"\n\s*Capacidades\s+T[eé]cnicas\s*\n([\s\S]+?)(?=\n\s*(?:Capacidades\s+Socioemocionais|Capacidades\s+B[aá]sicas|CONHECIMENTOS|$))",
         texto_uc,
@@ -256,39 +268,39 @@ def estruturar_dados_plano_pdf(caminho_pdf, unidade_curricular_alvo=None):
         item_atual = ""
 
         for linha in linhas:
-            # Verifica se é início de uma nova capacidade (verbo no infinitivo ou marcador como "-", "", "1.")
-            comeca_novo = bool(re.match(r"^[A-ZÁÉÍÓÚ][a-záéíóú]+(?:ar|er|ir|or)\b", linha)) or bool(re.match(r"^[\-\*\d\)]", linha))
-            
-            # Se for novo item e já temos um acumulado de tamanho razoável (> 20 caracteres)
-            if comeca_novo and item_atual and len(item_atual) > 20:
-                item_limpo = limpar_numeracao_item(item_atual)
-                if item_limpo and item_limpo not in itens:
-                    itens.append(item_limpo)
-                item_atual = linha
-            elif item_atual:
-                # Continua a frase anterior garantindo palavra completa
-                if item_atual.endswith("-"):
-                    item_atual = item_atual[:-1] + linha
-                else:
-                    item_atual = f"{item_atual} {linha}".strip()
+            if eh_linha_lixo(linha):
+                continue
+            has_bullet = bool(re.match(r"^[•\-\u2022\uf0b7\*\►\▸\▪\▫]\s*", linha))
+            linha_sem_bullet = re.sub(r"^[•\-\u2022\uf0b7\*\►\▸\▪\▫\s]+", "", linha).strip()
+            is_verb = bool(re.match(r"^[A-ZÁÉÍÓÚ][a-zà-ÿ]+(?:ar|er|ir|or)\b", linha_sem_bullet))
+
+            if has_bullet or (is_verb and not item_atual):
+                if item_atual:
+                    cap_limpa = limpar_numeracao_item(item_atual)
+                    if cap_limpa and not eh_linha_lixo(cap_limpa) and cap_limpa not in itens:
+                        itens.append(cap_limpa)
+                item_atual = linha_sem_bullet
+            elif is_verb and len(item_atual) > 25 and (item_atual.endswith(".") or linha_sem_bullet.split()[0] in ["Utilizar", "Aplicar", "Estruturar", "Codificar", "Interpretar", "Identificar", "Reconhecer"]):
+                if item_atual:
+                    cap_limpa = limpar_numeracao_item(item_atual)
+                    if cap_limpa and not eh_linha_lixo(cap_limpa) and cap_limpa not in itens:
+                        itens.append(cap_limpa)
+                item_atual = linha_sem_bullet
             else:
-                item_atual = linha
+                if item_atual:
+                    if item_atual.endswith("-"):
+                        item_atual = item_atual[:-1] + linha_sem_bullet
+                    else:
+                        item_atual = f"{item_atual} {linha_sem_bullet}".strip()
+                else:
+                    item_atual = linha_sem_bullet
 
         if item_atual:
-            item_limpo = limpar_numeracao_item(item_atual)
-            if item_limpo and item_limpo not in itens:
-                itens.append(item_limpo)
+            cap_limpa = limpar_numeracao_item(item_atual)
+            if cap_limpa and not eh_linha_lixo(cap_limpa) and cap_limpa not in itens:
+                itens.append(cap_limpa)
 
-        # Se os itens vieram agrupados com separadores como '•' ou '-'
-        itens_expandidos = []
-        for i in itens:
-            if " • " in i or " • " in i or i.startswith("•") or i.startswith("•"):
-                partes = [p.strip() for p in re.split(r"\s*[••]\s*", i) if len(p.strip()) > 10]
-                itens_expandidos.extend(partes)
-            else:
-                itens_expandidos.append(i)
-
-        dados["capacidades_tecnicas"] = [limpar_numeracao_item(i) for i in itens_expandidos if len(i) > 10]
+        dados["capacidades_tecnicas"] = [i for i in itens if len(i) > 10 and not eh_linha_lixo(i)]
 
     # 5. Capacidades Socioemocionais
     match_cap_socio = re.search(
@@ -302,35 +314,41 @@ def estruturar_dados_plano_pdf(caminho_pdf, unidade_curricular_alvo=None):
         itens_socio = []
         item_atual = ""
         for linha in linhas:
-            comeca_novo = bool(re.match(r"^[A-ZÁÉÍÓÚ][a-záéíóú]+(?:ar|er|ir|or)\b", linha)) or bool(re.match(r"^[\-\*\d\)]", linha))
-            if comeca_novo and item_atual and len(item_atual) > 20:
-                item_limpo = limpar_numeracao_item(item_atual)
-                if item_limpo and item_limpo not in itens_socio:
-                    itens_socio.append(item_limpo)
-                item_atual = linha
-            elif item_atual:
-                if item_atual.endswith("-"):
-                    item_atual = item_atual[:-1] + linha
+            if eh_linha_lixo(linha):
+                continue
+            has_bullet = bool(re.match(r"^[•\-\u2022\uf0b7\*\►\▸\▪\▫]\s*", linha))
+            linha_sem_bullet = re.sub(r"^[•\-\u2022\uf0b7\*\►\▸\▪\▫\s]+", "", linha).strip()
+            is_verb = bool(re.match(r"^[A-ZÁÉÍÓÚ][a-zà-ÿ]+(?:ar|er|ir|or)\b", linha_sem_bullet))
+
+            if has_bullet or (is_verb and not item_atual):
+                if item_atual:
+                    cap_limpa = limpar_numeracao_item(item_atual)
+                    if cap_limpa and not eh_linha_lixo(cap_limpa) and cap_limpa not in itens_socio:
+                        itens_socio.append(cap_limpa)
+                item_atual = linha_sem_bullet
+            elif is_verb and len(item_atual) > 25 and (item_atual.endswith(".") or linha_sem_bullet.split()[0] in ["Valorizar", "Demonstrar", "Atuar", "Colaborar", "Trabalhar"]):
+                if item_atual:
+                    cap_limpa = limpar_numeracao_item(item_atual)
+                    if cap_limpa and not eh_linha_lixo(cap_limpa) and cap_limpa not in itens_socio:
+                        itens_socio.append(cap_limpa)
+                item_atual = linha_sem_bullet
+            else:
+                if item_atual:
+                    if item_atual.endswith("-"):
+                        item_atual = item_atual[:-1] + linha_sem_bullet
+                    else:
+                        item_atual = f"{item_atual} {linha_sem_bullet}".strip()
                 else:
-                    item_atual = f"{item_atual} {linha}".strip()
-            else:
-                item_atual = linha
+                    item_atual = linha_sem_bullet
+
         if item_atual:
-            item_limpo = limpar_numeracao_item(item_atual)
-            if item_limpo and item_limpo not in itens_socio:
-                itens_socio.append(item_limpo)
+            cap_limpa = limpar_numeracao_item(item_atual)
+            if cap_limpa and not eh_linha_lixo(cap_limpa) and cap_limpa not in itens_socio:
+                itens_socio.append(cap_limpa)
 
-        itens_socio_expandidos = []
-        for i in itens_socio:
-            if " • " in i or " • " in i or i.startswith("•") or i.startswith("•"):
-                partes = [p.strip() for p in re.split(r"\s*[••]\s*", i) if len(p.strip()) > 10]
-                itens_socio_expandidos.extend(partes)
-            else:
-                itens_socio_expandidos.append(i)
+        dados["capacidades_socioemocionais"] = [i for i in itens_socio if len(i) > 10 and not eh_linha_lixo(i)]
 
-        dados["capacidades_socioemocionais"] = [limpar_numeracao_item(i) for i in itens_socio_expandidos if len(i) > 10]
-
-    # 6. Conhecimentos (unindo quebras de tópicos e garantindo palavras inteiras)
+    # 6. Conhecimentos (limpando ruídos institucionais como 'Plano de Curso' e unindo tópicos)
     match_conhec = re.search(r"\n\s*CONHECIMENTOS\s*\n([\s\S]+)$", texto_uc, re.IGNORECASE)
     if match_conhec:
         bloco = match_conhec.group(1)
@@ -339,19 +357,18 @@ def estruturar_dados_plano_pdf(caminho_pdf, unidade_curricular_alvo=None):
         item_atual = ""
 
         for linha in linhas:
-            # Pára se encontrar qualquer início de próxima seção ou próxima UC
-            if re.match(r"^(?:UNIDADE\s+CURRICULAR|METODOLOGIA|CRIT[EÉ]RIOS|PERFIL|INSTALA[ÇC])", linha, re.IGNORECASE):
+            if re.match(r"^(?:UNIDADE\s+CURRICULAR|M[OÓ]DULO|CARGA\s+HOR[AÁ]RIA|METODOLOGIA|CRIT[EÉ]RIOS|PERFIL|INSTALA[ÇC]|OBJETIVO\s+GERAL|FUN[ÇC][OÕ]ES)", linha, re.IGNORECASE):
                 break
+            if eh_linha_lixo(linha):
+                continue
 
-            # Verifica se a linha atual é continuação da linha anterior
+            # Verifica se a linha atual é continuação da anterior
             continua = False
             if item_atual:
                 palavras = item_atual.split()
                 ult_palavra = palavras[-1].lower() if palavras else ""
-                # Se terminou com conectivo ou hífen
                 if item_atual.endswith("-") or ult_palavra in ["de", "da", "do", "dos", "das", "para", "com", "em", "e", "ou", "a", "o", "por", "sobre", "na", "no"]:
                     continua = True
-                # Se a próxima linha começa com letra minúscula
                 elif re.match(r"^[a-zà-ÿ]", linha):
                     continua = True
 
@@ -363,13 +380,13 @@ def estruturar_dados_plano_pdf(caminho_pdf, unidade_curricular_alvo=None):
             else:
                 if item_atual:
                     item_limpo = limpar_numeracao_item(item_atual)
-                    if len(item_limpo) > 2 and not item_limpo.startswith("http") and item_limpo not in conhecimentos:
+                    if len(item_limpo) > 2 and not eh_linha_lixo(item_limpo) and not item_limpo.startswith("http") and item_limpo not in conhecimentos:
                         conhecimentos.append(item_limpo)
                 item_atual = linha
 
         if item_atual:
             item_limpo = limpar_numeracao_item(item_atual)
-            if len(item_limpo) > 2 and not item_limpo.startswith("http") and item_limpo not in conhecimentos:
+            if len(item_limpo) > 2 and not eh_linha_lixo(item_limpo) and not item_limpo.startswith("http") and item_limpo not in conhecimentos:
                 conhecimentos.append(item_limpo)
 
         dados["conhecimentos"] = conhecimentos

@@ -31,6 +31,7 @@ from utils.planejamento_docente_reader import ler_excel_planejamento_docente
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from utils.excel_reader import extrair_dados_excel, formatar_dados_para_prompt, contar_itens
 import os
+import re
 
 
 app = Flask(__name__)
@@ -380,6 +381,57 @@ def editar(id):
 
 
 # =========================
+# CABEÇALHO DA ATIVIDADE
+# =========================
+def extrair_cabecalho_atividade(atividade):
+    curso_raw = (atividade[1] or "").strip()
+    disc_raw = (atividade[2] or "").strip()
+    cont_raw = (atividade[3] or "").strip()
+    dif_raw = (atividade[4] or "").strip()
+
+    curso = curso_raw
+    uc = disc_raw
+    aula = "Encontro Regular"
+    bloom = dif_raw.capitalize() if dif_raw else "Lembrar"
+
+    if "—" in curso_raw:
+        partes = [p.strip() for p in curso_raw.split("—")]
+        curso = partes[0]
+        if len(partes) > 1 and disc_raw in ("Plano de Aula", "", None):
+            uc = partes[1]
+    elif " - " in curso_raw and disc_raw in ("Plano de Aula", "", None):
+        partes = [p.strip() for p in curso_raw.split(" - ")]
+        curso = partes[0]
+        uc = partes[1]
+
+    m_c = re.search(r"Curso:\s*([^\n\r]+)", cont_raw, re.IGNORECASE)
+    if m_c:
+        curso = m_c.group(1).strip()
+
+    m_uc = re.search(r"Unidade Curricular:\s*([^\n\r]+)", cont_raw, re.IGNORECASE)
+    if m_uc:
+        uc = m_uc.group(1).strip()
+
+    m_a = re.search(r"Aula\s*/\s*Encontro:\s*([^\n\r]+)", cont_raw, re.IGNORECASE)
+    if m_a:
+        aula = m_a.group(1).strip()
+    else:
+        m_a2 = re.search(r"Aula:\s*([^\n\r]+)", cont_raw, re.IGNORECASE)
+        if m_a2:
+            aula = m_a2.group(1).strip()
+
+    m_b = re.search(r"N[i\xed]vel Cognitivo(?:\s*\(Taxonomia de Bloom\))?:\s*([^\n\r]+)", cont_raw, re.IGNORECASE)
+    if m_b:
+        bloom = m_b.group(1).strip()
+
+    return {
+        "curso": curso,
+        "unidade_curricular": uc,
+        "aula_encontro": aula,
+        "nivel_bloom": bloom
+    }
+
+# =========================
 # PDF
 # =========================
 @app.route("/pdf/<int:id>")
@@ -412,11 +464,14 @@ def gerar_pdf(id):
     arquivo_docx = f"outputs/atividade_{id}.docx"
     arquivo_pdf = f"outputs/atividade_{id}.pdf"
 
+    dados_cab = extrair_cabecalho_atividade(atividade)
+
     gerar_docx_atividade(
-        titulo=f"{atividade[1]} - {atividade[2]}",
-        subtitulo=atividade[1],
+        titulo="ATIVIDADE AVALIATIVA",
+        subtitulo=dados_cab["curso"],
         conteudo=atividade[5],
-        caminho_saida=arquivo_docx
+        caminho_saida=arquivo_docx,
+        dados_cabecalho=dados_cab
     )
 
     resultado = gerar_pdf_atividade(
@@ -470,11 +525,14 @@ def gerar_word(id):
 
     arquivo = f"outputs/atividade_{id}.docx"
 
+    dados_cab = extrair_cabecalho_atividade(atividade)
+
     gerar_docx_atividade(
-        titulo=f"{atividade[1]} - {atividade[2]}",
-        subtitulo=atividade[1],
+        titulo="ATIVIDADE AVALIATIVA",
+        subtitulo=dados_cab["curso"],
         conteudo=atividade[5],
-        caminho_saida=arquivo
+        caminho_saida=arquivo,
+        dados_cabecalho=dados_cab
     )
 
     return send_file(
@@ -1135,6 +1193,39 @@ def gerar_atividade_plano(id):
     # =========================
     conn, cursor = get_cursor()
     try:
+        # Extrai metadados estruturados para o cabeçalho da atividade
+        curso_ident = nome_curso
+        uc_ident = "Plano de Aula"
+        aula_ident = f"Dia {plano[2]}"
+        bloom_ident = dificuldade.capitalize()
+
+        m_c = re.search(r"Curso:\s*([^\n\r]+)", conteudo, re.IGNORECASE)
+        if m_c:
+            curso_ident = m_c.group(1).strip()
+        elif "—" in nome_curso:
+            curso_ident = nome_curso.split("—")[0].strip()
+
+        m_uc = re.search(r"Unidade Curricular:\s*([^\n\r]+)", conteudo, re.IGNORECASE)
+        if m_uc:
+            uc_ident = m_uc.group(1).strip()
+        elif "—" in nome_curso:
+            uc_ident = nome_curso.split("—")[1].strip()
+
+        m_a = re.search(r"Aula\s*/\s*Encontro:\s*([^\n\r]+)", conteudo, re.IGNORECASE)
+        if m_a:
+            aula_ident = m_a.group(1).strip()
+
+        m_b = re.search(r"N[i\xed]vel Cognitivo(?:\s*\(Taxonomia de Bloom\))?:\s*([^\n\r]+)", conteudo, re.IGNORECASE)
+        if m_b:
+            bloom_ident = m_b.group(1).strip()
+
+        cabecalho_ident = (
+            f"- Curso: {curso_ident}\n"
+            f"- Unidade Curricular: {uc_ident}\n"
+            f"- Aula / Encontro: {aula_ident}\n"
+            f"- Nível Cognitivo (Taxonomia de Bloom): {bloom_ident}"
+        )
+
         cursor.execute(
             """
             INSERT INTO atividades (
@@ -1148,10 +1239,10 @@ def gerar_atividade_plano(id):
             VALUES (%s,%s,%s,%s,%s,%s)
             """,
             (
-                nome_curso,
-                "Plano de Aula",
-                conteudo[:200],
-                dificuldade,
+                curso_ident,
+                uc_ident,
+                cabecalho_ident,
+                bloom_ident,
                 atividade,
                 session["usuario_id"]
             ),

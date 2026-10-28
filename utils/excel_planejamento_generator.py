@@ -1,9 +1,50 @@
-from utils.texto_utils import limpar_numeracao_texto
 import os
+import re
+import math
 import openpyxl
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.utils import get_column_letter
 from datetime import datetime
+from utils.texto_utils import limpar_numeracao_texto, limpar_numeracao_item
+
+
+def calcular_altura_linha(texto_o_que, texto_estrategia="", texto_recursos="", texto_criterios="", texto_instrumentos=""):
+    """
+    Calcula a altura ideal da linha do Excel baseando-se no número de linhas reais
+    e quebras automáticas de texto (wrap text) para garantir que nenhuma informação
+    fique cortada ou oculta.
+    """
+    def estimar_linhas_bloco(texto, largura_chars):
+        if not texto:
+            return 0
+        total = 0
+        for linha in str(texto).split("\n"):
+            linha_s = linha.strip()
+            if not linha_s:
+                total += 1
+            else:
+                total += max(1, math.ceil(len(linha_s) / max(largura_chars, 10)))
+        return total
+
+    # Larguras estimadas em caracteres úteis por coluna mesclada:
+    # A:C (~50 caracteres)
+    # D (~32 caracteres)
+    # H:I (~16 caracteres)
+    # M:O (~22 caracteres)
+    # P (~18 caracteres)
+    linhas_a = estimar_linhas_bloco(texto_o_que, 50)
+    linhas_d = estimar_linhas_bloco(texto_estrategia, 32)
+    linhas_h = estimar_linhas_bloco(texto_recursos, 16)
+    linhas_m = estimar_linhas_bloco(texto_criterios, 22)
+    linhas_p = estimar_linhas_bloco(texto_instrumentos, 18)
+
+    max_linhas = max(linhas_a, linhas_d, linhas_h, linhas_m, linhas_p, 6)
+
+    # Cada linha consome aproximadamente 16 pontos em Calibri 10, com margem interna
+    altura_estimada = max_linhas * 16 + 25
+
+    # Altura base mínima de 115 pt; aumenta dinamicamente conforme a quantidade de conteúdo
+    return max(115, altura_estimada)
 
 
 def gerar_excel_planejamento(
@@ -14,7 +55,8 @@ def gerar_excel_planejamento(
 ):
     """
     Gera o arquivo Excel do Planejamento Docente a partir do modelo base,
-    preenchendo cabeçalho e todas as aulas calculadas com a Taxonomia de Bloom.
+    preenchendo cabeçalho e todas as aulas calculadas com a Taxonomia de Bloom,
+    com informações limpas, organizadas e altura de linha adaptativa.
     """
     if not os.path.exists(caminho_modelo):
         raise FileNotFoundError(f"Arquivo modelo não encontrado: {caminho_modelo}")
@@ -86,6 +128,9 @@ def gerar_excel_planejamento(
     # Estilos padrão
     fonte_padrao = Font(name="Calibri", size=10, bold=False)
     fonte_link = Font(name="Calibri", size=9, bold=False, color="0000FF", underline="single")
+    
+    alin_esquerda_topo = Alignment(horizontal="left", vertical="top", wrap_text=True)
+    alin_centro_topo = Alignment(horizontal="center", vertical="top", wrap_text=True)
     alin_centro = Alignment(horizontal="center", vertical="center", wrap_text=True)
     alin_data = Alignment(horizontal="center", vertical="center", wrap_text=False)
     
@@ -104,36 +149,46 @@ def gerar_excel_planejamento(
 
     for idx, aula in enumerate(aulas):
         r = linha_inicio_dados + idx
-        ws.row_dimensions[r].height = 110  # Altura generosa para acomodar o texto
 
-        # Texto do bloco O que? (Capacidade / Conhecimento) - 100% sem numeração de tópicos
+        # Texto do bloco O que? (Capacidade / Conhecimento)
+        # 100% sem números de tópicos e sem símbolos ou '?' antes das palavras
         cap_limpa = limpar_numeracao_texto(aula.get('capacidade', '')).strip()
-        con_limpo = limpar_numeracao_texto(aula.get('conhecimento', '')).strip()
+        con_limpo = limpar_numeracao_texto(aula.get('conhecimento', ''), separador="\n").strip()
+        
+        # Títulos CAPACIDADE e CONHECIMENTOS centralizados visualmente,
+        # enquanto o texto da capacidade e os conteúdos do plano continuam alinhados à esquerda
+        titulo_cap = " " * 19 + "CAPACIDADE:"
+        titulo_con = " " * 17 + "CONHECIMENTOS:"
+
         texto_o_que = (
-            f"CAPACIDADE:\n"
-            f"{cap_limpa}\n"
-            f"CONHECIMENTO\n"
+            f"{titulo_cap}\n"
+            f"{cap_limpa}\n\n"
+            f"{titulo_con}\n"
             f"{con_limpo}"
         )
         ws.cell(row=r, column=1, value=texto_o_que)  # Col A
 
         # Col D: Como? Estratégia de Ensino
-        ws.cell(row=r, column=4, value=str(aula.get("estrategia", "")).strip().upper())
+        estrategia_txt = str(aula.get("estrategia", "")).strip().upper()
+        ws.cell(row=r, column=4, value=estrategia_txt)
 
         # Col E: Onde? Ambientes Pedagógicos
         ws.cell(row=r, column=5, value=str(aula.get("ambiente", "LABORATORIO T.I")).strip().upper())
 
         # Col H: Recursos Didáticos
-        ws.cell(row=r, column=8, value=str(aula.get("recursos", "NOTEBOOK\nTELA DIGITAL\nCOMPUTADORES")).strip().upper())
+        recursos_txt = str(aula.get("recursos", "NOTEBOOK\nTELA DIGITAL\nCOMPUTADORES")).strip().upper()
+        ws.cell(row=r, column=8, value=recursos_txt)
 
         # Col J: Carga Horária
         ws.cell(row=r, column=10, value=str(aula.get("carga_horaria_str", "4 HS")).strip().upper())
 
         # Col M: Critérios de Avaliação
-        ws.cell(row=r, column=13, value=str(aula.get("criterios", "")).strip().upper())
+        criterios_txt = str(aula.get("criterios", "")).strip().upper()
+        ws.cell(row=r, column=13, value=criterios_txt)
 
         # Col P: Instrumento de Avaliação
-        ws.cell(row=r, column=16, value=str(aula.get("instrumentos", "")).strip().upper())
+        instrumentos_txt = str(aula.get("instrumentos", "")).strip().upper()
+        ws.cell(row=r, column=16, value=instrumentos_txt)
 
         # Col Q: Situação de Aprendizagem
         ws.cell(row=r, column=17, value=str(aula.get("situacao_aprendizagem", "https://recursosdidaticos.senai.br")).strip())
@@ -157,12 +212,30 @@ def gerar_excel_planejamento(
         else:
             cell_s.value = str(dt_fim) if dt_fim else ""
 
-        # Aplica estilos e bordas em todas as células de A a S da linha r
+        # Calcula a altura necessária da linha dinamicamente para acomodar todo o conteúdo
+        ws.row_dimensions[r].height = calcular_altura_linha(
+            texto_o_que,
+            estrategia_txt,
+            recursos_txt,
+            criterios_txt,
+            instrumentos_txt
+        )
+
+        # Aplica estilos e bordas nas células de A a S da linha r
         for col_idx in range(1, 20):
             c_obj = ws.cell(row=r, column=col_idx)
             c_obj.font = fonte_padrao
-            c_obj.alignment = alin_centro
             c_obj.border = borda_fina
+
+            # Alinhamentos específicos para máxima organização visual
+            if col_idx in (1, 2, 3):  # Colunas A:C (Capacidade / Conhecimento)
+                c_obj.alignment = alin_esquerda_topo
+            elif col_idx in (13, 14, 15):  # Colunas M:O (Critérios de Avaliação)
+                c_obj.alignment = alin_esquerda_topo
+            elif col_idx in (18, 19):  # Colunas R e S (Datas)
+                c_obj.alignment = alin_data
+            else:
+                c_obj.alignment = alin_centro
 
         # Ajusta mesclagens da linha r
         ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=3)   # A:C
