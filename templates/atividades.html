@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 
 {% block titulo %}Atividades Geradas{% endblock %}
 
@@ -8,7 +8,12 @@
 
     <!-- Cabeçalho com busca -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0">Atividades Geradas pela IA</h2>
+        <div class="d-flex align-items-center gap-3">
+            <h2 class="mb-0">Atividades Geradas pela IA</h2>
+            <a href="/" class="btn btn-success">
+                <i class="bi bi-plus-lg me-1"></i> Nova Atividade
+            </a>
+        </div>
 
         <form action="/atividades" method="GET" class="d-flex gap-2">
             <input type="text"
