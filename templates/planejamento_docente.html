@@ -47,9 +47,16 @@
                                    placeholder="Ex: Conceitos de Hardware de Microcomputadores" required>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold">Modalidade</label>
-                            <input type="text" name="modalidade" class="form-control form-control-lg"
-                                   value="HABILITAÇÃO TÉCNICA">
+                            <label class="form-label fw-semibold">Tipo / Modalidade do Curso <span class="text-danger">*</span></label>
+                            <select name="modalidade" id="modalidade" class="form-select form-select-lg" onchange="atualizarTipoCurso()" required>
+                                <option value="HABILITAÇÃO TÉCNICA">🎓 Curso Técnico</option>
+                                <option value="QUALIFICAÇÃO PROFISSIONAL">📋 Curso de Qualificação</option>
+                                <option value="APERFEIÇOAMENTO PROFISSIONAL">📋 Curso de Aperfeiçoamento</option>
+                            </select>
+                            <small class="mt-1 d-block" id="dica_modelo">
+                                <span class="badge bg-primary me-1" id="badge_modelo">Modelo Técnico</span>
+                                <span class="text-muted" id="label_modelo">modelo tecnico.xlsx (oficial com Matriz SAEP)</span>
+                            </small>
                         </div>
                     </div>
 
@@ -174,6 +181,33 @@
 </div>
 
 <script>
+
+function atualizarTipoCurso() {
+    const sel = document.getElementById('modalidade');
+    const label = document.getElementById('label_modelo');
+    const badge = document.getElementById('badge_modelo');
+    if (!sel || !label) return;
+    const val = sel.value.toUpperCase();
+    if (val.includes('TÉCNICO') || val.includes('TECNICO') || val.includes('HABILITA')) {
+        if (badge) {
+            badge.className = 'badge bg-primary me-1';
+            badge.innerText = 'Modelo Técnico';
+        }
+        label.innerText = 'modelo tecnico.xlsx (oficial com Matriz SAEP)';
+    } else if (val.includes('APERFEIÇ') || val.includes('APERFEIC')) {
+        if (badge) {
+            badge.className = 'badge bg-success me-1';
+            badge.innerText = 'Modelo Qualificação';
+        }
+        label.innerText = 'modelo qualificacao.xlsx (layout Aperfeiçoamento)';
+    } else {
+        if (badge) {
+            badge.className = 'badge bg-success me-1';
+            badge.innerText = 'Modelo Qualificação';
+        }
+        label.innerText = 'modelo qualificacao.xlsx (layout Qualificação)';
+    }
+}
 function calcularDataFimEstimada(dataInicioStr, totalAulas) {
     if (!dataInicioStr || !totalAulas || totalAulas <= 0) return null;
     const partes = dataInicioStr.split('-');
@@ -246,6 +280,24 @@ function iniciarGeracaoPlanejamento(e) {
 
 // Data de início padrão: hoje
 document.addEventListener('DOMContentLoaded', () => {
+    const nomeCursoInput = document.getElementById('nome_curso');
+    if (nomeCursoInput) {
+        nomeCursoInput.addEventListener('input', function() {
+            const txt = this.value.toUpperCase();
+            const sel = document.getElementById('modalidade');
+            if (!sel) return;
+            if (txt.includes('APERFEIÇ') || txt.includes('APERFEIC')) {
+                sel.value = 'APERFEIÇOAMENTO PROFISSIONAL';
+                atualizarTipoCurso();
+            } else if (txt.includes('QUALIF')) {
+                sel.value = 'QUALIFICAÇÃO PROFISSIONAL';
+                atualizarTipoCurso();
+            } else if (txt.includes('TÉCNIC') || txt.includes('TECNIC')) {
+                sel.value = 'HABILITAÇÃO TÉCNICA';
+                atualizarTipoCurso();
+            }
+        });
+    }
     const hoje = new Date().toISOString().split('T')[0];
     const dataInicioEl = document.getElementById('data_inicio');
     const dataFimEl = document.getElementById('data_fim');

@@ -43,6 +43,7 @@ brain/
 
 # Outputs and uploads temporários/gerados
 outputs/*.xlsx
+outputs/*.xls
 outputs/*.docx
 outputs/*.pdf
 uploads/*.pdf

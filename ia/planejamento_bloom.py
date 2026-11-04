@@ -342,11 +342,26 @@ def gerar_planejamento_algoritmico(dados_plano, dados_matriz, total_aulas, horas
         criterios = cfg_bloom["criterios"]
         instrumentos = cfg_bloom["instrumentos"]
 
+        # Matriz SAEP para cursos técnicos
+        saep_dia = "Não tem cruzamento"
+        if matriz_uc:
+            idx_m = min(int((dia - 1) / total_aulas * len(matriz_uc)), len(matriz_uc) - 1)
+            item_m = matriz_uc[idx_m]
+            cap_s = str(item_m.get("capacidade_saep") or "").strip()
+            con_r = str(item_m.get("conhecimentos_relacionados") or "").strip()
+            if cap_s and con_r:
+                saep_dia = f"{cap_s}\n{con_r}"
+            elif cap_s:
+                saep_dia = cap_s
+            elif con_r:
+                saep_dia = con_r
+
         aula = {
             "dia": dia,
             "nivel_bloom": nivel,
             "capacidade": capacidade_dia,
             "conhecimento": texto_conhecimento,
+            "saep": saep_dia,
             "estrategia": estrategia,
             "ambiente": "LABORATORIO T.I",
             "recursos": "NOTEBOOK\nTELA DIGITAL\nCOMPUTADORES\nFERRAMENTAS DIDÁTICAS",
@@ -482,11 +497,25 @@ Responda ESTRITAMENTE em formato JSON valido, sem nenhum texto antes ou depois:
                         if not cap_ia or eh_linha_lixo(cap_ia):
                             cap_ia = formular_capacidade_dia(dia, total_aulas, nivel_ia, con_ia.split("\n"), capacidades_plano, matriz_uc, [], uc)
 
+                        saep_dia = "Não tem cruzamento"
+                        if matriz_uc:
+                            idx_m = min(int(idx / total_aulas * len(matriz_uc)), len(matriz_uc) - 1)
+                            item_m = matriz_uc[idx_m]
+                            cap_s = str(item_m.get("capacidade_saep") or "").strip()
+                            con_r = str(item_m.get("conhecimentos_relacionados") or "").strip()
+                            if cap_s and con_r:
+                                saep_dia = f"{cap_s}\n{con_r}"
+                            elif cap_s:
+                                saep_dia = cap_s
+                            elif con_r:
+                                saep_dia = con_r
+
                         aulas_finais.append({
                             "dia": dia,
                             "nivel_bloom": nivel_ia,
                             "capacidade": cap_ia,
                             "conhecimento": con_ia,
+                            "saep": saep_dia,
                             "estrategia": a.get("estrategia", "AULA EXPOSITIVA COM ATIVIDADE PRATICA EM LABORATORIO"),
                             "ambiente": "LABORATORIO T.I",
                             "recursos": "NOTEBOOK\nTELA DIGITAL\nCOMPUTADORES\nFERRAMENTAS DIDÁTICAS",

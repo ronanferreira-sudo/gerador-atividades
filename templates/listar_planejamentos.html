@@ -58,8 +58,23 @@
                     <tr>
                         <td class="text-center fw-bold text-muted">{{ p[0] }}</td>
                         <td class="fw-semibold">
-                            {{ p[1] }}
-                            <div class="small text-muted">Turma: {{ p[3] or 'N/I' }} | {{ p[4] or '' }}</div>
+                            <div>{{ p[1] }}</div>
+                            <div class="small mt-1">
+                                {% if p|length > 14 and p[14] %}
+                                    {% if 'TÉCNIC' in p[14]|upper or 'TECNIC' in p[14]|upper or 'HABILITA' in p[14]|upper %}
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle me-1">🎓 Técnico</span>
+                                    {% elif 'APERFEIÇ' in p[14]|upper or 'APERFEIC' in p[14]|upper %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle me-1">📋 Aperfeiçoamento</span>
+                                    {% else %}
+                                        <span class="badge bg-info-subtle text-info border border-info-subtle me-1">📋 Qualificação</span>
+                                    {% endif %}
+                                {% elif 'TÉCNIC' in p[1]|upper or 'TECNIC' in p[1]|upper %}
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle me-1">🎓 Técnico</span>
+                                {% else %}
+                                    <span class="badge bg-info-subtle text-info border border-info-subtle me-1">📋 Qualificação</span>
+                                {% endif %}
+                                <span class="text-muted">Turma: {{ p[3] or 'N/I' }}</span>
+                            </div>
                         </td>
                         <td>
                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">

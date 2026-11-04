@@ -1463,9 +1463,10 @@ def planejamento_docente():
                     data_fim,
                     total_aulas,
                     arquivo_excel,
-                    usuario_id
+                    usuario_id,
+                    modalidade
                 )
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 RETURNING id
                 """,
                 (
@@ -1479,7 +1480,8 @@ def planejamento_docente():
                     data_fim_str or None,
                     total_aulas,
                     nome_arquivo_excel,
-                    session["usuario_id"]
+                    session["usuario_id"],
+                    modalidade
                 )
             )
             planejamento_id = cursor.fetchone()[0]
