@@ -3,10 +3,14 @@ import requests
 import hashlib
 import threading
 import re
+import logging
 from dotenv import load_dotenv
+from ia.ia_client import chamar_ia, obter_config_ia, verificar_ollama_online
 
 # Carrega variáveis de ambiente do .env
 load_dotenv()
+
+logger = logging.getLogger("gerador_atividades")
 
 # Cache global thread-safe com Lock
 # Chaveado por hash do conteúdo — sem risco de cruzar dados entre usuários
@@ -15,29 +19,9 @@ _cache_atividades = {}
 
 
 def obter_config_ollama():
-    """
-    Retorna a configuração atual do Ollama de forma dinâmica,
-    priorizando valores definidos no .env.
-    """
-    url = os.environ.get("OLLAMA_URL", "http://localhost:11434").rstrip("/")
-    modelo = os.environ.get("OLLAMA_MODEL", "llama3.2")
-    try:
-        timeout = int(os.environ.get("OLLAMA_TIMEOUT", "180"))
-    except ValueError:
-        timeout = 180
-    return url, modelo, timeout
-
-
-def verificar_ollama_online(timeout=2.0):
-    """
-    Verifica rapidamente se o Ollama está online para evitar esperas longas desnecessárias.
-    """
-    url, _, _ = obter_config_ollama()
-    try:
-        resp = requests.get(f"{url}/api/tags", timeout=timeout)
-        return resp.status_code == 200
-    except Exception:
-        return False
+    """Mantido para compatibilidade retroativa."""
+    cfg = obter_config_ia()["ollama"]
+    return cfg["url"], cfg["model"], cfg["timeout"]
 
 
 def extrair_topicos_relevantes(texto_base):
@@ -60,7 +44,6 @@ def extrair_topicos_relevantes(texto_base):
     if match_cp:
         for linha in match_cp.group(1).splitlines():
             limpa = re.sub(r'^[\s\-\*•▪▫●○■□►▸\d\.\)]+', '', linha).strip()
-            # Remove sufixos como números soltos "2" no fim da linha
             limpa = re.sub(r'\s+\d+$', '', limpa).strip()
             if len(limpa) >= 3:
                 topicos.append(limpa)
@@ -121,7 +104,6 @@ def extrair_conteudo_pedagogico(texto):
     if not texto:
         return ""
 
-    # Se for um plano de aula estruturado
     if "Conteudo Programatico" in texto or "Conteúdo Programático" in texto:
         partes = []
 
@@ -156,7 +138,6 @@ def extrair_conteudo_pedagogico(texto):
         if partes:
             return "\n\n".join(partes)
 
-    # Texto comum / PDF / inserção manual: filtra metadados administrativos
     linhas = [l.strip() for l in texto.replace("\r", " ").split("\n") if l.strip()]
     linhas_filtradas = [
         l for l in linhas
@@ -172,13 +153,10 @@ def extrair_conteudo_pedagogico(texto):
 
 def limpar_labels_questoes(texto):
     """
-    Remove labels de tipo de questão geradas pela IA como '[Objetiva]', '[Discursiva]',
-    '[Objetiva]:', '[Dissertativa]', etc., deixando apenas o número e o enunciado.
-    Exemplo: 'Questão 1: [Objetiva] Qual é...' → 'Questão 1: Qual é...'
+    Remove labels redundantes de tipo geradas pela IA como '[Objetiva]', '[Discursiva]'.
     """
     if not texto:
         return texto
-    # Remove variações como [Objetiva], [Discursiva], [Dissertativa], (Objetiva), etc.
     texto = re.sub(
         r'(?i)(Quest[aã]o\s+\d+\s*:\s*)\[(?:Objetiva|Discursiva|Dissertativa|Mista)\]\s*',
         r'\1',
@@ -207,8 +185,8 @@ def gerar_hash(texto_pdf, dificuldade, tipo, quantidade):
 
 def gerar_atividade_fallback(texto_base, dificuldade, tipo, quantidade):
     """
-    Gera uma atividade formatada e profissional imediatamente caso o serviço de IA
-    esteja temporariamente indisponível, usando tópicos pedagógicos reais.
+    Gera uma atividade formatada e profissional imediatamente caso a IA
+    esteja temporariamente indisponível.
     """
     topicos = extrair_topicos_relevantes(texto_base)
 
@@ -256,8 +234,11 @@ def gerar_atividade(texto_pdf, dificuldade, tipo="objetiva", quantidade=5):
     quantidade = int(quantidade)
     quantidade = max(1, min(quantidade, 30))
 
-    url_ollama, modelo_ollama, timeout_ollama = obter_config_ollama()
-    print(f"[ATIVIDADE] Tipo={tipo} | Dificuldade={dificuldade} | Qtd={quantidade} | Modelo={modelo_ollama}")
+    cfg_geral = obter_config_ia()
+    provider_ativo = cfg_geral["provider"]
+    modelo_ativo = cfg_geral["gemini"]["model"] if provider_ativo == "gemini" else cfg_geral["ollama"]["model"]
+
+    print(f"[ATIVIDADE] Provedor={provider_ativo} | Modelo={modelo_ativo} | Tipo={tipo} | Dificuldade={dificuldade} | Qtd={quantidade}")
 
     key = gerar_hash(texto_pdf, dificuldade, tipo, quantidade)
 
@@ -267,17 +248,7 @@ def gerar_atividade(texto_pdf, dificuldade, tipo="objetiva", quantidade=5):
             print("[CACHE] Hit atividade")
             return _cache_atividades[key]
 
-    # 2. Verificação Rápida do Ollama
-    if not verificar_ollama_online():
-        print("[AVISO] Ollama offline. Gerando atividade estruturada de apoio...")
-        fallback = gerar_atividade_fallback(texto_pdf, dificuldade, tipo, quantidade)
-        with _cache_lock:
-            _cache_atividades[key] = fallback
-        return fallback
-
-    print(f"[IA] Solicitando ao Ollama ({modelo_ollama}) em {url_ollama} (timeout={timeout_ollama}s)...")
-
-    # 3. Instruções direcionadas e objetivas
+    # 2. Instruções direcionadas e objetivas
     if tipo == "objetiva":
         instrucao_tipo = (
             f"Crie EXATAMENTE {quantidade} questões OBJETIVAS de múltipla escolha de nível {dificuldade}. "
@@ -301,13 +272,11 @@ def gerar_atividade(texto_pdf, dificuldade, tipo="objetiva", quantidade=5):
         formato = "Questão 1: [Enunciado objetiva]\nA) ...\nB) ...\nC) ...\nD) ...\nResposta correta: A\n\nQuestão 2: [Enunciado discursiva]"
         tokens_por_questao = 130
 
-    # Dimensionamento otimizado de tokens para acelerar a geração
     num_predict = min(3500, max(600, quantidade * tokens_por_questao))
-
     conteudo_pedagogico = extrair_conteudo_pedagogico(texto_pdf)
 
-    prompt = f"""Você é um professor especialista do SENAI.
-Crie a lista de questões avaliativas abaixo baseando-se estritamente nestes conteúdos técnicos e objetivos pedagógicos:
+    system_prompt = "Você é um professor especialista do SENAI responsável por criar atividades avaliativas rigorosas e de alta qualidade técnica."
+    prompt = f"""Crie a lista de questões avaliativas abaixo baseando-se estritamente nestes conteúdos técnicos e objetivos pedagógicos:
 ---
 {conteudo_pedagogico}
 ---
@@ -324,48 +293,25 @@ REGRAS OBRIGATÓRIAS:
 
 Gere as {quantidade} questões agora:"""
 
-    tentativas = 0
-    max_tentativas = 2
-    while tentativas < max_tentativas:
-        try:
-            resposta = requests.post(
-                f"{url_ollama}/api/generate",
-                json={
-                    "model": modelo_ollama,
-                    "prompt": prompt,
-                    "stream": False,
-                    "options": {
-                        "temperature": 0.2,
-                        "num_predict": num_predict,
-                        "top_p": 0.9
-                    }
-                },
-                timeout=timeout_ollama
-            )
+    try:
+        resposta_ia = chamar_ia(
+            prompt=prompt,
+            system_prompt=system_prompt,
+            max_tokens=num_predict,
+            temperature=0.2
+        )
 
-            if resposta.status_code == 200:
-                dados = resposta.json()
-                atividade = dados.get("response", "").strip()
+        if resposta_ia and len(resposta_ia.strip()) >= 30:
+            atividade = limpar_labels_questoes(resposta_ia.strip())
+            with _cache_lock:
+                _cache_atividades[key] = atividade
+            print(f"[OK] Atividade gerada via IA ({len(atividade)} chars)")
+            return atividade
+    except Exception as e:
+        print(f"[AVISO] Exceção ao chamar IA: {e}")
 
-                if len(atividade) >= 30:
-                    atividade = limpar_labels_questoes(atividade)
-                    with _cache_lock:
-                        _cache_atividades[key] = atividade
-                    print(f"[OK] Atividade gerada ({len(atividade)} chars)")
-                    return atividade
-
-            tentativas += 1
-            print(f"[AVISO] Tentativa {tentativas}/{max_tentativas} falhou (status {resposta.status_code})")
-
-        except Exception as erro:
-            tentativas += 1
-            print(f"[AVISO] Comunicacao IA (tentativa {tentativas}/{max_tentativas}): {erro}")
-            if tentativas >= max_tentativas:
-                break
-            import time
-            time.sleep(1)
-
-    print("[AVISO] Retornando atividade estruturada de apoio...")
+    # Fallback instantâneo
+    print("[AVISO] IA indisponível ou resposta incompleta. Retornando atividade estruturada de apoio...")
     fallback = gerar_atividade_fallback(texto_pdf, dificuldade, tipo, quantidade)
     with _cache_lock:
         _cache_atividades[key] = fallback

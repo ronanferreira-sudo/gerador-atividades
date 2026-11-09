@@ -239,12 +239,12 @@ planejamentos_docente — planejamentos gerados com Bloom
 
 ## 🔐 Segurança
 
-- Autenticação por login/senha com sessão Flask
-- Cada professor acessa apenas seus próprios dados
+- **Hash criptográfico de senhas**: Implementado com `bcrypt` (salt rounds=12)
+- **Migração transparente**: Usuários cadastrados antes da migração têm suas senhas convertidas automaticamente para bcrypt no próximo login
+- Autenticação protegida por sessão Flask (`session_id`)
+- Cada professor acessa apenas seus próprios dados (isolamento por `usuario_id`)
 - `secret_key` configurável via `.env`
-- Credenciais do banco via `.env` (não commitadas no código)
-
-> **⚠️ Atenção:** As senhas dos usuários são armazenadas em texto puro. Para ambientes externos à rede escolar, implemente hash com `bcrypt`.
+- Credenciais do banco e chaves de IA via `.env` (não commitadas no código)
 
 ---
 
@@ -266,9 +266,10 @@ venv\Scripts\python app.py
 |--------|-----|
 | `Flask` | Framework web |
 | `waitress` | Servidor WSGI para produção no Windows |
+| `bcrypt` | Criptografia segura de senhas |
 | `psycopg2-binary` | Conexão com PostgreSQL |
 | `python-dotenv` | Leitura do `.env` |
-| `requests` | Chamadas ao Ollama |
+| `requests` | Chamadas de IA (Ollama / Gemini / OpenAI) |
 | `openpyxl` | Geração do Excel do Planejamento Docente |
 | `python-docx` | Geração de arquivos Word |
 | `docx2pdf` | Conversão Word → PDF |

@@ -41,6 +41,14 @@ venv.bak/
 brain/
 *.log
 
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Backups
+*.bak
+
 # Outputs and uploads temporários/gerados
 outputs/*.xlsx
 outputs/*.xls

@@ -6,12 +6,9 @@ import requests
 from dotenv import load_dotenv
 from utils.texto_utils import limpar_numeracao_item, limpar_numeracao_texto, eh_linha_lixo
 from utils.matriz_saep_reader import filtrar_matriz_por_uc
+from ia.ia_client import chamar_ia
 
 load_dotenv()
-
-# URL do Ollama configurável via .env
-OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
-OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2")
 
 # Níveis da Taxonomia de Bloom e verbos correspondentes
 NIVEIS_BLOOM = {
@@ -463,23 +460,16 @@ Responda ESTRITAMENTE em formato JSON valido, sem nenhum texto antes ou depois:
 """
 
     try:
-        print(f"🤖 Solicitando ao Ollama planejamento docente ({total_aulas} aulas com Taxonomia de Bloom)...")
-        resp = requests.post(
-            f"{OLLAMA_URL}/api/generate",
-            json={
-                "model": OLLAMA_MODEL,
-                "prompt": prompt,
-                "stream": False,
-                "options": {
-                    "temperature": 0.2,
-                    "num_predict": 4096
-                }
-            },
+        print(f"🤖 Solicitando planejamento docente com Taxonomia de Bloom ({total_aulas} aulas)...")
+        texto_resp = chamar_ia(
+            prompt=prompt,
+            system_prompt="Você é um especialista em planejamento pedagógico do SENAI e responde exclusivamente em JSON válido.",
+            max_tokens=4096,
+            temperature=0.2,
             timeout=35
         )
 
-        if resp.status_code == 200:
-            texto_resp = resp.json().get("response", "").strip()
+        if texto_resp:
             match_json = re.search(r"\{[\s\S]*\}", texto_resp)
             if match_json:
                 dados_json = json.loads(match_json.group(0))
@@ -526,7 +516,7 @@ Responda ESTRITAMENTE em formato JSON valido, sem nenhum texto antes ou depois:
                             "data_inicio": data_aula,
                             "data_fim": data_aula
                         })
-                    print("✅ Planejamento gerado com sucesso via Ollama!")
+                    print("✅ Planejamento gerado com sucesso via IA!")
                     return aulas_finais
 
     except Exception as e:

@@ -1,6 +1,7 @@
 import os
 import re
 import math
+import zipfile
 import openpyxl
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.utils import get_column_letter
@@ -14,6 +15,50 @@ PASTA_TEMPLATES = os.path.join(BASE_DIR, "templates")
 MODELO_TECNICO      = os.path.join(PASTA_TEMPLATES, "modelo_tecnico.xlsx")
 MODELO_QUALIFICACAO = os.path.join(PASTA_TEMPLATES, "modelo_qualificacao.xlsx")
 MODELO_LEGADO       = os.path.join(PASTA_TEMPLATES, "modelo_planejamento_docente.xlsx")
+
+# Caminhos da logo oficial SENAI 2024
+LOGO_DOWNLOADS = r"C:\Users\ronanjose\Downloads\SENAI_logo_2024 (1).png"
+LOGO_PROJETO   = os.path.join(BASE_DIR, "static", "img", "SENAI_logo_2024.png")
+
+
+def obter_bytes_logo_oficial():
+    """Retorna os bytes da logo oficial do SENAI 2024."""
+    for caminho in [LOGO_DOWNLOADS, LOGO_PROJETO]:
+        if caminho and os.path.exists(caminho):
+            try:
+                with open(caminho, "rb") as f:
+                    return f.read()
+            except Exception:
+                pass
+    return None
+
+
+def garantir_logo_oficial(caminho_xlsx: str):
+    """
+    Garante que a logo oficial do SENAI (2024) esteja sempre inserida com 100%
+    de fidelidade visual dentro da planilha Excel gerada em ambos os modelos.
+    """
+    logo_bytes = obter_bytes_logo_oficial()
+    if not logo_bytes or not os.path.exists(caminho_xlsx):
+        return
+
+    tmp_path = caminho_xlsx + ".tmp"
+    try:
+        with zipfile.ZipFile(caminho_xlsx, "r") as zin:
+            with zipfile.ZipFile(tmp_path, "w", compression=zipfile.ZIP_DEFLATED) as zout:
+                for item in zin.infolist():
+                    if item.filename == "xl/media/image1.png":
+                        zout.writestr(item, logo_bytes)
+                    else:
+                        zout.writestr(item, zin.read(item.filename))
+        os.replace(tmp_path, caminho_xlsx)
+    except Exception as e:
+        print(f"[AVISO] Nao foi possivel validar logo no arquivo {caminho_xlsx}: {e}")
+        if os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except Exception:
+                pass
 
 
 def obter_caminho_modelo(tipo: str) -> str:
@@ -310,6 +355,7 @@ def _gerar_excel_qualificacao(dados_cabecalho, aulas, caminho_modelo, caminho_sa
 
     wb.save(caminho_saida)
     wb.close()
+    garantir_logo_oficial(caminho_saida)
     return caminho_saida
 
 
@@ -496,4 +542,5 @@ def _gerar_excel_tecnico(dados_cabecalho, aulas, caminho_modelo, caminho_saida):
 
     wb.save(caminho_saida)
     wb.close()
+    garantir_logo_oficial(caminho_saida)
     return caminho_saida

@@ -30,6 +30,7 @@ from utils.planejamento_docente_reader import ler_excel_planejamento_docente
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from utils.excel_reader import extrair_dados_excel, formatar_dados_para_prompt, contar_itens
+from utils.security import gerar_hash_senha, verificar_senha, atualizar_senha_para_hash_se_necessario
 import os
 import re
 
@@ -72,12 +73,28 @@ def cadastro():
 
     if request.method == "POST":
 
-        nome = request.form["nome"]
-        email = request.form["email"]
-        senha = request.form["senha"]
+        nome = request.form.get("nome", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        senha = request.form.get("senha", "")
+
+        if not nome or not email or not senha:
+            return render_template("cadastro.html", erro="Preencha todos os campos obrigatórios.")
+
+        if len(senha) < 3:
+            return render_template("cadastro.html", erro="A senha deve conter pelo menos 3 caracteres.")
 
         conn, cursor = get_cursor()
         try:
+            # Verifica se o e-mail já está cadastrado
+            cursor.execute("SELECT id FROM usuarios WHERE email=%s", (email,))
+            if cursor.fetchone():
+                return render_template(
+                    "cadastro.html",
+                    erro=f"O e-mail '{email}' já está cadastrado. Faça login ou use outro e-mail."
+                )
+
+            senha_hash = gerar_hash_senha(senha)
+
             cursor.execute(
                 """
                 INSERT INTO usuarios (
@@ -88,10 +105,17 @@ def cadastro():
                 )
                 VALUES (%s,%s,%s,%s)
                 """,
-                (nome, email, senha, "professor"),
+                (nome, email, senha_hash, "professor"),
             )
 
             conn.commit()
+        except Exception as e:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            print(f"[CADASTRO] Erro ao cadastrar usuário: {e}")
+            return render_template("cadastro.html", erro="Ocorreu um erro ao cadastrar. Tente novamente.")
         finally:
             release_cursor(conn, cursor)
 
@@ -105,32 +129,35 @@ def login():
 
     if request.method == "POST":
 
-        email = request.form["email"]
+        email = request.form["email"].strip().lower()
         senha = request.form["senha"]
 
         conn, cursor = get_cursor()
         try:
             cursor.execute(
                 """
-                SELECT id, nome, email, perfil
+                SELECT id, nome, email, perfil, senha
                 FROM usuarios
-                WHERE email=%s AND senha=%s
+                WHERE email=%s
                 """,
-                (email, senha),
+                (email,),
             )
 
             usuario = cursor.fetchone()
         finally:
             release_cursor(conn, cursor)
 
-        if usuario:
+        if usuario and verificar_senha(senha, usuario[4]):
+            # Migra transparentemente se a senha ainda estava em texto puro
+            atualizar_senha_para_hash_se_necessario(usuario[0], senha, usuario[4])
+
             session["usuario_id"] = usuario[0]
             session["nome"] = usuario[1]
             session["perfil"] = usuario[3]
 
             return redirect("/dashboard")
 
-        return "Login invÃ¡lido"
+        return render_template("login.html", erro="Email ou senha incorretos.")
 
     return render_template("login.html")
 
@@ -202,7 +229,7 @@ def index():
 
 
 # =========================
-# LISTAR + PESQUISA
+# LISTAR + PESQUISA COM PAGINAÇÃO
 # =========================
 @app.route("/atividades")
 def atividades():
@@ -210,13 +237,30 @@ def atividades():
     if "usuario_id" not in session:
         return redirect("/login")
 
-    busca = request.args.get("busca")
+    busca = (request.args.get("busca") or "").strip()
+    try:
+        pagina = max(1, int(request.args.get("pagina", 1)))
+    except ValueError:
+        pagina = 1
+
+    por_pagina = 20
+    offset = (pagina - 1) * por_pagina
 
     conn, cursor = get_cursor()
     try:
         if session["perfil"] == "admin":
-
             if busca:
+                cursor.execute(
+                    """
+                    SELECT COUNT(*)
+                    FROM atividades
+                    WHERE curso ILIKE %s
+                       OR disciplina ILIKE %s
+                       OR conteudo ILIKE %s
+                    """,
+                    (f"%{busca}%", f"%{busca}%", f"%{busca}%"),
+                )
+                total_itens = cursor.fetchone()[0]
 
                 cursor.execute(
                     """
@@ -226,23 +270,41 @@ def atividades():
                        OR disciplina ILIKE %s
                        OR conteudo ILIKE %s
                     ORDER BY id DESC
+                    LIMIT %s OFFSET %s
                     """,
-                    (f"%{busca}%", f"%{busca}%", f"%{busca}%"),
+                    (f"%{busca}%", f"%{busca}%", f"%{busca}%", por_pagina, offset),
                 )
-
             else:
+                cursor.execute("SELECT COUNT(*) FROM atividades")
+                total_itens = cursor.fetchone()[0]
 
                 cursor.execute(
                     """
                     SELECT *
                     FROM atividades
                     ORDER BY id DESC
-                    """
+                    LIMIT %s OFFSET %s
+                    """,
+                    (por_pagina, offset),
                 )
 
         else:
-
+            usuario_id = session["usuario_id"]
             if busca:
+                cursor.execute(
+                    """
+                    SELECT COUNT(*)
+                    FROM atividades
+                    WHERE usuario_id = %s
+                      AND (
+                            curso ILIKE %s
+                         OR disciplina ILIKE %s
+                         OR conteudo ILIKE %s
+                      )
+                    """,
+                    (usuario_id, f"%{busca}%", f"%{busca}%", f"%{busca}%"),
+                )
+                total_itens = cursor.fetchone()[0]
 
                 cursor.execute(
                     """
@@ -255,16 +317,20 @@ def atividades():
                          OR conteudo ILIKE %s
                       )
                     ORDER BY id DESC
+                    LIMIT %s OFFSET %s
                     """,
                     (
-                        session["usuario_id"],
+                        usuario_id,
                         f"%{busca}%",
                         f"%{busca}%",
-                        f"%{busca}%"
+                        f"%{busca}%",
+                        por_pagina,
+                        offset
                     ),
                 )
-
             else:
+                cursor.execute("SELECT COUNT(*) FROM atividades WHERE usuario_id = %s", (usuario_id,))
+                total_itens = cursor.fetchone()[0]
 
                 cursor.execute(
                     """
@@ -272,17 +338,23 @@ def atividades():
                     FROM atividades
                     WHERE usuario_id = %s
                     ORDER BY id DESC
+                    LIMIT %s OFFSET %s
                     """,
-                    (session["usuario_id"],),
+                    (usuario_id, por_pagina, offset),
                 )
 
         dados = cursor.fetchall()
+        total_paginas = max(1, -(-total_itens // por_pagina))
     finally:
         release_cursor(conn, cursor)
 
     return render_template(
         "atividades.html",
-        atividades=dados
+        atividades=dados,
+        pagina=pagina,
+        total_paginas=total_paginas,
+        total_itens=total_itens,
+        busca=busca
     )
 
 

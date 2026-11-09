@@ -1,4 +1,4 @@
-﻿{% extends 'base.html' %}
+{% extends 'base.html' %}
 
 {% block titulo %}Atividades Geradas{% endblock %}
 
@@ -96,6 +96,33 @@
             </tbody>
         </table>
     </div>
+
+    {% if total_paginas and total_paginas > 1 %}
+    <nav class="d-flex justify-content-between align-items-center mt-3">
+        <span class="text-muted small">
+            Página <strong>{{ pagina }}</strong> de <strong>{{ total_paginas }}</strong> (Total: {{ total_itens }} atividades)
+        </span>
+        <ul class="pagination pagination-sm mb-0">
+            {% if pagina > 1 %}
+            <li class="page-item">
+                <a class="page-link" href="/atividades?pagina={{ pagina - 1 }}{% if busca %}&busca={{ busca }}{% endif %}">&laquo; Anterior</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">&laquo; Anterior</span></li>
+            {% endif %}
+
+            <li class="page-item active"><span class="page-link">{{ pagina }}</span></li>
+
+            {% if pagina < total_paginas %}
+            <li class="page-item">
+                <a class="page-link" href="/atividades?pagina={{ pagina + 1 }}{% if busca %}&busca={{ busca }}{% endif %}">Próxima &raquo;</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Próxima &raquo;</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
     {% else %}
     <div class="alert alert-warning text-center py-5">
         <h4 class="mb-3">Nenhuma atividade encontrada</h4>

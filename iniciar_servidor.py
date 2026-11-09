@@ -50,7 +50,7 @@ load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 def iniciar_ollama_se_necessario():
     """Garante que o Ollama esteja em execução em segundo plano."""
-    ollama_url = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+    ollama_url = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
     try:
         r = requests.get(f"{ollama_url}/api/tags", timeout=1.5)
         if r.status_code == 200:
@@ -65,14 +65,20 @@ def iniciar_ollama_se_necessario():
         if os.name == 'nt':
             # DETACHED_PROCESS (0x00000008) + CREATE_NO_WINDOW (0x08000000)
             flags = 0x00000008 | 0x08000000
+
+        caminho_ollama = "ollama"
+        padrao_appdata = os.path.expandvars(r"%LOCALAPPDATA%\Programs\Ollama\ollama.exe")
+        if os.path.exists(padrao_appdata):
+            caminho_ollama = padrao_appdata
+
         subprocess.Popen(
-            ["ollama", "serve"],
+            [caminho_ollama, "serve"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             creationflags=flags
         )
         time.sleep(2)
-        print("  [IA] Servico Ollama inicializado.")
+        print("  [IA] Servico Ollama inicializado com sucesso.")
         return True
     except Exception as e:
         print(f"  [AVISO] Nao foi possivel iniciar o Ollama automaticamente: {e}")
@@ -85,13 +91,24 @@ HOST    = os.environ.get("SERVER_HOST",    "0.0.0.0")
 PORT    = int(os.environ.get("SERVER_PORT",    "5000"))
 THREADS = int(os.environ.get("SERVER_THREADS", "4"))
 MODELO  = os.environ.get("OLLAMA_MODEL",   "llama3.2")
+PROVIDER = os.environ.get("IA_PROVIDER",   "auto").strip().lower()
+GEMINI_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
 
 if __name__ == "__main__":
     print("=" * 60)
     print("  GERADOR DE ATIVIDADES SENAI — Servidor Waitress")
     print("=" * 60)
-    iniciar_ollama_se_necessario()
-    print(f"  [OK] Modelo de IA configurado: {MODELO} (Ultra rapido)")
+    
+    if PROVIDER in ("auto", "ollama"):
+        iniciar_ollama_se_necessario()
+        print(f"  [IA] Provedor Primario: Ollama ({MODELO})")
+        if GEMINI_KEY:
+            print("  [IA] Fallback de Nuvem: Google Gemini Ativo")
+    elif PROVIDER == "gemini":
+        print(f"  [IA] Provedor Ativo: Google Gemini ({os.environ.get('GEMINI_MODEL', 'gemini-2.5-flash')})")
+    else:
+        print(f"  [IA] Provedor Ativo: {PROVIDER}")
+
     print(f"  [OK] Servidor iniciado em http://{HOST}:{PORT}")
     print(f"  [OK] Threads: {THREADS} (conexoes simultaneas)")
     print(f"  [OK] Modo: PRODUCAO (Waitress WSGI)")

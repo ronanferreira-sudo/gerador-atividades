@@ -1,10 +1,10 @@
 import os
 import re
-import requests
 import hashlib
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dotenv import load_dotenv
+from ia.ia_client import chamar_ia, obter_config_ia, verificar_ollama_online
 
 load_dotenv()
 
@@ -13,20 +13,11 @@ load_dotenv()
 _cache_lock = threading.Lock()
 _cache_planos = {}
 
-# URL do Ollama configurável via .env
-OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
-OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2")
 
-
-def verificar_ollama_online(timeout=1.5):
-    """
-    Verifica rapidamente se o Ollama está rodando para evitar congelamento por timeout longo.
-    """
-    try:
-        resp = requests.get(f"{OLLAMA_URL}/api/tags", timeout=timeout)
-        return resp.status_code == 200
-    except Exception:
-        return False
+def obter_config_ollama():
+    """Retorna configuração dinâmica para compatibilidade."""
+    cfg = obter_config_ia()["ollama"]
+    return cfg["url"], cfg["model"], cfg["timeout"]
 
 
 def gerar_hash_plano(texto_base, carga_horaria, aulas_por_dia, dia):
@@ -35,6 +26,8 @@ def gerar_hash_plano(texto_base, carga_horaria, aulas_por_dia, dia):
 
 
 def preprocessar_texto(texto):
+    if not texto:
+        return ""
     texto = texto.replace("\n", " ")
     texto = " ".join(texto.split())
     return texto[:3000]
@@ -112,7 +105,7 @@ def construir_plano_estruturado_de_aula(aula, nome_curso, uc, horas_dia):
 def gerar_plano_aula(texto_base, carga_horaria, aulas_por_dia, dia):
     """
     Gera o plano de aula para upload direto (PDF de plano de curso avulso).
-    Verifica se o Ollama está online para resposta rápida sem travar o sistema.
+    Utiliza ia_client para suportar Ollama, Gemini ou APIs compatíveis dinamicamente.
     """
     key = gerar_hash_plano(texto_base, carga_horaria, aulas_por_dia, dia)
 
@@ -121,33 +114,7 @@ def gerar_plano_aula(texto_base, carga_horaria, aulas_por_dia, dia):
             print(f"[CACHE] Hit plano dia {dia}")
             return (dia, _cache_planos[key])
 
-    # Se Ollama estiver offline, não trava esperando timeout
-    if not verificar_ollama_online():
-        plano_rapido = f"""1. Identificacao:
-- Unidade Curricular / Conteudo: Aula do Dia {dia}
-- Carga Horaria: {aulas_por_dia} horas
-
-2. Objetivos da Aula:
-- Compreender e aplicar os conceitos e tecnicas previstos para o Dia {dia}.
-
-3. Conteudo Programatico:
-- {preprocessar_texto(texto_base)[:300]}
-
-4. Estrategia Didatica:
-- Abertura com contextualizacao dos topicos previstos.
-- Desenvolvimento expositivo-dialogado e resolucao pratica de exercicios.
-- Fechamento com sintese e esclarecimento de duvidas.
-
-5. Recursos Didaticos:
-- Computador, tela interativa, material didatico de apoio.
-
-6. Avaliacao da Aprendizagem:
-- Observacao direta do desempenho discente e acompanhamento das praticas."""
-        with _cache_lock:
-            _cache_planos[key] = plano_rapido
-        return (dia, plano_rapido)
-
-    print(f"[IA] Chamando Ollama - DIA {dia}...")
+    print(f"[IA] Solicitando geracao do Plano de Aula - DIA {dia}...")
 
     prompt = f"""Crie o plano de aula do DIA {dia} baseado no conteudo abaixo:
 {preprocessar_texto(texto_base)[:2000]}
@@ -163,32 +130,22 @@ Gere APENAS o plano de aula no formato estruturado:
 Comece diretamente com "1. Identificacao:"."""
 
     try:
-        resposta = requests.post(
-            f"{OLLAMA_URL}/api/generate",
-            json={
-                "model": OLLAMA_MODEL,
-                "prompt": prompt,
-                "stream": False,
-                "options": {
-                    "num_predict": 450,
-                    "temperature": 0.1
-                }
-            },
-            timeout=40
+        plano = chamar_ia(
+            prompt=prompt,
+            system_prompt="Você é um especialista em planejamento pedagógico do SENAI.",
+            max_tokens=600,
+            temperature=0.1
         )
 
-        if resposta.status_code == 200:
-            data = resposta.json()
-            plano = data.get("response", "").strip()
-            if len(plano) >= 50:
-                with _cache_lock:
-                    _cache_planos[key] = plano
-                return (dia, plano)
-
+        if plano and len(plano.strip()) >= 50:
+            plano_limpo = plano.strip()
+            with _cache_lock:
+                _cache_planos[key] = plano_limpo
+            return (dia, plano_limpo)
     except Exception as e:
-        print(f"[AVISO] Ollama DIA {dia}: {e}")
+        print(f"[AVISO] Erro na geracao via IA do DIA {dia}: {e}")
 
-    # Fallback estruturado se IA demorar
+    # Fallback estruturado se IA demorar ou falhar
     plano_fallback = f"""1. Identificacao:
 - Aula: Encontro do Dia {dia} ({aulas_por_dia}h)
 
@@ -206,6 +163,7 @@ Comece diretamente com "1. Identificacao:"."""
 
 6. Avaliacao da Aprendizagem:
 - Acompanhamento formativo por checklist e participacao."""
+
     with _cache_lock:
         _cache_planos[key] = plano_fallback
     return (dia, plano_fallback)
@@ -234,7 +192,7 @@ def gerar_plano_aula_de_planejamento(aula, nome_curso, uc, horas_dia, usar_ia=Fa
     """
     Gera um plano de aula detalhado baseado na aula do Planejamento Docente.
     Por padrão gera de forma instantânea e consistente com a Taxonomia de Bloom.
-    Se usar_ia=True e o Ollama estiver ativo, realiza enriquecimento contextual.
+    Se usar_ia=True, realiza enriquecimento contextual via IA.
     """
     dia = aula.get("dia", 1)
     key = hashlib.md5(f"plan-bloom-{nome_curso}-{uc}-{dia}-{horas_dia}".encode()).hexdigest()
@@ -246,12 +204,12 @@ def gerar_plano_aula_de_planejamento(aula, nome_curso, uc, horas_dia, usar_ia=Fa
     # Geração instantânea padronizada de alta fidelidade
     plano_estruturado = construir_plano_estruturado_de_aula(aula, nome_curso, uc, horas_dia)
 
-    if not usar_ia or not verificar_ollama_online():
+    if not usar_ia:
         with _cache_lock:
             _cache_planos[key] = plano_estruturado
         return (dia, plano_estruturado)
 
-    # Enriquecimento opcional via Ollama se requisitado
+    # Enriquecimento opcional via IA se requisitado
     try:
         prompt = f"""Voce e especialista pedagogico do SENAI.
 Aprimore o seguinte plano de aula mantendo rigorosamente a estrutura numerada de 1 a 6:
@@ -261,26 +219,18 @@ Conteudo: {aula.get('conhecimento', '')}
 
 {plano_estruturado}"""
 
-        resposta = requests.post(
-            f"{OLLAMA_URL}/api/generate",
-            json={
-                "model": OLLAMA_MODEL,
-                "prompt": prompt,
-                "stream": False,
-                "options": {
-                    "num_predict": 450,
-                    "temperature": 0.2
-                }
-            },
-            timeout=25
+        plano_ia = chamar_ia(
+            prompt=prompt,
+            system_prompt="Você é um especialista pedagógico do SENAI.",
+            max_tokens=550,
+            temperature=0.2
         )
 
-        if resposta.status_code == 200:
-            plano_ia = resposta.json().get("response", "").strip()
-            if len(plano_ia) >= 80:
-                with _cache_lock:
-                    _cache_planos[key] = plano_ia
-                return (dia, plano_ia)
+        if plano_ia and len(plano_ia.strip()) >= 80:
+            plano_ia_limpo = plano_ia.strip()
+            with _cache_lock:
+                _cache_planos[key] = plano_ia_limpo
+            return (dia, plano_ia_limpo)
     except Exception as e:
         print(f"[AVISO] Enriquecimento IA dia {dia}: {e}")
 
@@ -291,10 +241,7 @@ Conteudo: {aula.get('conhecimento', '')}
 
 def gerar_todos_planos_de_planejamento(aulas, nome_curso, uc, horas_dia, max_workers=4):
     """
-    Gera todos os planos de aula a partir do Planejamento Docente.
-    Como o Planejamento Docente já possui toda a Taxonomia de Bloom, capacidades,
-    conteúdos e critérios calibrados, os planos são gerados de forma INSTANTÂNEA,
-    padronizada e profissional em milissegundos.
+    Gera todos os planos de aula a partir do Planejamento Docente instantaneamente.
     """
     print(f"[PLANOS] Gerando {len(aulas)} Planos de Aula a partir do Planejamento Docente...")
     resultados = {}
