@@ -26,8 +26,8 @@
     <div class="alert alert-success alert-dismissible fade show shadow-sm mb-4 d-flex align-items-center rounded-3 p-3" role="alert">
         <i class="bi bi-check-circle-fill text-success fs-3 me-3"></i>
         <div>
-            <strong class="d-block">Planejamento Docente gerado e salvo com sucesso!</strong>
-            <span class="small text-muted">A planilha oficial do Excel foi preenchida e o download iniciou automaticamente.</span>
+            <strong class="d-block">Planejamento Docente e Planos de Aula gerados com sucesso!</strong>
+            <span class="small text-muted">A planilha oficial do Excel foi preenchida (download iniciado) e todos os planos de aula individuais já foram estruturados.</span>
         </div>
         <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Fechar"></button>
     </div>
@@ -69,12 +69,12 @@
                             <td class="fw-semibold">
                                 <div class="text-dark">{{ p[1] }}</div>
                                 <div class="small mt-1">
-                                    {% if p|length > 14 and p[14] %}
-                                        {% if 'TÉCNIC' in p[14]|upper or 'TECNIC' in p[14]|upper or 'HABILITA' in p[14]|upper %}
+                                    {% if p|length > 12 and p[12] %}
+                                        {% if 'TÉCNIC' in p[12]|upper or 'TECNIC' in p[12]|upper or 'HABILITA' in p[12]|upper %}
                                             <span class="badge badge-subtle-primary me-1">
                                                 <i class="bi bi-mortarboard-fill me-1"></i> Técnico
                                             </span>
-                                        {% elif 'APERFEIÇ' in p[14]|upper or 'APERFEIC' in p[14]|upper %}
+                                        {% elif 'APERFEIÇ' in p[12]|upper or 'APERFEIC' in p[12]|upper %}
                                             <span class="badge badge-subtle-success me-1">
                                                 <i class="bi bi-award-fill me-1"></i> Aperfeiçoamento
                                             </span>
@@ -117,17 +117,17 @@
                                 {% endif %}
                             </td>
                             <td class="text-center small text-muted">
-                                {{ p[12].strftime('%d/%m/%Y %H:%M') if p[12].strftime else p[12] }}
+                                {{ p[14].strftime('%d/%m/%Y %H:%M') if p|length > 14 and p[14] and p[14].strftime else p[14] if p|length > 14 else '' }}
                             </td>
                             <td class="text-center">
                                 <div class="d-flex align-items-center justify-content-center gap-1">
-                                    {% if p[13] %}
-                                        <a href="/curso/{{ p[13] }}" class="btn btn-outline-primary btn-sm" title="Ver Planos de Aula vinculados">
-                                            <i class="bi bi-journal-text"></i> Planos
+                                    {% if p|length > 11 and p[11] %}
+                                        <a href="/curso/{{ p[11] }}" class="btn btn-outline-primary btn-sm" title="Ver Planos de Aula gerados para este planejamento">
+                                            <i class="bi bi-journal-text"></i> Ver Planos
                                         </a>
                                     {% else %}
-                                        <a href="/gerar_planos_planejamento/{{ p[0] }}" class="btn btn-outline-warning btn-sm btn-gerar-planos" title="Gerar planos de aula a partir deste planejamento">
-                                            <i class="bi bi-lightning-charge"></i> Planos
+                                        <a href="/gerar_planos_planejamento/{{ p[0] }}" class="btn btn-outline-primary btn-sm btn-gerar-planos" title="Ver Planos de Aula deste planejamento">
+                                            <i class="bi bi-journal-text"></i> Ver Planos
                                         </a>
                                     {% endif %}
                                     <a href="/baixar_planejamento/{{ p[0] }}" class="btn btn-success btn-sm" title="Baixar arquivo Excel (.xlsx) preenchido">

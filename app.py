@@ -1863,10 +1863,22 @@ def planejamento_docente():
         print(f"[OK] Excel do Planejamento Docente gerado com sucesso: {caminho_excel}")
 
         # ----------------------------------------------------------
-        # 4. Salva o Planejamento Docente no banco de dados
+        # 4. Salva o Planejamento Docente e gera automaticamente os Planos de Aula
         # ----------------------------------------------------------
         conn, cursor = get_cursor()
         try:
+            # 4.1 Cria o registro do curso em cursos_plano
+            cursor.execute(
+                """
+                INSERT INTO cursos_plano (nome_curso, carga_horaria, aulas_por_dia, usuario_id)
+                VALUES (%s, %s, %s, %s)
+                RETURNING id
+                """,
+                (f"{nome_curso} — {unidade_curricular}", carga_horaria, horas_por_dia, session["usuario_id"])
+            )
+            curso_id = cursor.fetchone()[0]
+
+            # 4.2 Salva o Planejamento Docente com curso_id vinculado
             cursor.execute(
                 """
                 INSERT INTO planejamentos_docente (
@@ -1880,10 +1892,11 @@ def planejamento_docente():
                     data_fim,
                     total_aulas,
                     arquivo_excel,
+                    curso_id,
                     usuario_id,
                     modalidade
                 )
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 RETURNING id
                 """,
                 (
@@ -1897,16 +1910,55 @@ def planejamento_docente():
                     data_fim_str or None,
                     total_aulas,
                     nome_arquivo_excel,
+                    curso_id,
                     session["usuario_id"],
                     modalidade
                 )
             )
             planejamento_id = cursor.fetchone()[0]
+
+            # 4.3 Gera automaticamente todos os Planos de Aula estruturados por encontro
+            planos_gerados = gerar_todos_planos_de_planejamento(
+                aulas,
+                nome_curso,
+                unidade_curricular,
+                horas_por_dia,
+                max_workers=2
+            )
+
+            # 4.4 Salva os planos de aula no banco vinculados ao curso e ao planejamento
+            planos_completos = ""
+            for dia, plano_texto in enumerate(planos_gerados, start=1):
+                planos_completos += f"\n\nDIA {dia}\n\n{plano_texto}"
+                cursor.execute(
+                    """
+                    INSERT INTO planos_aula (curso_id, dia, tema, plano_gerado, usuario_id, planejamento_id)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    """,
+                    (curso_id, dia, f"Plano Dia {dia} — {unidade_curricular}", plano_texto, session["usuario_id"], planejamento_id)
+                )
+
             conn.commit()
+            print(f"[OK] Planejamento Docente #{planejamento_id} e {len(planos_gerados)} Planos de Aula gerados para o Curso #{curso_id}!")
         finally:
             release_cursor(conn, cursor)
 
-        print(f"[OK] Planejamento Docente salvo no banco: ID #{planejamento_id}")
+        # 4.5 Gera DOCX e PDF consolidados do curso
+        try:
+            os.makedirs("outputs", exist_ok=True)
+            arquivo_docx = f"outputs/plano_{curso_id}.docx"
+            arquivo_pdf = f"outputs/plano_{curso_id}.pdf"
+            gerar_docx_plano(
+                titulo="PLANO DE AULA",
+                subtitulo=f"Curso: {nome_curso} — {unidade_curricular}",
+                conteudo=planos_completos,
+                caminho_saida=arquivo_docx
+            )
+            gerar_pdf_plano(arquivo_docx, arquivo_pdf)
+        except Exception as e:
+            print(f"[AVISO] Erro ao consolidar DOCX/PDF do curso: {e}")
+
+        print(f"[OK] Planejamento Docente e Planos de Aula prontos!")
         print(f"[INFO] Disponibilizando arquivo Excel para download imediato...")
         print("=" * 60)
 
@@ -2066,7 +2118,7 @@ def gerar_planos_planejamento(planejamento_id):
     if not plan:
         return "Planejamento não encontrado", 404
 
-    curso_id = plan[13] if len(plan) > 13 else None
+    curso_id = plan[11] if len(plan) > 11 else None
 
     # Se já tem planos gerados e curso_id vinculado, vai direto para o curso
     if curso_id:
@@ -2094,26 +2146,27 @@ def gerar_planos_planejamento(planejamento_id):
         except Exception as e:
             print(f"Erro ao ler Excel do planejamento: {e}")
 
-    # Cria o curso
-    conn, cursor = get_cursor()
-    try:
-        cursor.execute(
-            """
-            INSERT INTO cursos_plano (nome_curso, carga_horaria, aulas_por_dia, usuario_id)
-            VALUES (%s, %s, %s, %s)
-            RETURNING id
-            """,
-            (f"{nome_curso} — {uc}", ch, hd, session["usuario_id"])
-        )
-        curso_id = cursor.fetchone()[0]
+    # Cria ou vincula o curso
+    if not curso_id:
+        conn, cursor = get_cursor()
+        try:
+            cursor.execute(
+                """
+                INSERT INTO cursos_plano (nome_curso, carga_horaria, aulas_por_dia, usuario_id)
+                VALUES (%s, %s, %s, %s)
+                RETURNING id
+                """,
+                (f"{nome_curso} — {uc}", ch, hd, session["usuario_id"])
+            )
+            curso_id = cursor.fetchone()[0]
 
-        cursor.execute(
-            "UPDATE planejamentos_docente SET curso_id = %s WHERE id = %s",
-            (curso_id, planejamento_id)
-        )
-        conn.commit()
-    finally:
-        release_cursor(conn, cursor)
+            cursor.execute(
+                "UPDATE planejamentos_docente SET curso_id = %s WHERE id = %s",
+                (curso_id, planejamento_id)
+            )
+            conn.commit()
+        finally:
+            release_cursor(conn, cursor)
 
     if not aulas_excel:
         datas = calcular_datas_aulas(str(plan[7]) if plan[7] else None, plan[9])
@@ -2122,9 +2175,11 @@ def gerar_planos_planejamento(planejamento_id):
 
     planos_gerados = gerar_todos_planos_de_planejamento(aulas_excel, nome_curso, uc, hd, max_workers=2)
 
+    planos_completos = ""
     conn, cursor = get_cursor()
     try:
         for dia, plano_texto in enumerate(planos_gerados, start=1):
+            planos_completos += f"\n\nDIA {dia}\n\n{plano_texto}"
             cursor.execute(
                 """
                 INSERT INTO planos_aula (curso_id, dia, tema, plano_gerado, usuario_id, planejamento_id)
@@ -2135,6 +2190,21 @@ def gerar_planos_planejamento(planejamento_id):
         conn.commit()
     finally:
         release_cursor(conn, cursor)
+
+    # Gera DOCX e PDF consolidados do curso
+    try:
+        os.makedirs("outputs", exist_ok=True)
+        arquivo_docx = f"outputs/plano_{curso_id}.docx"
+        arquivo_pdf = f"outputs/plano_{curso_id}.pdf"
+        gerar_docx_plano(
+            titulo="PLANO DE AULA",
+            subtitulo=f"Curso: {nome_curso} — {uc}",
+            conteudo=planos_completos,
+            caminho_saida=arquivo_docx
+        )
+        gerar_pdf_plano(arquivo_docx, arquivo_pdf)
+    except Exception as e:
+        print(f"[AVISO] Erro ao consolidar DOCX/PDF: {e}")
 
     return redirect(f"/curso/{curso_id}")
 
