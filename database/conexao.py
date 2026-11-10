@@ -33,3 +33,25 @@ def release_cursor(conn, cursor):
         cursor.close()
     if conn:
         conexao_pool.putconn(conn)
+
+
+def _executar_migracoes_iniciais():
+    """Garante que novas colunas existam no banco sem necessidade de intervenção manual."""
+    try:
+        conn = conexao_pool.getconn()
+        conn.autocommit = True
+        cur = conn.cursor()
+        cur.execute("""
+            ALTER TABLE planejamentos_docente ADD COLUMN IF NOT EXISTS modalidade VARCHAR(100);
+            ALTER TABLE planejamentos_docente ADD COLUMN IF NOT EXISTS curso_id INTEGER REFERENCES cursos_plano(id) ON DELETE SET NULL;
+            ALTER TABLE planos_aula ADD COLUMN IF NOT EXISTS planejamento_id INTEGER REFERENCES planejamentos_docente(id) ON DELETE SET NULL;
+        """)
+        cur.close()
+        conexao_pool.putconn(conn)
+    except Exception as e:
+        print(f"[BD] Aviso na verificação de migrações: {e}")
+
+
+# Executa checagem de colunas na inicialização
+_executar_migracoes_iniciais()
+

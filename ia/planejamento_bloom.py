@@ -465,8 +465,7 @@ Responda ESTRITAMENTE em formato JSON valido, sem nenhum texto antes ou depois:
             prompt=prompt,
             system_prompt="Você é um especialista em planejamento pedagógico do SENAI e responde exclusivamente em JSON válido.",
             max_tokens=4096,
-            temperature=0.2,
-            timeout=35
+            temperature=0.2
         )
 
         if texto_resp:

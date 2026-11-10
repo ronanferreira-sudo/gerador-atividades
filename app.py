@@ -538,6 +538,8 @@ def gerar_pdf(id):
 
     dados_cab = extrair_cabecalho_atividade(atividade)
 
+    os.makedirs("outputs", exist_ok=True)
+
     gerar_docx_atividade(
         titulo="ATIVIDADE AVALIATIVA",
         subtitulo=dados_cab["curso"],
@@ -547,22 +549,34 @@ def gerar_pdf(id):
     )
 
     resultado = gerar_pdf_atividade(
-        arquivo_docx,
-        arquivo_pdf
+        arquivo_docx=arquivo_docx,
+        arquivo_pdf=arquivo_pdf,
+        titulo="ATIVIDADE AVALIATIVA",
+        subtitulo=dados_cab["curso"],
+        dados_cabecalho=dados_cab,
+        conteudo=atividade[5]
     )
 
-    # Se o PDF falhar (exemplo: Word nÃ£o instalado), envia o DOCX como fallback
-    if not resultado:
-        return send_file(
-            arquivo_docx,
-            as_attachment=True,
-            download_name=f"atividade_{id}.docx"
+    if not resultado or not os.path.exists(arquivo_pdf):
+        from utils.pdf_atividade_generator import gerar_pdf_atividade_reportlab
+        gerar_pdf_atividade_reportlab(
+            arquivo_pdf=arquivo_pdf,
+            titulo="ATIVIDADE AVALIATIVA",
+            subtitulo=dados_cab["curso"],
+            dados_cabecalho=dados_cab,
+            conteudo=atividade[5],
+            arquivo_docx=arquivo_docx
         )
 
-    return send_file(
-        arquivo_pdf,
-        as_attachment=True
-    )
+    if os.path.exists(arquivo_pdf):
+        return send_file(
+            arquivo_pdf,
+            as_attachment=True,
+            download_name=f"atividade_{id}.pdf",
+            mimetype="application/pdf"
+        )
+
+    return "Erro ao gerar arquivo PDF da atividade. Por favor, tente novamente.", 500
 
 
 # =========================
@@ -593,7 +607,7 @@ def gerar_word(id):
         release_cursor(conn, cursor)
 
     if not atividade:
-        return "Atividade nÃ£o encontrada"
+        return "Atividade não encontrada"
 
     arquivo = f"outputs/atividade_{id}.docx"
 
@@ -609,7 +623,9 @@ def gerar_word(id):
 
     return send_file(
         arquivo,
-        as_attachment=True
+        as_attachment=True,
+        download_name=f"atividade_{id}.docx",
+        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
 
 
@@ -1121,15 +1137,33 @@ def plano_pdf(id):
         caminho_saida=arquivo_docx
     )
 
-    gerar_pdf_plano(
+    resultado = gerar_pdf_plano(
         arquivo_docx,
-        arquivo_pdf
+        arquivo_pdf,
+        titulo="PLANO DE AULA",
+        subtitulo=plano[3],
+        conteudo=plano[4]
     )
 
-    return send_file(
-        arquivo_pdf,
-        as_attachment=True
-    )
+    if not resultado or not os.path.exists(arquivo_pdf):
+        from utils.pdf_generator import gerar_pdf_plano_reportlab
+        gerar_pdf_plano_reportlab(
+            docx_path=arquivo_docx,
+            pdf_path=arquivo_pdf,
+            titulo="PLANO DE AULA",
+            subtitulo=plano[3],
+            conteudo=plano[4]
+        )
+
+    if os.path.exists(arquivo_pdf):
+        return send_file(
+            arquivo_pdf,
+            as_attachment=True,
+            download_name=f"plano_{id}.pdf",
+            mimetype="application/pdf"
+        )
+
+    return "Erro ao gerar arquivo PDF do plano. Por favor, tente novamente.", 500
 
 
 # =========================
@@ -1157,7 +1191,7 @@ def plano_word(id):
         release_cursor(conn, cursor)
 
     if not plano:
-        return "Plano nÃ£o encontrado"
+        return "Plano não encontrado"
 
     arquivo = f"outputs/plano_{id}.docx"
 
@@ -1170,7 +1204,120 @@ def plano_word(id):
 
     return send_file(
         arquivo,
-        as_attachment=True
+        as_attachment=True,
+        download_name=f"plano_{id}.docx",
+        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
+
+
+# =========================
+# CURSO COMPLETO PDF & WORD
+# =========================
+@app.route("/curso_pdf/<int:curso_id>")
+def curso_pdf(curso_id):
+
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    conn, cursor = get_cursor()
+    try:
+        cursor.execute("SELECT * FROM cursos_plano WHERE id = %s", (curso_id,))
+        curso = cursor.fetchone()
+
+        cursor.execute("SELECT * FROM planos_aula WHERE curso_id = %s ORDER BY dia", (curso_id,))
+        planos = cursor.fetchall()
+    finally:
+        release_cursor(conn, cursor)
+
+    if not curso:
+        return "Curso não encontrado", 404
+
+    arquivo_docx = f"outputs/plano_{curso_id}.docx"
+    arquivo_pdf = f"outputs/plano_{curso_id}.pdf"
+
+    nome_curso = curso[1]
+    planos_completos = []
+    for p in planos:
+        planos_completos.append(f"DIA {p[2]}\n{p[4]}")
+    conteudo_total = "\n\n".join(planos_completos)
+
+    if not os.path.exists(arquivo_docx):
+        gerar_docx_plano(
+            titulo="PLANO DE AULA",
+            subtitulo=f"Curso: {nome_curso}",
+            conteudo=conteudo_total,
+            caminho_saida=arquivo_docx
+        )
+
+    gerar_pdf_plano(
+        docx_path=arquivo_docx,
+        pdf_path=arquivo_pdf,
+        titulo="PLANO DE AULA",
+        subtitulo=f"Curso: {nome_curso}",
+        conteudo=conteudo_total
+    )
+
+    if not os.path.exists(arquivo_pdf):
+        from utils.pdf_generator import gerar_pdf_plano_reportlab
+        gerar_pdf_plano_reportlab(
+            docx_path=arquivo_docx,
+            pdf_path=arquivo_pdf,
+            titulo="PLANO DE AULA",
+            subtitulo=f"Curso: {nome_curso}",
+            conteudo=conteudo_total
+        )
+
+    if os.path.exists(arquivo_pdf):
+        return send_file(
+            arquivo_pdf,
+            as_attachment=True,
+            download_name=f"curso_{curso_id}_completo.pdf",
+            mimetype="application/pdf"
+        )
+
+    return "Erro ao gerar arquivo PDF do curso completo.", 500
+
+
+@app.route("/curso_word/<int:curso_id>")
+def curso_word(curso_id):
+
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    conn, cursor = get_cursor()
+    try:
+        cursor.execute("SELECT * FROM cursos_plano WHERE id = %s", (curso_id,))
+        curso = cursor.fetchone()
+
+        cursor.execute("SELECT * FROM planos_aula WHERE curso_id = %s ORDER BY dia", (curso_id,))
+        planos = cursor.fetchall()
+    finally:
+        release_cursor(conn, cursor)
+
+    if not curso:
+        return "Curso não encontrado", 404
+
+    arquivo_docx = f"outputs/plano_{curso_id}.docx"
+
+    if not os.path.exists(arquivo_docx):
+        nome_curso = curso[1]
+        planos_completos = []
+        for p in planos:
+            planos_completos.append(f"DIA {p[2]}\n{p[4]}")
+        conteudo_total = "\n\n".join(planos_completos)
+
+        gerar_docx_plano(
+            titulo="PLANO DE AULA",
+            subtitulo=f"Curso: {nome_curso}",
+            conteudo=conteudo_total,
+            caminho_saida=arquivo_docx
+        )
+
+    return send_file(
+        arquivo_docx,
+        as_attachment=True,
+        download_name=f"curso_{curso_id}_completo.docx",
+        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
 
 

@@ -1,4 +1,4 @@
-﻿-- ============================================================
+-- ============================================================
 -- SCRIPT COMPLETO PARA CRIAÇÃO DO BANCO NO POSTGRESQL
 -- Sistema: Gerador de Atividades e Planos de Aula
 -- Banco: PostgreSQL
@@ -106,6 +106,8 @@ CREATE TABLE IF NOT EXISTS planejamentos_docente (
     data_fim            DATE,
     total_aulas         INTEGER NOT NULL,
     arquivo_excel       VARCHAR(255),
+    curso_id            INTEGER REFERENCES cursos_plano(id) ON DELETE SET NULL,
+    modalidade          VARCHAR(100),
     usuario_id          INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
     data_criacao        TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

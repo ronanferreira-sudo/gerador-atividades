@@ -252,7 +252,10 @@ def chamar_ia(prompt: str, system_prompt: str = None, max_tokens: int = 2000, te
     # Tenta Ollama local primeiro se estiver online
     if verificar_ollama_online():
         try:
-            res = _chamar_ollama(prompt, system_prompt, max_tokens, temperature, timeout)
+            # Modelos locais no Ollama (ex: llama3.1) demoram mais para carregar/gerar.
+            # Garante que não use um timeout inferior ao configurado no .env (OLLAMA_TIMEOUT).
+            timeout_ollama = max(timeout or 0, config["ollama"]["timeout"])
+            res = _chamar_ollama(prompt, system_prompt, max_tokens, temperature, timeout_ollama)
             if res:
                 return res
         except Exception as e:
