@@ -134,19 +134,19 @@ def extrair_dados_excel(caminho_arquivo):
     linha_cabecalho = encontrar_linha_cabecalho(ws)
     colunas = encontrar_colunas(ws, linha_cabecalho)
 
-    print(f"📋 Linha do cabeçalho encontrada: {linha_cabecalho}")
-    print(f"📋 Colunas encontradas: {colunas}")
+    print(f"[INFO] Linha do cabeçalho encontrada: {linha_cabecalho}")
+    print(f"[INFO] Colunas encontradas: {colunas}")
 
     # Se nenhuma coluna foi encontrada, tenta abordagens alternativas
     if not any(colunas.values()):
-        print("⚠️  Nenhuma coluna específica encontrada. Tentando formato PLANEJAMENTO DOCENTE...")
+        print("[AVISO] Nenhuma coluna específica encontrada. Tentando formato PLANEJAMENTO DOCENTE...")
         dados = extrair_texto_celulas_mescladas(ws)
         if dados:
             wb.close()
-            print(f"✅ Extraídos {len(dados)} itens no formato PLANEJAMENTO DOCENTE")
+            print(f"[OK] Extraídos {len(dados)} itens no formato PLANEJAMENTO DOCENTE")
             return dados
 
-        print("⚠️  Usando abordagem genérica...")
+        print("[AVISO] Usando abordagem genérica...")
         dados = _extrair_generico(ws, linha_cabecalho)
         wb.close()
         return dados
@@ -155,12 +155,12 @@ def extrair_dados_excel(caminho_arquivo):
     # Caso as colunas encontradas não tenham dados reais
     if colunas["subfuncao"] == colunas["capacidade"] == colunas["conhecimento"]:
         # Provavelmente é uma planilha com células mescladas onde tudo está na mesma coluna
-        print("⚠️  Colunas de Subfunção, Capacidade e Conhecimento apontam para a mesma coluna.")
-        print("⚠️  Tentando extrair como formato PLANEJAMENTO DOCENTE...")
+        print("[AVISO] Colunas de Subfunção, Capacidade e Conhecimento apontam para a mesma coluna.")
+        print("[AVISO] Tentando extrair como formato PLANEJAMENTO DOCENTE...")
         dados = extrair_texto_celulas_mescladas(ws)
         if dados:
             wb.close()
-            print(f"✅ Extraídos {len(dados)} itens no formato PLANEJAMENTO DOCENTE")
+            print(f"[OK] Extraídos {len(dados)} itens no formato PLANEJAMENTO DOCENTE")
             return dados
 
     dados = []
@@ -301,8 +301,8 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         caminho = sys.argv[1]
         dados = extrair_dados_excel(caminho)
-        print(f"\n📊 Total de itens extraídos: {len(dados)}")
-        print(f"📊 Total de conhecimentos: {contar_itens(dados)}")
+        print(f"\n[INFO] Total de itens extraídos: {len(dados)}")
+        print(f"[INFO] Total de conhecimentos: {contar_itens(dados)}")
         print("\n" + "=" * 60)
         print("TEXTO FORMATADO PARA IA:")
         print("=" * 60)

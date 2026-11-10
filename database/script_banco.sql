@@ -64,30 +64,6 @@ CREATE INDEX IF NOT EXISTS idx_cursos_plano_usuario ON cursos_plano(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_cursos_plano_data ON cursos_plano(data_criacao DESC);
 
 -- ============================================================
--- TABELA: planos_aula
--- ============================================================
-CREATE TABLE IF NOT EXISTS planos_aula (
-    id              SERIAL PRIMARY KEY,
-    curso_id        INTEGER NOT NULL REFERENCES cursos_plano(id) ON DELETE CASCADE,
-    dia             INTEGER NOT NULL,
-    tema            VARCHAR(300),
-    plano_gerado    TEXT NOT NULL,
-    usuario_id      INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-    planejamento_id INTEGER REFERENCES planejamentos_docente(id) ON DELETE CASCADE,
-    data_criacao    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-COMMENT ON TABLE planos_aula IS 'Planos de aula gerados para cada dia de um curso';
-COMMENT ON COLUMN planos_aula.dia IS 'Número do dia/aula do plano';
-COMMENT ON COLUMN planos_aula.plano_gerado IS 'Conteúdo completo do plano de aula gerado pela IA';
-
-CREATE INDEX IF NOT EXISTS idx_planos_aula_curso ON planos_aula(curso_id);
-CREATE INDEX IF NOT EXISTS idx_planos_aula_usuario ON planos_aula(usuario_id);
-CREATE INDEX IF NOT EXISTS idx_planos_aula_dia ON planos_aula(curso_id, dia);
-
--- ============================================================
-
--- ============================================================
 -- TABELA: planejamentos_docente
 -- ============================================================
 CREATE TABLE IF NOT EXISTS planejamentos_docente (
@@ -110,6 +86,28 @@ CREATE TABLE IF NOT EXISTS planejamentos_docente (
 
 CREATE INDEX IF NOT EXISTS idx_planejamentos_usuario ON planejamentos_docente(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_planejamentos_data ON planejamentos_docente(data_criacao DESC);
+
+-- ============================================================
+-- TABELA: planos_aula
+-- ============================================================
+CREATE TABLE IF NOT EXISTS planos_aula (
+    id              SERIAL PRIMARY KEY,
+    curso_id        INTEGER NOT NULL REFERENCES cursos_plano(id) ON DELETE CASCADE,
+    dia             INTEGER NOT NULL,
+    tema            VARCHAR(300),
+    plano_gerado    TEXT NOT NULL,
+    usuario_id      INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    planejamento_id INTEGER REFERENCES planejamentos_docente(id) ON DELETE CASCADE,
+    data_criacao    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+COMMENT ON TABLE planos_aula IS 'Planos de aula gerados para cada dia de um curso';
+COMMENT ON COLUMN planos_aula.dia IS 'Número do dia/aula do plano';
+COMMENT ON COLUMN planos_aula.plano_gerado IS 'Conteúdo completo do plano de aula gerado pela IA';
+
+CREATE INDEX IF NOT EXISTS idx_planos_aula_curso ON planos_aula(curso_id);
+CREATE INDEX IF NOT EXISTS idx_planos_aula_usuario ON planos_aula(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_planos_aula_dia ON planos_aula(curso_id, dia);
 
 -- SEQUENCES (criadas automaticamente pelo SERIAL, apenas para referência)
 -- ============================================================

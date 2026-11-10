@@ -35,4 +35,4 @@ openpyxl>=3.1.2
 xlrd>=2.0.1
 
 # --- Windows (automação Excel/Word e conversão PDF) ---
-pywin32>=306
+pywin32>=306; sys_platform == 'win32'

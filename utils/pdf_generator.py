@@ -1,8 +1,12 @@
 import os
 import re
 import html
-import pythoncom
-from docx2pdf import convert
+try:
+    import pythoncom
+    from docx2pdf import convert
+except ImportError:
+    pythoncom = None
+    convert = None
 import docx
 
 from reportlab.lib.pagesizes import A4
@@ -250,18 +254,18 @@ def gerar_pdf_plano(docx_path, pdf_path, titulo=None, subtitulo=None, conteudo=N
             conteudo=conteudo
         )
         if sucesso and os.path.exists(pdf_path) and os.path.getsize(pdf_path) > 0:
-            print(f"✅ PDF do plano gerado via ReportLab: {pdf_path}")
+            print(f"[OK] PDF do plano gerado via ReportLab: {pdf_path}")
             return True
     except Exception as e:
         print(f"Aviso ReportLab plano ({e}). Tentando docx2pdf...")
 
     # 2. Alternativa via docx2pdf
-    if docx_path and os.path.exists(docx_path):
+    if pythoncom and convert and docx_path and os.path.exists(docx_path):
         try:
             pythoncom.CoInitialize()
             convert(docx_path, pdf_path)
             if os.path.exists(pdf_path) and os.path.getsize(pdf_path) > 0:
-                print(f"✅ PDF do plano gerado via docx2pdf: {pdf_path}")
+                print(f"[OK] PDF do plano gerado via docx2pdf: {pdf_path}")
                 return True
         except Exception as e:
             print(f"Aviso docx2pdf indisponível para plano ({e}).")

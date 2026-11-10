@@ -1,64 +1,88 @@
 {% extends 'base.html' %}
 
-{% block titulo %}Editar Atividade{% endblock %}
+{% block titulo %}Editar Atividade #{{ atividade[0] }} &mdash; SENAI{% endblock %}
 
 {% block conteudo %}
 
-<div class="row justify-content-center mt-4">
-    <div class="col-md-10 col-lg-8">
+<div class="row justify-content-center py-3">
+    <div class="col-md-11 col-lg-9">
 
-        <div class="card shadow border-0">
-            <div class="card-body p-4">
-
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                        <h2 class="fw-bold mb-1">Editar Atividade</h2>
-                        <p class="text-muted mb-0">ID: {{ atividade[0] }}</p>
+        <div class="card-modern shadow-md">
+            <!-- Header do Card -->
+            <div class="card-header-modern bg-white d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="brand-icon-wrapper" style="width: 44px; height: 44px; font-size: 1.3rem;">
+                        <i class="bi bi-pencil-square"></i>
                     </div>
-                    <a href="/atividades" class="btn btn-outline-secondary">Voltar</a>
+                    <div>
+                        <h4 class="mb-0 fw-bold">Editar Atividade Pedagógica</h4>
+                        <span class="text-muted small">Registro ID #{{ atividade[0] }} &mdash; Altere o enunciado, questões ou gabarito</span>
+                    </div>
                 </div>
+                <a href="/atividades" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left"></i> Voltar ao Banco
+                </a>
+            </div>
+
+            <div class="card-body p-4 p-md-5">
 
                 <form method="POST">
 
-                    <div class="row mb-3">
+                    <div class="row g-3 mb-3">
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Curso</label>
+                            <label class="form-label">
+                                <i class="bi bi-mortarboard text-primary"></i> Curso <span class="text-danger">*</span>
+                            </label>
                             <input type="text" name="curso" class="form-control form-control-lg"
                                    value="{{ atividade[1] }}" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Disciplina</label>
+                            <label class="form-label">
+                                <i class="bi bi-book text-primary"></i> Unidade Curricular / Disciplina <span class="text-danger">*</span>
+                            </label>
                             <input type="text" name="disciplina" class="form-control form-control-lg"
                                    value="{{ atividade[2] }}" required>
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Conteudo</label>
-                        <input type="text" name="conteudo" class="form-control form-control-lg"
-                               value="{{ atividade[3] }}" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Dificuldade</label>
-                        <select name="dificuldade" class="form-select form-select-lg">
-                            <option value="fácil" {% if atividade[4] == 'fácil' %}selected{% endif %}>Facil</option>
-                            <option value="médio" {% if atividade[4] == 'médio' %}selected{% endif %}>Medio</option>
-                            <option value="difícil" {% if atividade[4] == 'difícil' %}selected{% endif %}>Dificil</option>
-                        </select>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label">
+                                <i class="bi bi-card-text text-primary"></i> Conteúdo / Tópicos Avaliados <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="conteudo" class="form-control form-control-lg"
+                                   value="{{ atividade[3] }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">
+                                <i class="bi bi-speedometer2 text-primary"></i> Dificuldade
+                            </label>
+                            <select name="dificuldade" class="form-select form-select-lg">
+                                <option value="fácil" {% if atividade[4] == 'fácil' %}selected{% endif %}>Fácil</option>
+                                <option value="médio" {% if atividade[4] == 'médio' %}selected{% endif %}>Médio</option>
+                                <option value="difícil" {% if atividade[4] == 'difícil' %}selected{% endif %}>Difícil</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label fw-semibold">Atividade Gerada</label>
-                        <textarea name="atividade_gerada" class="form-control" rows="20"
-                                  style="font-family: monospace; font-size: 14px;" required>{{ atividade[5] }}</textarea>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label mb-0">
+                                <i class="bi bi-file-earmark-text text-primary"></i> Texto Completo da Atividade &amp; Gabarito <span class="text-danger">*</span>
+                            </label>
+                            <span class="text-muted small">Suporta formatação com numeração de questões</span>
+                        </div>
+                        <textarea name="atividade_gerada" class="form-control p-3" rows="18"
+                                  style="font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; font-size: 0.9rem; line-height: 1.6;" required>{{ atividade[5] }}</textarea>
                     </div>
 
                     <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg flex-grow-1 fw-bold">
-                            Salvar Alteracoes
+                        <button type="submit" class="btn btn-primary btn-lg flex-grow-1 fw-bold shadow-sm">
+                            <i class="bi bi-check-lg"></i> Salvar Alterações
                         </button>
-                        <a href="/atividades" class="btn btn-outline-danger btn-lg">Cancelar</a>
+                        <a href="/atividades" class="btn btn-outline-danger btn-lg">
+                            <i class="bi bi-x-lg"></i> Cancelar
+                        </a>
                     </div>
 
                 </form>

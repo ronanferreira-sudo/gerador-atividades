@@ -1,23 +1,27 @@
 {% extends 'base.html' %}
 
-{% block titulo %}Gerar Planejamento Docente (Excel){% endblock %}
+{% block titulo %}Planejamento Docente (Excel) &mdash; SENAI{% endblock %}
 
 {% block conteudo %}
 
-<div class="row justify-content-center mt-4 mb-5">
+<div class="row justify-content-center py-3">
     <div class="col-lg-10 col-xl-9">
 
-        <div class="card shadow border-0 rounded-4">
-            <div class="card-header bg-primary text-white p-4 rounded-top-4">
-                <div class="d-flex align-items-center">
-                    <div class="me-3 fs-1">📊</div>
+        <div class="card-modern shadow-md">
+            <!-- Header do Card -->
+            <div class="card-header-modern bg-white d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="brand-icon-wrapper" style="width: 46px; height: 46px; font-size: 1.4rem; background: linear-gradient(135deg, #3730a3 0%, #6366f1 100%);">
+                        <i class="bi bi-file-earmark-spreadsheet-fill"></i>
+                    </div>
                     <div>
-                        <h3 class="mb-1 fw-bold">Gerador de Planejamento Docente (Excel)</h3>
-                        <p class="mb-0 opacity-75">
-                            Preenchimento automático do modelo oficial com <strong>Taxonomia de Bloom</strong> e divisão por carga horária.
-                        </p>
+                        <h4 class="mb-0 fw-bold">Gerador de Planejamento Docente (Excel)</h4>
+                        <span class="text-muted small">Preenchimento automático do modelo oficial com <strong>Taxonomia de Bloom</strong> e divisão por carga horária</span>
                     </div>
                 </div>
+                <a href="/listar_planejamentos" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-list-ul"></i> Meus Planejamentos
+                </a>
             </div>
 
             <div class="card-body p-4 p-md-5">
@@ -25,118 +29,149 @@
                 <form method="POST" enctype="multipart/form-data" id="formPlanejamento" onsubmit="iniciarGeracaoPlanejamento(event)">
 
                     <!-- Seção 1: Identificação do Curso e UC -->
-                    <h5 class="fw-bold text-secondary mb-3 pb-2 border-bottom d-flex align-items-center">
-                        <span class="badge bg-primary me-2">1</span> Identificação do Curso
-                    </h5>
+                    <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                        <span class="badge bg-primary rounded-pill px-2 py-1 small">1</span>
+                        <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                            <i class="bi bi-mortarboard text-primary"></i> Identificação do Curso &amp; Unidade Curricular
+                        </h5>
+                    </div>
 
                     <div class="row g-3 mb-4">
                         <div class="col-md-8">
-                            <label class="form-label fw-semibold">Nome do Curso <span class="text-danger">*</span></label>
+                            <label class="form-label">
+                                Nome do Curso <span class="text-danger">*</span>
+                            </label>
                             <input type="text" name="nome_curso" id="nome_curso" class="form-control form-control-lg"
-                                   placeholder="Ex: TÉCNICO EM INFORMÁTICA" required>
+                                   placeholder="Ex: TÉCNICO EM DESENVOLVIMENTO DE SISTEMAS" required autofocus>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold">Código da Turma</label>
+                            <label class="form-label">
+                                Código da Turma
+                            </label>
                             <input type="text" name="codigo_turma" class="form-control form-control-lg"
-                                   placeholder="Ex: TEC.2025.1.431" value="TEC.2026.1">
+                                   placeholder="Ex: TEC.2026.1" value="TEC.2026.1">
                         </div>
 
                         <div class="col-md-8">
-                            <label class="form-label fw-semibold">Unidade Curricular (UC) <span class="text-danger">*</span></label>
+                            <label class="form-label">
+                                Unidade Curricular (UC) <span class="text-danger">*</span>
+                            </label>
                             <input type="text" name="unidade_curricular" id="unidade_curricular" class="form-control form-control-lg"
-                                   placeholder="Ex: Conceitos de Hardware de Microcomputadores" required>
+                                   placeholder="Ex: Banco de Dados e Modelagem de Sistemas" required>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold">Tipo / Modalidade do Curso <span class="text-danger">*</span></label>
+                            <label class="form-label">
+                                Modalidade / Nível <span class="text-danger">*</span>
+                            </label>
                             <select name="modalidade" id="modalidade" class="form-select form-select-lg" onchange="atualizarTipoCurso()" required>
-                                <option value="HABILITAÇÃO TÉCNICA">🎓 Curso Técnico</option>
-                                <option value="QUALIFICAÇÃO PROFISSIONAL">📋 Curso de Qualificação</option>
-                                <option value="APERFEIÇOAMENTO PROFISSIONAL">📋 Curso de Aperfeiçoamento</option>
+                                <option value="HABILITAÇÃO TÉCNICA">Curso Técnico (Habilitação)</option>
+                                <option value="QUALIFICAÇÃO PROFISSIONAL">Qualificação Profissional</option>
+                                <option value="APERFEIÇOAMENTO PROFISSIONAL">Aperfeiçoamento Profissional</option>
                             </select>
-                            <small class="mt-1 d-block" id="dica_modelo">
-                                <span class="badge bg-primary me-1" id="badge_modelo">Modelo Técnico</span>
-                                <span class="text-muted" id="label_modelo">modelo tecnico.xlsx (oficial com Matriz SAEP)</span>
-                            </small>
+                            <div class="mt-2" id="dica_modelo">
+                                <span class="badge badge-subtle-primary me-1" id="badge_modelo">
+                                    <i class="bi bi-mortarboard-fill me-1"></i> Modelo Técnico
+                                </span>
+                                <span class="text-muted small" id="label_modelo" style="font-size: 0.78rem;">modelo tecnico.xlsx (oficial com Matriz SAEP)</span>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Seção 2: Cargas Horárias e Datas -->
-                    <h5 class="fw-bold text-secondary mb-3 pb-2 border-bottom d-flex align-items-center">
-                        <span class="badge bg-primary me-2">2</span> Cronograma e Carga Horária
-                    </h5>
+                    <!-- Seção 2: Cargas Horárias e Cronograma -->
+                    <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                        <span class="badge bg-primary rounded-pill px-2 py-1 small">2</span>
+                        <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                            <i class="bi bi-calendar3 text-primary"></i> Cronograma &amp; Carga Horária
+                        </h5>
+                    </div>
 
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Carga Horária Total (UC) <span class="text-danger">*</span></label>
+                            <label class="form-label">
+                                Carga Horária Total da UC <span class="text-danger">*</span>
+                            </label>
                             <div class="input-group input-group-lg">
                                 <input type="number" name="carga_horaria" id="carga_horaria" class="form-control"
-                                       placeholder="Ex: 28" min="1" required oninput="atualizarResumoAulas()">
-                                <span class="input-group-text">Horas</span>
+                                       placeholder="Ex: 80" min="1" required oninput="atualizarResumoAulas()">
+                                <span class="input-group-text bg-light text-muted">Horas</span>
                             </div>
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Horas por Dia <span class="text-danger">*</span></label>
+                            <label class="form-label">
+                                Horas por Dia (Encontro) <span class="text-danger">*</span>
+                            </label>
                             <div class="input-group input-group-lg">
                                 <input type="number" name="horas_por_dia" id="horas_por_dia" class="form-control"
                                        value="4" min="1" required oninput="atualizarResumoAulas()">
-                                <span class="input-group-text">Horas/dia</span>
+                                <span class="input-group-text bg-light text-muted">Horas/dia</span>
                             </div>
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Data de Início <span class="text-danger">*</span></label>
+                            <label class="form-label">
+                                Data de Início das Aulas <span class="text-danger">*</span>
+                            </label>
                             <input type="date" name="data_inicio" id="data_inicio" class="form-control form-control-lg" required onchange="atualizarResumoAulas()">
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Data Final (Previsão)</label>
+                            <label class="form-label">
+                                Previsão de Término
+                            </label>
                             <input type="date" name="data_fim" id="data_fim" class="form-control form-control-lg">
                         </div>
 
                         <div class="col-12">
-                            <div class="alert alert-info py-2 d-flex align-items-center mb-0" id="resumoCalculo">
-                                <span class="me-2 fs-5">ℹ️</span>
-                                <span id="resumoTexto">Informe a Carga Horária e as Horas/Dia para calcular a quantidade total de aulas e cronograma.</span>
+                            <div class="alert alert-info py-3 px-3 d-flex align-items-center mb-0 rounded-3 shadow-sm" id="resumoCalculo">
+                                <i class="bi bi-info-circle-fill fs-4 me-3 text-primary"></i>
+                                <span id="resumoTexto" class="small">
+                                    Informe a Carga Horária e as Horas/Dia para calcular a quantidade total de aulas e cronograma.
+                                </span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Seção 3: Upload dos Arquivos -->
-                    <h5 class="fw-bold text-secondary mb-3 pb-2 border-bottom d-flex align-items-center">
-                        <span class="badge bg-primary me-2">3</span> Arquivos de Referência
-                    </h5>
+                    <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                        <span class="badge bg-primary rounded-pill px-2 py-1 small">3</span>
+                        <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                            <i class="bi bi-cloud-arrow-up text-primary"></i> Arquivos Pedagógicos de Referência
+                        </h5>
+                    </div>
 
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
-                            <div class="card bg-light border-0 p-3 h-100 d-flex flex-column justify-content-between">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold text-dark mb-1">
-                                        📄 Plano de Curso (PDF) <span class="text-danger">*</span>
-                                    </label>
-                                    <p class="text-muted small mb-0">
-                                        Envie o PDF do Plano de Curso completo. O sistema identificará e lerá somente a UC informada acima na Seção 1.
+                            <div class="upload-dropzone h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="upload-icon-badge">
+                                        <i class="bi bi-file-earmark-pdf"></i>
+                                    </div>
+                                    <h6 class="fw-bold mb-1">Plano de Curso (PDF) <span class="text-danger">*</span></h6>
+                                    <p class="text-muted small mb-3">
+                                        Envie o PDF do Plano de Curso. O sistema identificará automaticamente a UC informada.
                                     </p>
                                 </div>
-                                <div class="mt-auto">
-                                    <input type="file" name="arquivo_plano_pdf" id="arquivo_plano_pdf" class="form-control form-control-lg"
+                                <div>
+                                    <input type="file" name="arquivo_plano_pdf" id="arquivo_plano_pdf" class="form-control"
                                            accept=".pdf" required>
                                 </div>
                             </div>
                         </div>
 
                         <div class="col-md-6">
-                            <div class="card bg-light border-0 p-3 h-100 d-flex flex-column justify-content-between">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold text-dark mb-1">
-                                        📋 Matriz de Referência SAEP (Opcional)
-                                    </label>
-                                    <p class="text-muted small mb-0">
-                                        Planilha Excel (.xls/.xlsx) com o detalhamento das capacidades e níveis da Taxonomia de Bloom.
+                            <div class="upload-dropzone h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="upload-icon-badge">
+                                        <i class="bi bi-file-earmark-excel"></i>
+                                    </div>
+                                    <h6 class="fw-bold mb-1">Matriz de Referência SAEP (Opcional)</h6>
+                                    <p class="text-muted small mb-3">
+                                        Planilha Excel (.xls/.xlsx) com o detalhamento das capacidades e níveis cognitivos de Bloom.
                                     </p>
                                 </div>
-                                <div class="mt-auto">
-                                    <input type="file" name="arquivo_matriz" id="arquivo_matriz" class="form-control form-control-lg"
+                                <div>
+                                    <input type="file" name="arquivo_matriz" id="arquivo_matriz" class="form-control"
                                            accept=".xls,.xlsx,.pdf">
                                 </div>
                             </div>
@@ -145,18 +180,14 @@
 
                     <!-- Seção 4: Configuração Opcional -->
                     <div class="mb-4">
-                        <a class="text-decoration-none fw-semibold small text-secondary" data-bs-toggle="collapse" href="#opcoesAvancadas" role="button">
-                            ⚙️ Opções Avançadas (Unidade Escolar, etc.)
+                        <a class="text-decoration-none fw-semibold small text-secondary d-inline-flex align-items-center gap-1" data-bs-toggle="collapse" href="#opcoesAvancadas" role="button">
+                            <i class="bi bi-gear-fill"></i> Opções Adicionais (Unidade Escolar, etc.)
                         </a>
                         <div class="collapse mt-3" id="opcoesAvancadas">
-                            <div class="card card-body bg-light border-0">
-                                <div class="row g-3">
-                                    <div class="col-md-12">
-                                        <label class="form-label fw-semibold">Unidade Escolar</label>
-                                        <input type="text" name="unidade_escolar" class="form-control form-control-lg"
-                                               value="Taquaralto - Centro de Formação Profissional">
-                                    </div>
-                                </div>
+                            <div class="card card-body bg-light border-0 rounded-3">
+                                <label class="form-label">Unidade Escolar / Centro de Formação</label>
+                                <input type="text" name="unidade_escolar" class="form-control form-control-lg"
+                                       value="Taquaralto - Centro de Formação Profissional">
                             </div>
                         </div>
                     </div>
@@ -164,11 +195,11 @@
                     <!-- Botão de Submissão -->
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary btn-lg fw-bold py-3 shadow-sm" id="btnGerar">
-                            <span id="btnIcon">📥</span> Gerar e Baixar Planejamento Docente (Excel)
+                            <i class="bi bi-download fs-5"></i> Gerar e Baixar Planejamento Docente (Excel)
                         </button>
                         <p class="text-center text-muted small mt-2 mb-0">
-                            Ao clicar, a IA gera a distribuição de aulas e o arquivo Excel é baixado imediatamente.<br>
-                            Você poderá solicitar os <strong>Planos de Aula</strong> e <strong>Atividades</strong> separadamente quando desejar.
+                            Ao clicar, o sistema processa a distribuição e o download do arquivo Excel (.xlsx) inicia automaticamente.<br>
+                            Você poderá gerar os <strong>Planos de Aula</strong> e <strong>Atividades</strong> a partir deste planejamento.
                         </p>
                     </div>
 
@@ -181,7 +212,6 @@
 </div>
 
 <script>
-
 function atualizarTipoCurso() {
     const sel = document.getElementById('modalidade');
     const label = document.getElementById('label_modelo');
@@ -190,24 +220,25 @@ function atualizarTipoCurso() {
     const val = sel.value.toUpperCase();
     if (val.includes('TÉCNICO') || val.includes('TECNICO') || val.includes('HABILITA')) {
         if (badge) {
-            badge.className = 'badge bg-primary me-1';
-            badge.innerText = 'Modelo Técnico';
+            badge.className = 'badge badge-subtle-primary me-1';
+            badge.innerHTML = '<i class="bi bi-mortarboard-fill me-1"></i> Modelo Técnico';
         }
         label.innerText = 'modelo tecnico.xlsx (oficial com Matriz SAEP)';
     } else if (val.includes('APERFEIÇ') || val.includes('APERFEIC')) {
         if (badge) {
-            badge.className = 'badge bg-success me-1';
-            badge.innerText = 'Modelo Qualificação';
+            badge.className = 'badge badge-subtle-success me-1';
+            badge.innerHTML = '<i class="bi bi-award-fill me-1"></i> Aperfeiçoamento';
         }
         label.innerText = 'modelo qualificacao.xlsx (layout Aperfeiçoamento)';
     } else {
         if (badge) {
-            badge.className = 'badge bg-success me-1';
-            badge.innerText = 'Modelo Qualificação';
+            badge.className = 'badge badge-subtle-success me-1';
+            badge.innerHTML = '<i class="bi bi-award-fill me-1"></i> Qualificação';
         }
         label.innerText = 'modelo qualificacao.xlsx (layout Qualificação)';
     }
 }
+
 function calcularDataFimEstimada(dataInicioStr, totalAulas) {
     if (!dataInicioStr || !totalAulas || totalAulas <= 0) return null;
     const partes = dataInicioStr.split('-');
@@ -215,7 +246,6 @@ function calcularDataFimEstimada(dataInicioStr, totalAulas) {
     let data = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
     let diasUteisRestantes = totalAulas;
     
-    // Avança pulando sábados e domingos
     while (diasUteisRestantes > 1) {
         data.setDate(data.getDate() + 1);
         const diaSemana = data.getDay();
@@ -240,7 +270,6 @@ function atualizarResumoAulas() {
         const total = Math.ceil(ch / hd);
         resumo.innerHTML = `<strong>${total} encontros/aulas</strong> calculados (${ch}h totais ÷ ${hd}h/dia). As aulas serão distribuídas em dias úteis com aplicação progressiva da Taxonomia de Bloom.`;
         
-        // Sugere a data fim calculada caso o campo esteja vazio ou pré-preenchido automaticamente
         if (dataInicioEl && dataInicioEl.value && dataFimEl) {
             const dataFimPrevista = calcularDataFimEstimada(dataInicioEl.value, total);
             if (dataFimPrevista && (!dataFimEl.value || dataFimEl.dataset.autoCalculada === "true")) {
@@ -259,26 +288,9 @@ function iniciarGeracaoPlanejamento(e) {
         document.getElementById('loadingTitle').innerText = 'Gerando Planejamento Docente...';
         document.getElementById('loadingMessage').innerText = 'Lendo PDF, aplicando Taxonomia de Bloom e preenchendo o Excel oficial.';
         overlay.classList.add('active');
-
-        // Animação de passos
-        setTimeout(() => {
-            const s1 = document.querySelector('.loading-step[data-step="1"]');
-            if (s1) s1.classList.add('active');
-        }, 300);
-
-        setTimeout(() => {
-            const s2 = document.querySelector('.loading-step[data-step="2"]');
-            if (s2) s2.classList.add('active');
-        }, 3000);
-
-        setTimeout(() => {
-            const s3 = document.querySelector('.loading-step[data-step="3"]');
-            if (s3) s3.classList.add('active');
-        }, 7000);
     }
 }
 
-// Data de início padrão: hoje
 document.addEventListener('DOMContentLoaded', () => {
     const nomeCursoInput = document.getElementById('nome_curso');
     if (nomeCursoInput) {

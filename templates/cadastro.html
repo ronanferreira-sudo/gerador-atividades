@@ -1,52 +1,66 @@
 {% extends 'base.html' %}
 
-{% block titulo %}Cadastro{% endblock %}
+{% block titulo %}Cadastro de Docente &mdash; SENAI{% endblock %}
 
 {% block conteudo %}
 
-<div class="row justify-content-center mt-4">
-    <div class="col-md-6 col-lg-5">
+<div class="row justify-content-center py-4">
+    <div class="col-md-7 col-lg-5">
 
-        <div class="card shadow border-0">
-            <div class="card-body p-4">
+        <div class="card-modern shadow-md">
+            <div class="card-body p-4 p-md-5">
 
                 <div class="text-center mb-4">
-                    <h2 class="fw-bold">Criar Conta</h2>
-                    <p class="text-muted">Cadastre-se para usar o sistema</p>
+                    <div class="auth-card-icon mb-3">
+                        <i class="bi bi-person-plus-fill"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1">Novo Cadastro</h3>
+                    <p class="text-muted small">Crie sua conta docente para acessar as ferramentas pedagógicas</p>
                 </div>
 
                 {% if erro %}
-                <div class="alert alert-danger py-2 mb-3 text-center" role="alert">
-                    {{ erro }}
+                <div class="alert alert-danger py-2 px-3 mb-4 d-flex align-items-center gap-2 small rounded-3" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                    <div>{{ erro }}</div>
                 </div>
                 {% endif %}
 
                 <form method="POST">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Nome completo</label>
-                        <input type="text" name="nome" class="form-control form-control-lg" placeholder="Seu nome" required>
+                        <label class="form-label">
+                            <i class="bi bi-person text-primary"></i> Nome Completo <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="nome" class="form-control form-control-lg"
+                               placeholder="Ex: Prof. Carlos Eduardo" required autofocus>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">E-mail</label>
-                        <input type="email" name="email" class="form-control form-control-lg" placeholder="seu@email.com" required>
+                        <label class="form-label">
+                            <i class="bi bi-envelope text-primary"></i> E-mail <span class="text-danger">*</span>
+                        </label>
+                        <input type="email" name="email" class="form-control form-control-lg"
+                               placeholder="seu.email@senai.br" required>
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label fw-semibold">Senha</label>
-                        <input type="password" name="senha" class="form-control form-control-lg" placeholder="Minimo 6 caracteres" required>
+                        <label class="form-label">
+                            <i class="bi bi-key text-primary"></i> Senha <span class="text-danger">*</span>
+                        </label>
+                        <input type="password" name="senha" class="form-control form-control-lg"
+                               placeholder="Mínimo 3 caracteres" minlength="3" required>
+                        <div class="form-text small">Use uma senha segura para proteger seus planejamentos.</div>
                     </div>
 
-                    <button class="btn btn-success btn-lg w-100 fw-bold">
-                        Criar Conta
+                    <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm">
+                        <i class="bi bi-check-circle-fill"></i> Concluir Cadastro
                     </button>
                 </form>
 
-                <div class="text-center mt-3">
-                    <p class="text-muted mb-0">
-                        Ja tem conta?
-                        <a href="/login" class="fw-bold">Fazer login</a>
-                    </p>
+                <div class="text-center mt-4 pt-3 border-top">
+                    <span class="text-muted small">Já possui cadastro?</span>
+                    <a href="/login" class="fw-bold text-primary text-decoration-none ms-1 small">
+                        Fazer login
+                    </a>
                 </div>
 
             </div>

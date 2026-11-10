@@ -1,65 +1,79 @@
 {% extends 'base.html' %}
 
-{% block titulo %}Gerar Planos de Aula{% endblock %}
+{% block titulo %}Gerar Planos de Aula &mdash; SENAI{% endblock %}
 
 {% block conteudo %}
 
-<div class="row justify-content-center mt-4 mb-5">
-    <div class="col-md-9 col-lg-7">
+<div class="row justify-content-center py-3">
+    <div class="col-md-9 col-lg-8">
 
-        <div class="card shadow border-0 rounded-4">
-            <div class="card-header bg-dark text-white p-4 rounded-top-4">
-                <div class="d-flex align-items-center">
-                    <div class="me-3 fs-1">📖</div>
+        <div class="card-modern shadow-md">
+            <!-- Header do Card -->
+            <div class="card-header-modern bg-white d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="brand-icon-wrapper" style="width: 46px; height: 46px; font-size: 1.4rem; background: linear-gradient(135deg, #0369a1 0%, #38bdf8 100%);">
+                        <i class="bi bi-journal-plus"></i>
+                    </div>
                     <div>
-                        <h3 class="mb-1 fw-bold">Gerar Planos de Aula</h3>
-                        <p class="mb-0 opacity-75">
-                            Crie planos de aula individuais e estruturados para cada dia do curso.
-                        </p>
+                        <h4 class="mb-0 fw-bold">Gerar Planos de Aula</h4>
+                        <span class="text-muted small">Crie planos de aula individuais e estruturados para cada dia do curso</span>
                     </div>
                 </div>
+                <a href="/listar_cursos" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-journal-bookmark"></i> Ver Cursos
+                </a>
             </div>
 
             <div class="card-body p-4 p-md-5">
 
-                <div class="alert alert-light border shadow-sm p-3 mb-4 rounded-3">
-                    <div class="d-flex align-items-start">
-                        <span class="fs-4 me-3">💡</span>
-                        <div>
-                            <strong class="d-block text-dark">Origem dos Planos de Aula:</strong>
-                            <span class="text-muted small">
-                                Você pode enviar o arquivo <strong>Excel (.xlsx) do Planejamento Docente</strong> que você gerou, ou enviar o PDF do Plano de Curso. Se enviar o Excel do Planejamento Docente, as capacidades e a Taxonomia de Bloom de cada dia serão aplicadas com precisão instantaneamente em cada aula!
-                            </span>
-                        </div>
+                <div class="alert alert-light border shadow-sm p-3 mb-4 rounded-3 d-flex align-items-start gap-3">
+                    <i class="bi bi-lightbulb-fill text-warning fs-4"></i>
+                    <div>
+                        <strong class="d-block text-dark mb-1">Origem dos Planos de Aula:</strong>
+                        <span class="text-muted small">
+                            Você pode enviar a <strong>planilha Excel (.xlsx) do Planejamento Docente</strong> gerada anteriormente ou o <strong>PDF do Plano de Curso</strong>. Caso envie o Excel do Planejamento Docente, as capacidades e os níveis cognitivos da Taxonomia de Bloom de cada dia serão transferidos com exatidão para cada plano diário.
+                        </span>
                     </div>
                 </div>
 
                 <form method="POST" enctype="multipart/form-data" id="formPlanos">
 
                     <div class="mb-4">
-                        <label class="form-label fw-bold">Arquivo de Referência <span class="text-danger">*</span></label>
-                        <input type="file" name="arquivo_pdf" id="arquivo_input" class="form-control form-control-lg"
-                               accept=".xlsx,.xls,.pdf" required onchange="aoSelecionarArquivo(this)">
-                        <div class="form-text mt-2 text-muted">
-                            Selecione a <strong>planilha Excel do Planejamento Docente (.xlsx)</strong> baixada anteriormente <em>OU</em> o PDF do Plano de Curso.
+                        <label class="form-label">
+                            <i class="bi bi-file-earmark-arrow-up text-primary"></i> Arquivo de Referência <span class="text-danger">*</span>
+                        </label>
+                        <div class="upload-dropzone">
+                            <div class="upload-icon-badge">
+                                <i class="bi bi-cloud-arrow-up"></i>
+                            </div>
+                            <h6 class="fw-bold mb-1">Selecione o arquivo Excel ou PDF</h6>
+                            <p class="text-muted small mb-3">Planilha do Planejamento Docente (.xlsx) ou PDF do Plano de Curso</p>
+                            <input type="file" name="arquivo_pdf" id="arquivo_input" class="form-control"
+                                   accept=".xlsx,.xls,.pdf" required onchange="aoSelecionarArquivo(this)">
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Nome do Curso / Unidade Curricular</label>
+                        <label class="form-label">
+                            <i class="bi bi-mortarboard text-primary"></i> Nome do Curso / Unidade Curricular
+                        </label>
                         <input type="text" name="nome_curso" id="campo_curso" class="form-control form-control-lg"
                                placeholder="Opcional se enviar o Excel do Planejamento Docente">
-                        <div class="form-text small">Preenchido automaticamente se enviar o Excel do Planejamento Docente.</div>
+                        <div class="form-text small">Preenchido automaticamente ao enviar a planilha Excel.</div>
                     </div>
 
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Carga Horária Total (Horas)</label>
+                            <label class="form-label">
+                                <i class="bi bi-clock-history text-primary"></i> Carga Horária Total (Horas)
+                            </label>
                             <input type="number" name="carga_horaria" id="campo_ch" class="form-control form-control-lg"
-                                   placeholder="Ex: 40" min="1">
+                                   placeholder="Ex: 80" min="1">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Aulas por Dia (Horas/dia)</label>
+                            <label class="form-label">
+                                <i class="bi bi-hourglass-split text-primary"></i> Aulas por Dia (Horas/dia)
+                            </label>
                             <input type="number" name="aulas_por_dia" id="campo_hd" class="form-control form-control-lg"
                                    value="4" min="1">
                         </div>
@@ -67,7 +81,7 @@
 
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary btn-lg fw-bold py-3 shadow-sm" id="btnGerarPlanos">
-                            🚀 Gerar Planos de Aula
+                            <i class="bi bi-lightning-charge-fill me-2"></i> Gerar Planos de Aula
                         </button>
                     </div>
 
@@ -87,11 +101,11 @@ function aoSelecionarArquivo(input) {
         const chEl = document.getElementById('campo_ch');
 
         if (nome.endsWith('.xlsx') || nome.endsWith('.xls')) {
-            cursoEl.placeholder = 'Detectado do Excel do Planejamento Docente';
-            chEl.placeholder = 'Detectado do Excel do Planejamento Docente';
+            cursoEl.placeholder = 'Identificado a partir do Excel do Planejamento Docente';
+            chEl.placeholder = 'Identificado a partir do Excel do Planejamento Docente';
         } else {
             cursoEl.placeholder = 'Ex: Informática Básica';
-            chEl.placeholder = 'Ex: 40';
+            chEl.placeholder = 'Ex: 80';
         }
     }
 }
@@ -99,8 +113,7 @@ function aoSelecionarArquivo(input) {
 document.getElementById('formPlanos').addEventListener('submit', function() {
     const btn = document.getElementById('btnGerarPlanos');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processando e gerando planos de aula...';
-    this.submit();
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processando e gerando planos diários... aguarde';
 });
 </script>
 

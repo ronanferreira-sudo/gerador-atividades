@@ -1,49 +1,61 @@
 {% extends 'base.html' %}
 
-{% block titulo %}Plano de Aula - Dia {{ plano[2] }}{% endblock %}
+{% block titulo %}Plano de Aula &mdash; Dia {{ plano[2] }}{% endblock %}
 
 {% block conteudo %}
 
-<div class="container mt-4">
+<div class="py-2">
 
     <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="/listar_cursos">Cursos</a></li>
+    <nav aria-label="Navegação estrutural" class="mb-3">
+        <ol class="breadcrumb small">
             <li class="breadcrumb-item">
-                <a href="/curso/{{ plano[1] }}">
+                <a href="/listar_cursos" class="text-decoration-none text-muted">
+                    <i class="bi bi-journal-bookmark me-1"></i> Planos de Aula
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="/curso/{{ plano[1] }}" class="text-decoration-none text-muted">
                     {% if plano[6] %}{{ plano[6] }}{% else %}Curso #{{ plano[1] }}{% endif %}
                 </a>
             </li>
-            <li class="breadcrumb-item active" aria-current="page">
-                Dia {{ plano[2] }}
+            <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">
+                Dia {{ plano[2] }} &mdash; {{ plano[3] }}
             </li>
         </ol>
     </nav>
 
-    <!-- Cabecalho do Plano -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+    <!-- Cabeçalho do Plano -->
+    <div class="card-modern shadow-md mb-4">
+        <div class="card-header-modern bg-white d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 py-3">
             <div>
-                <h3 class="mb-0">
-                    <span class="badge bg-light text-dark me-2">Dia {{ plano[2] }}</span>
-                    {{ plano[3] }}
-                </h3>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge bg-primary text-white rounded-pill px-3 py-1 fw-bold">
+                        Dia {{ plano[2] }}
+                    </span>
+                    <h3 class="mb-0 fw-bold text-dark fs-5">
+                        {{ plano[3] }}
+                    </h3>
+                </div>
                 {% if plano[6] %}
-                <small class="text-white-50">
-                    {{ plano[6] }}{% if plano[7] %} &middot; {{ plano[7] }}h{% endif %}
-                </small>
+                <div class="text-muted small">
+                    <i class="bi bi-mortarboard me-1"></i> {{ plano[6] }}{% if plano[7] %} &middot; {{ plano[7] }}h totais{% endif %}
+                </div>
                 {% endif %}
             </div>
             <div class="d-flex gap-2">
-                <a href="/plano_pdf/{{ plano[0] }}" class="btn btn-light btn-sm">PDF</a>
-                <a href="/plano_word/{{ plano[0] }}" class="btn btn-light btn-sm">Word</a>
+                <a href="/plano_pdf/{{ plano[0] }}" class="btn btn-outline-danger btn-sm shadow-sm">
+                    <i class="bi bi-file-earmark-pdf"></i> Baixar PDF
+                </a>
+                <a href="/plano_word/{{ plano[0] }}" class="btn btn-outline-primary btn-sm shadow-sm">
+                    <i class="bi bi-file-earmark-word"></i> Baixar Word
+                </a>
             </div>
         </div>
 
-        <!-- Conteudo formatado do Plano -->
-        <div class="card-body">
-            <div class="plano-conteudo">
+        <!-- Conteúdo formatado do Plano -->
+        <div class="card-body p-4 p-md-5">
+            <div class="plano-conteudo" style="line-height: 1.8;">
                 {% set linhas = plano[4].split('\n') %}
                 {% for linha in linhas %}
                     {% if linha.startswith('1.') or linha.startswith('2.') or linha.startswith('3.') or
@@ -63,54 +75,65 @@
                           linha.startswith('Introducao') or linha.startswith('Desenvolvimento') or
                           linha.startswith('Conclusão') or linha.startswith('Conclusao') or
                           linha.startswith('DIA') or linha.startswith('PLANO') %}
-                        <h5 class="text-primary mt-3 mb-2 border-bottom pb-1">{{ linha }}</h5>
+                        <h5 class="text-primary mt-4 mb-2 pb-2 border-bottom fw-bold d-flex align-items-center gap-2">
+                            <i class="bi bi-caret-right-fill fs-6 text-primary"></i> {{ linha }}
+                        </h5>
                     {% elif linha.strip() == '' %}
-                        <br>
-                    {% elif linha.strip().startswith('-') or linha.strip().startswith('•') or
-                          linha.strip().startswith('*') %}
-                        <p class="mb-1 ps-3 text-muted">{{ linha }}</p>
+                        <div class="my-2"></div>
+                    {% elif linha.strip().startswith('-') or linha.strip().startswith('•') or linha.strip().startswith('*') %}
+                        <p class="mb-2 ps-3 text-secondary d-flex align-items-start gap-2">
+                            <i class="bi bi-dot fs-5 text-primary lh-1 mt-1"></i>
+                            <span>{{ linha.strip().lstrip('-•* ') }}</span>
+                        </p>
                     {% else %}
-                        <p class="mb-1">{{ linha }}</p>
+                        <p class="mb-2 text-dark">{{ linha }}</p>
                     {% endif %}
                 {% endfor %}
             </div>
         </div>
     </div>
 
-    <!-- Secao: Gerar Atividade -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-success text-white">
-            <h5 class="mb-0">Gerar Atividade a partir deste Plano</h5>
+    <!-- Seção: Gerar Atividade baseada no plano -->
+    <div class="card-modern shadow-sm mb-4">
+        <div class="card-header-modern bg-light py-3 d-flex align-items-center gap-2">
+            <i class="bi bi-check2-square text-success fs-5"></i>
+            <h5 class="mb-0 fw-bold text-dark fs-6">Gerar Atividade Avaliativa a partir deste Plano</h5>
         </div>
-        <div class="card-body">
+        <div class="card-body p-4">
             <form action="/gerar_atividade_plano/{{ plano[0] }}" method="GET" class="row g-3 align-items-end">
                 <div class="col-md-3">
-                    <label class="form-label fw-semibold">Tipo da Atividade</label>
-                    <select name="tipo" class="form-select">
-                        <option value="objetiva">Objetiva</option>
+                    <label class="form-label">
+                        <i class="bi bi-ui-checks text-primary"></i> Formato da Avaliação
+                    </label>
+                    <select name="tipo" class="form-select form-select-lg">
+                        <option value="objetiva">Objetiva (Múltipla Escolha)</option>
                         <option value="discursiva">Discursiva</option>
-                        <option value="mista">Mista</option>
+                        <option value="mista" selected>Mista</option>
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label fw-semibold">Questoes</label>
-                    <input type="number" name="quantidade" class="form-control"
+                    <label class="form-label">
+                        <i class="bi bi-hash text-primary"></i> Questões
+                    </label>
+                    <input type="number" name="quantidade" class="form-control form-control-lg"
                            value="5" min="1" max="50">
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label fw-semibold">Dificuldade</label>
-                    <select name="dificuldade" class="form-select">
-                        <option value="fácil">Facil</option>
-                        <option value="médio" selected>Medio</option>
-                        <option value="difícil">Dificil</option>
+                    <label class="form-label">
+                        <i class="bi bi-speedometer2 text-primary"></i> Dificuldade
+                    </label>
+                    <select name="dificuldade" class="form-select form-select-lg">
+                        <option value="fácil">Fácil</option>
+                        <option value="médio" selected>Médio</option>
+                        <option value="difícil">Difícil</option>
                     </select>
                 </div>
                 <div class="col-md-4 d-flex gap-2">
-                    <button type="submit" class="btn btn-success flex-grow-1">
-                        Gerar Atividade
+                    <button type="submit" class="btn btn-success btn-lg flex-grow-1 fw-bold shadow-sm">
+                        <i class="bi bi-cpu"></i> Gerar Atividade
                     </button>
-                    <a href="/curso/{{ plano[1] }}" class="btn btn-outline-secondary">
-                        Voltar
+                    <a href="/curso/{{ plano[1] }}" class="btn btn-outline-secondary btn-lg">
+                        <i class="bi bi-arrow-left"></i> Voltar
                     </a>
                 </div>
             </form>

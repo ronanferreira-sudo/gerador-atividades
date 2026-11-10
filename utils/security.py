@@ -51,3 +51,37 @@ def atualizar_senha_para_hash_se_necessario(usuario_id: int, senha_plana: str, s
             print(f"[SEGURANCA] Aviso ao migrar senha de usuario #{usuario_id}: {e}")
         finally:
             release_cursor(conn, cursor)
+
+
+def redefinir_senha_usuario(usuario_id: int, nova_senha: str) -> bool:
+    """Atualiza a senha de um usuário no banco com hash seguro bcrypt."""
+    if not nova_senha:
+        return False
+    novo_hash = gerar_hash_senha(nova_senha)
+    conn, cursor = get_cursor()
+    try:
+        cursor.execute("UPDATE usuarios SET senha = %s WHERE id = %s", (novo_hash, usuario_id))
+        conn.commit()
+        return cursor.rowcount > 0
+    except Exception as e:
+        print(f"[SEGURANCA] Erro ao redefinir senha do usuário #{usuario_id}: {e}")
+        return False
+    finally:
+        release_cursor(conn, cursor)
+
+
+def redefinir_senha_por_email(email: str, nova_senha: str) -> bool:
+    """Atualiza a senha de um usuário através do e-mail cadastrado."""
+    if not email or not nova_senha:
+        return False
+    novo_hash = gerar_hash_senha(nova_senha)
+    conn, cursor = get_cursor()
+    try:
+        cursor.execute("UPDATE usuarios SET senha = %s WHERE LOWER(email) = LOWER(%s)", (novo_hash, email.strip()))
+        conn.commit()
+        return cursor.rowcount > 0
+    except Exception as e:
+        print(f"[SEGURANCA] Erro ao redefinir senha por email ({email}): {e}")
+        return False
+    finally:
+        release_cursor(conn, cursor)

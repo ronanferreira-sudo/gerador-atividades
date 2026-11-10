@@ -460,7 +460,7 @@ Responda ESTRITAMENTE em formato JSON valido, sem nenhum texto antes ou depois:
 """
 
     try:
-        print(f"🤖 Solicitando planejamento docente com Taxonomia de Bloom ({total_aulas} aulas)...")
+        print(f"[IA] Solicitando planejamento docente com Taxonomia de Bloom ({total_aulas} aulas)...")
         texto_resp = chamar_ia(
             prompt=prompt,
             system_prompt="Você é um especialista em planejamento pedagógico do SENAI e responde exclusivamente em JSON válido.",
@@ -515,11 +515,11 @@ Responda ESTRITAMENTE em formato JSON valido, sem nenhum texto antes ou depois:
                             "data_inicio": data_aula,
                             "data_fim": data_aula
                         })
-                    print("✅ Planejamento gerado com sucesso via IA!")
+                    print("[OK] Planejamento gerado com sucesso via IA!")
                     return aulas_finais
 
     except Exception as e:
-        print(f"⚠️ Aviso na geração via IA: {e}. Utilizando gerador algorítmico robusto...")
+        print(f"[AVISO] Aviso na geração via IA: {e}. Utilizando gerador algorítmico robusto...")
 
     # Fallback transparente para o gerador algorítmico de alta fidelidade
     return gerar_planejamento_algoritmico(dados_plano, dados_matriz, total_aulas, horas_por_dia, datas)

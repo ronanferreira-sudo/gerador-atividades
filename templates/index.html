@@ -1,67 +1,91 @@
 {% extends 'base.html' %}
 
-{% block titulo %}Gerar Atividade{% endblock %}
+{% block titulo %}Nova Atividade &mdash; Gerador Pedagógico SENAI{% endblock %}
 
 {% block conteudo %}
 
-<div class="row justify-content-center mt-4">
-    <div class="col-md-8 col-lg-7">
+<div class="row justify-content-center py-3">
+    <div class="col-md-9 col-lg-8">
 
-        <div class="card shadow border-0">
-            <div class="card-body p-4">
-
-                <div class="text-center mb-4">
-                    <h2 class="fw-bold">Gerar Nova Atividade</h2>
-                    <p class="text-muted">Preencha os dados abaixo para gerar uma atividade personalizada com IA</p>
+        <div class="card-modern shadow-md">
+            <!-- Cabeçalho do Card -->
+            <div class="card-header-modern bg-white d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="brand-icon-wrapper" style="width: 44px; height: 44px; font-size: 1.3rem;">
+                        <i class="bi bi-pencil-square"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0 fw-bold">Gerar Nova Atividade Avaliativa</h4>
+                        <span class="text-muted small">Crie avaliações objetivas, discursivas ou mistas com auxílio de IA</span>
+                    </div>
                 </div>
+                <a href="/atividades" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-arrow-left"></i> Ver Banco
+                </a>
+            </div>
+
+            <div class="card-body p-4 p-md-5">
 
                 <form method="POST" id="formGerarAtividade">
 
-                    <div class="row mb-3">
+                    <div class="row g-3 mb-4">
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Curso</label>
+                            <label class="form-label">
+                                <i class="bi bi-mortarboard text-primary"></i> Curso <span class="text-danger">*</span>
+                            </label>
                             <input type="text" name="curso" class="form-control form-control-lg"
-                                   placeholder="Ex: Informática" required>
+                                   placeholder="Ex: Técnico em Desenvolvimento de Sistemas" required autofocus>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Disciplina</label>
+                            <label class="form-label">
+                                <i class="bi bi-book text-primary"></i> Unidade Curricular / Disciplina <span class="text-danger">*</span>
+                            </label>
                             <input type="text" name="disciplina" class="form-control form-control-lg"
-                                   placeholder="Ex: Programação" required>
+                                   placeholder="Ex: Banco de Dados Relacional" required>
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Conteudo / Descricao</label>
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i class="bi bi-card-text text-primary"></i> Conteúdo / Tópicos a serem Avaliados <span class="text-danger">*</span>
+                        </label>
                         <textarea name="conteudo" class="form-control form-control-lg" rows="4"
-                                  placeholder="Descreva o conteudo que sera abordado na atividade..." required></textarea>
+                                  placeholder="Descreva detalhadamente o conteúdo, habilidades ou competências que devem ser cobradas na atividade..." required></textarea>
+                        <div class="form-text small">Quanto mais específico for o tema, mais alinhadas serão as questões geradas.</div>
                     </div>
 
-                    <div class="row mb-4">
+                    <div class="row g-3 mb-4">
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold">Dificuldade</label>
+                            <label class="form-label">
+                                <i class="bi bi-speedometer2 text-primary"></i> Nível de Dificuldade
+                            </label>
                             <select name="dificuldade" class="form-select form-select-lg">
-                                <option value="fácil">Facil</option>
-                                <option value="médio" selected>Medio</option>
-                                <option value="difícil">Dificil</option>
+                                <option value="fácil">Fácil (Conceitual)</option>
+                                <option value="médio" selected>Médio (Aplicação)</option>
+                                <option value="difícil">Difícil (Análise / Resolução)</option>
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold">Tipo</label>
+                            <label class="form-label">
+                                <i class="bi bi-ui-checks text-primary"></i> Formato das Questões
+                            </label>
                             <select name="tipo" class="form-select form-select-lg">
-                                <option value="objetiva">Objetiva</option>
+                                <option value="objetiva">Objetiva (Múltipla Escolha)</option>
                                 <option value="discursiva">Discursiva</option>
-                                <option value="mista">Mista</option>
+                                <option value="mista" selected>Mista (Objetiva + Discursiva)</option>
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold">Questoes</label>
+                            <label class="form-label">
+                                <i class="bi bi-hash text-primary"></i> Quantidade de Questões
+                            </label>
                             <input type="number" name="quantidade" class="form-control form-control-lg"
-                                   value="5" min="1" max="50">
+                                   value="5" min="1" max="50" required>
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold" id="btnSubmitAtividade">
-                        Gerar Atividade com IA
+                    <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm" id="btnSubmitAtividade">
+                        <i class="bi bi-cpu-fill"></i> Gerar Atividade com IA
                     </button>
 
                 </form>
@@ -76,7 +100,7 @@
 document.getElementById('formGerarAtividade').addEventListener('submit', function() {
     const btn = document.getElementById('btnSubmitAtividade');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Gerando atividade com IA... por favor, aguarde';
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Formulando atividade pedagógica... aguarde';
     this.submit();
 });
 </script>

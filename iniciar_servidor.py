@@ -39,7 +39,11 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 # Se executado com o Python global, repassa automaticamente para o venv
-venv_python = os.path.join(BASE_DIR, "venv", "Scripts", "python.exe")
+venv_python = (
+    os.path.join(BASE_DIR, "venv", "Scripts", "python.exe")
+    if os.name == "nt"
+    else os.path.join(BASE_DIR, "venv", "bin", "python")
+)
 if os.path.exists(venv_python) and os.path.abspath(sys.executable).lower() != os.path.abspath(venv_python).lower():
     sys.exit(subprocess.call([venv_python] + sys.argv))
 
@@ -61,21 +65,23 @@ def iniciar_ollama_se_necessario():
 
     print("  [IA] Iniciando o servico Ollama em segundo plano...")
     try:
-        flags = 0
+        popen_kwargs = {
+            "stdout": subprocess.DEVNULL,
+            "stderr": subprocess.DEVNULL
+        }
         if os.name == 'nt':
             # DETACHED_PROCESS (0x00000008) + CREATE_NO_WINDOW (0x08000000)
-            flags = 0x00000008 | 0x08000000
+            popen_kwargs["creationflags"] = 0x00000008 | 0x08000000
 
         caminho_ollama = "ollama"
-        padrao_appdata = os.path.expandvars(r"%LOCALAPPDATA%\Programs\Ollama\ollama.exe")
-        if os.path.exists(padrao_appdata):
-            caminho_ollama = padrao_appdata
+        if os.name == 'nt':
+            padrao_appdata = os.path.expandvars(r"%LOCALAPPDATA%\Programs\Ollama\ollama.exe")
+            if os.path.exists(padrao_appdata):
+                caminho_ollama = padrao_appdata
 
         subprocess.Popen(
             [caminho_ollama, "serve"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            creationflags=flags
+            **popen_kwargs
         )
         time.sleep(2)
         print("  [IA] Servico Ollama inicializado com sucesso.")

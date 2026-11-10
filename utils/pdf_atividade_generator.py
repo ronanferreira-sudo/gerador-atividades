@@ -1,8 +1,12 @@
 import os
 import re
 import html
-import pythoncom
-from docx2pdf import convert
+try:
+    import pythoncom
+    from docx2pdf import convert
+except ImportError:
+    pythoncom = None
+    convert = None
 import docx
 
 from reportlab.lib.pagesizes import A4
@@ -343,18 +347,18 @@ def gerar_pdf_atividade(
             arquivo_docx=arquivo_docx
         )
         if sucesso and os.path.exists(arquivo_pdf) and os.path.getsize(arquivo_pdf) > 0:
-            print(f"✅ PDF de atividade gerado com sucesso via ReportLab: {arquivo_pdf}")
+            print(f"[OK] PDF de atividade gerado com sucesso via ReportLab: {arquivo_pdf}")
             return True
     except Exception as e:
         print(f"Aviso no gerador ReportLab da atividade: {e}. Tentando docx2pdf...")
 
     # 2. Alternativa via docx2pdf (se Word estiver disponível no Windows)
-    if arquivo_docx and os.path.exists(arquivo_docx):
+    if pythoncom and convert and arquivo_docx and os.path.exists(arquivo_docx):
         try:
             pythoncom.CoInitialize()
             convert(arquivo_docx, arquivo_pdf)
             if os.path.exists(arquivo_pdf) and os.path.getsize(arquivo_pdf) > 0:
-                print(f"✅ PDF gerado via docx2pdf: {arquivo_pdf}")
+                print(f"[OK] PDF gerado via docx2pdf: {arquivo_pdf}")
                 return True
         except Exception as e:
             print(f"Aviso docx2pdf indisponível ({e}).")

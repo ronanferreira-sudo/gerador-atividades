@@ -65,16 +65,16 @@ cabecalho_qualif = {
 print("Testando gerador TÉCNICO (.xlsx)...")
 try:
     saida_t = gerar_excel_planejamento(cabecalho_tecnico, AULAS_TESTE, caminho_saida="outputs/TESTE_tecnico.xlsx")
-    print(f"  ✅ Arquivo gerado: {saida_t}")
+    print(f"  [OK] Arquivo gerado: {saida_t}")
 except Exception as e:
-    print(f"  ❌ Erro: {e}")
+    print(f"  [ERRO] Erro: {e}")
     import traceback; traceback.print_exc()
 
 print()
 print("Testando gerador QUALIFICAÇÃO (.xlsx)...")
 try:
     saida_q = gerar_excel_planejamento(cabecalho_qualif, AULAS_TESTE, caminho_saida="outputs/TESTE_qualificacao.xlsx")
-    print(f"  ✅ Arquivo gerado: {saida_q}")
+    print(f"  [OK] Arquivo gerado: {saida_q}")
 except Exception as e:
-    print(f"  ❌ Erro: {e}")
+    print(f"  [ERRO] Erro: {e}")
     import traceback; traceback.print_exc()

@@ -30,7 +30,13 @@ from utils.planejamento_docente_reader import ler_excel_planejamento_docente
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from utils.excel_reader import extrair_dados_excel, formatar_dados_para_prompt, contar_itens
-from utils.security import gerar_hash_senha, verificar_senha, atualizar_senha_para_hash_se_necessario
+from utils.security import (
+    gerar_hash_senha,
+    verificar_senha,
+    atualizar_senha_para_hash_se_necessario,
+    redefinir_senha_usuario,
+    redefinir_senha_por_email,
+)
 import os
 import re
 
@@ -168,6 +174,198 @@ def logout():
     session.clear()
 
     return redirect("/login")
+
+
+# ============================================================
+# REDEFINIÇÃO DE SENHA (PÚBLICA / ESQUECI MINHA SENHA)
+# ============================================================
+@app.route("/redefinir_senha", methods=["GET", "POST"])
+@app.route("/esqueci_senha", methods=["GET", "POST"])
+def redefinir_senha():
+    # Se já logado, redireciona para a página interna de alteração
+    if "usuario_id" in session:
+        return redirect("/alterar_senha")
+
+    chave_recuperacao_configurada = os.environ.get("CHAVE_RECUPERACAO_SENHA", "").strip()
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        nova_senha = request.form.get("nova_senha", "")
+        confirmar_senha = request.form.get("confirmar_senha", "")
+        codigo = request.form.get("codigo_recuperacao", "").strip()
+
+        if not email or not nova_senha or not confirmar_senha:
+            return render_template(
+                "redefinir_senha.html",
+                erro="Preencha todos os campos obrigatórios.",
+                exige_codigo=bool(chave_recuperacao_configurada),
+                email=email,
+            )
+
+        if len(nova_senha) < 3:
+            return render_template(
+                "redefinir_senha.html",
+                erro="A nova senha deve ter no mínimo 3 caracteres.",
+                exige_codigo=bool(chave_recuperacao_configurada),
+                email=email,
+            )
+
+        if nova_senha != confirmar_senha:
+            return render_template(
+                "redefinir_senha.html",
+                erro="A confirmação de senha não confere com a nova senha.",
+                exige_codigo=bool(chave_recuperacao_configurada),
+                email=email,
+            )
+
+        # Se houver chave institucional configurada no .env, valida
+        if chave_recuperacao_configurada and codigo != chave_recuperacao_configurada:
+            return render_template(
+                "redefinir_senha.html",
+                erro="Chave de segurança institucional incorreta. Solicite ao administrador da rede.",
+                exige_codigo=True,
+                email=email,
+            )
+
+        # Atualiza a senha no banco
+        sucesso = redefinir_senha_por_email(email, nova_senha)
+        if not sucesso:
+            return render_template(
+                "redefinir_senha.html",
+                erro="E-mail não encontrado no sistema. Verifique o endereço informado.",
+                exige_codigo=bool(chave_recuperacao_configurada),
+                email=email,
+            )
+
+        return redirect("/login?sucesso=senha_redefinida")
+
+    return render_template(
+        "redefinir_senha.html",
+        exige_codigo=bool(chave_recuperacao_configurada),
+        email=request.args.get("email", ""),
+    )
+
+
+# ============================================================
+# ALTERAR SENHA (USUÁRIO LOGADO)
+# ============================================================
+@app.route("/alterar_senha", methods=["GET", "POST"])
+def alterar_senha():
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    usuario_id = session["usuario_id"]
+
+    if request.method == "POST":
+        senha_atual = request.form.get("senha_atual", "")
+        nova_senha = request.form.get("nova_senha", "")
+        confirmar_senha = request.form.get("confirmar_senha", "")
+
+        if not senha_atual or not nova_senha or not confirmar_senha:
+            return render_template("alterar_senha.html", erro="Preencha todos os campos obrigatórios.")
+
+        if len(nova_senha) < 3:
+            return render_template("alterar_senha.html", erro="A nova senha deve conter pelo menos 3 caracteres.")
+
+        if nova_senha != confirmar_senha:
+            return render_template("alterar_senha.html", erro="A nova senha e a confirmação não conferem.")
+
+        conn, cursor = get_cursor()
+        try:
+            cursor.execute("SELECT senha FROM usuarios WHERE id = %s", (usuario_id,))
+            res = cursor.fetchone()
+            if not res or not verificar_senha(senha_atual, res[0]):
+                return render_template("alterar_senha.html", erro="A senha atual informada está incorreta.")
+        finally:
+            release_cursor(conn, cursor)
+
+        sucesso = redefinir_senha_usuario(usuario_id, nova_senha)
+        if sucesso:
+            return render_template("alterar_senha.html", sucesso="Sua senha foi alterada com sucesso!")
+        else:
+            return render_template("alterar_senha.html", erro="Erro ao atualizar a senha no banco de dados.")
+
+    return render_template("alterar_senha.html")
+
+
+# ============================================================
+# GESTÃO DE USUÁRIOS (PAINEL ADMINISTRATIVO)
+# ============================================================
+@app.route("/usuarios")
+def listar_usuarios():
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    if session.get("perfil") != "admin":
+        return redirect("/dashboard")
+
+    conn, cursor = get_cursor()
+    try:
+        cursor.execute("""
+            SELECT u.id, u.nome, u.email, u.perfil,
+                   COALESCE((SELECT COUNT(*) FROM atividades a WHERE a.usuario_id = u.id), 0) AS total_atividades,
+                   COALESCE((SELECT COUNT(*) FROM planejamentos_docente p WHERE p.usuario_id = u.id), 0) AS total_planejamentos
+            FROM usuarios u
+            ORDER BY u.id ASC
+        """)
+        usuarios = cursor.fetchall()
+    finally:
+        release_cursor(conn, cursor)
+
+    return render_template("usuarios.html", usuarios=usuarios)
+
+
+@app.route("/admin/redefinir_senha/<int:id>", methods=["POST"])
+def admin_redefinir_senha(id):
+    if "usuario_id" not in session or session.get("perfil") != "admin":
+        return redirect("/login")
+
+    nova_senha = request.form.get("nova_senha", "").strip()
+    if not nova_senha or len(nova_senha) < 3:
+        return redirect("/usuarios?erro=senha_curta")
+
+    redefinir_senha_usuario(id, nova_senha)
+    return redirect("/usuarios?sucesso=senha_redefinida")
+
+
+@app.route("/admin/alterar_perfil/<int:id>", methods=["POST"])
+def admin_alterar_perfil(id):
+    if "usuario_id" not in session or session.get("perfil") != "admin":
+        return redirect("/login")
+
+    if id == session["usuario_id"]:
+        return redirect("/usuarios?erro=proprio_usuario")
+
+    novo_perfil = request.form.get("perfil", "professor").strip().lower()
+    if novo_perfil not in ("admin", "professor"):
+        novo_perfil = "professor"
+
+    conn, cursor = get_cursor()
+    try:
+        cursor.execute("UPDATE usuarios SET perfil = %s WHERE id = %s", (novo_perfil, id))
+        conn.commit()
+    finally:
+        release_cursor(conn, cursor)
+
+    return redirect("/usuarios?sucesso=perfil_atualizado")
+
+
+@app.route("/admin/deletar_usuario/<int:id>", methods=["POST", "GET"])
+def admin_deletar_usuario(id):
+    if "usuario_id" not in session or session.get("perfil") != "admin":
+        return redirect("/login")
+
+    if id == session["usuario_id"]:
+        return redirect("/usuarios?erro=proprio_usuario")
+
+    conn, cursor = get_cursor()
+    try:
+        cursor.execute("DELETE FROM usuarios WHERE id = %s", (id,))
+        conn.commit()
+    finally:
+        release_cursor(conn, cursor)
+
+    return redirect("/usuarios?sucesso=usuario_excluido")
 
 
 # =========================
@@ -792,7 +990,7 @@ def planos():
         is_excel = nome_arquivo.lower().endswith((".xlsx", ".xls"))
 
         print("=" * 60)
-        print(f"📚 PROCESSANDO ARQUIVO PARA GERAR PLANOS DE AULA")
+        print(f"[INFO] PROCESSANDO ARQUIVO PARA GERAR PLANOS DE AULA")
         print(f"   Arquivo: {nome_arquivo} (Excel: {is_excel})")
         print("=" * 60)
 
@@ -805,7 +1003,7 @@ def planos():
             try:
                 dados_cabecalho, aulas_excel = ler_excel_planejamento_docente(caminho)
                 if aulas_excel and len(aulas_excel) > 0:
-                    print(f"📊 Arquivo reconhecido como Planejamento Docente ({len(aulas_excel)} aulas identificadas)!")
+                    print(f"[INFO] Arquivo reconhecido como Planejamento Docente ({len(aulas_excel)} aulas identificadas)!")
                     if not nome_curso and dados_cabecalho.get("nome_curso"):
                         nome_curso = dados_cabecalho["nome_curso"]
                     if dados_cabecalho.get("unidade_curricular"):
@@ -852,11 +1050,11 @@ def planos():
         # Fluxo alternativo: Matriz SAEP ou PDF de Plano de Curso
         if not planos:
             if is_excel:
-                print("📊 Extraindo dados de Matriz de Referência...")
+                print("[INFO] Extraindo dados de Matriz de Referência...")
                 dados_excel = extrair_dados_excel(caminho)
                 texto = formatar_dados_para_prompt(dados_excel)
             else:
-                print("📄 Extraindo texto do PDF...")
+                print("[INFO] Extraindo texto do PDF...")
                 reader = PdfReader(caminho)
                 texto = ""
                 for pagina in reader.pages:
@@ -918,7 +1116,7 @@ def planos():
         )
         gerar_pdf_plano(arquivo_docx, arquivo_pdf)
 
-        print(f"✅ {len(planos)} Planos de aula gerados para o Curso #{curso_id}!")
+        print(f"[OK] {len(planos)} Planos de aula gerados para o Curso #{curso_id}!")
         print("=" * 60)
 
         # Redireciona para o curso onde cada plano tem o botão individual para gerar atividade
@@ -1585,7 +1783,7 @@ def planejamento_docente():
         total_aulas = -(-carga_horaria // horas_por_dia)  # Divisão com teto
 
         print("=" * 60)
-        print(f"📊 GERANDO PLANEJAMENTO DOCENTE")
+        print(f"[INFO] GERANDO PLANEJAMENTO DOCENTE")
         print(f"   Curso: {nome_curso} | UC: {unidade_curricular}")
         print(f"   CH: {carga_horaria}h | {horas_por_dia}h/dia | {total_aulas} aulas")
         print("=" * 60)
@@ -1609,13 +1807,13 @@ def planejamento_docente():
             nome_plano = secure_filename(arquivo_plano.filename)
             caminho_plano = os.path.join(pasta_upload, nome_plano)
             arquivo_plano.save(caminho_plano)
-            print(f"📄 Plano de Curso salvo: {caminho_plano}")
+            print(f"[INFO] Plano de Curso salvo: {caminho_plano}")
             try:
                 dados_plano = estruturar_dados_plano_pdf(caminho_plano, unidade_curricular_alvo=unidade_curricular)
                 dados_plano["unidade_curricular"] = dados_plano.get("unidade_curricular") or unidade_curricular
-                print(f"✅ PDF lido: {len(dados_plano.get('conhecimentos', []))} conhecimentos extraídos")
+                print(f"[OK] PDF lido: {len(dados_plano.get('conhecimentos', []))} conhecimentos extraídos")
             except Exception as e:
-                print(f"⚠️ Erro ao ler PDF do plano: {e}")
+                print(f"[AVISO] Erro ao ler PDF do plano: {e}")
 
         # ----------------------------------------------------------
         # 2. Lê a Matriz SAEP (opcional)
@@ -1626,12 +1824,12 @@ def planejamento_docente():
             nome_matriz = secure_filename(arquivo_matriz.filename)
             caminho_matriz = os.path.join(pasta_upload, nome_matriz)
             arquivo_matriz.save(caminho_matriz)
-            print(f"📋 Matriz SAEP salva: {caminho_matriz}")
+            print(f"[INFO] Matriz SAEP salva: {caminho_matriz}")
             try:
                 dados_matriz = ler_matriz_saep(caminho_matriz)
-                print(f"✅ Matriz lida: {len(dados_matriz)} capacidades")
+                print(f"[OK] Matriz lida: {len(dados_matriz)} capacidades")
             except Exception as e:
-                print(f"⚠️ Erro ao ler Matriz SAEP: {e}")
+                print(f"[AVISO] Erro ao ler Matriz SAEP: {e}")
 
         # ----------------------------------------------------------
         # 3. Gera o Planejamento Docente (Taxonomia de Bloom)
@@ -1662,7 +1860,7 @@ def planejamento_docente():
         os.makedirs("outputs", exist_ok=True)
         caminho_excel = gerar_excel_planejamento(dados_cabecalho, aulas)
         nome_arquivo_excel = os.path.basename(caminho_excel)
-        print(f"✅ Excel do Planejamento Docente gerado com sucesso: {caminho_excel}")
+        print(f"[OK] Excel do Planejamento Docente gerado com sucesso: {caminho_excel}")
 
         # ----------------------------------------------------------
         # 4. Salva o Planejamento Docente no banco de dados
@@ -1708,8 +1906,8 @@ def planejamento_docente():
         finally:
             release_cursor(conn, cursor)
 
-        print(f"✅ Planejamento Docente salvo no banco: ID #{planejamento_id}")
-        print(f"📥 Disponibilizando arquivo Excel para download imediato...")
+        print(f"[OK] Planejamento Docente salvo no banco: ID #{planejamento_id}")
+        print(f"[INFO] Disponibilizando arquivo Excel para download imediato...")
         print("=" * 60)
 
         # Redireciona para a lista de planejamentos com feedback visual e download automático
@@ -1831,14 +2029,14 @@ def deletar_planejamento(planejamento_id):
             caminho = os.path.join("outputs", nome_arquivo)
             if os.path.exists(caminho):
                 os.remove(caminho)
-                print(f"🗑️ Arquivo Excel removido: {caminho}")
+                print(f"[INFO] Arquivo Excel removido: {caminho}")
 
         cursor.execute(
             "DELETE FROM planejamentos_docente WHERE id = %s",
             (planejamento_id,)
         )
         conn.commit()
-        print(f"🗑️ Planejamento Docente #{planejamento_id} deletado")
+        print(f"[INFO] Planejamento Docente #{planejamento_id} deletado")
     finally:
         release_cursor(conn, cursor)
 

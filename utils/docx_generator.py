@@ -166,4 +166,4 @@ def gerar_docx_plano(
         os.makedirs(pasta, exist_ok=True)
 
     doc.save(caminho_saida)
-    print(f"✅ WORD GERADO COM SUCESSO: {caminho_saida}")
+    print(f"[OK] WORD GERADO COM SUCESSO: {caminho_saida}")
