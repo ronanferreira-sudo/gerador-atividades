@@ -1831,10 +1831,48 @@ def planejamento_docente():
             except Exception as e:
                 print(f"[AVISO] Erro ao ler Matriz SAEP: {e}")
 
+        # Dias da semana de aula selecionados pelo professor (0=Seg, ..., 6=Dom)
+        dias_semana_raw = request.form.getlist("dias_semana")
+        if dias_semana_raw:
+            dias_semana = [int(x) for x in dias_semana_raw if str(x).isdigit()]
+        else:
+            dias_semana = [0, 1, 2, 3, 4]
+
+        # Feriados e recessos municipais / regionais informados
+        feriados_json = request.form.get("feriados_json", "[]")
+        feriados = []
+        try:
+            import json
+            itens_feriados = json.loads(feriados_json) if feriados_json else []
+            for item in itens_feriados:
+                if isinstance(item, dict) and "data" in item:
+                    feriados.append(item["data"])
+                elif isinstance(item, str) and item.strip():
+                    feriados.append(item.strip())
+        except Exception as e:
+            print(f"[AVISO] Erro ao decodificar feriados_json: {e}")
+
+        feriados_form = request.form.getlist("feriados")
+        if feriados_form:
+            feriados.extend([f.strip() for f in feriados_form if f.strip()])
+
+        # Frequência / Periodicidade (semanal ou quinzenal / 15 em 15 dias)
+        periodicidade = request.form.get("periodicidade", "semanal")
+
         # ----------------------------------------------------------
         # 3. Gera o Planejamento Docente (Taxonomia de Bloom)
         # ----------------------------------------------------------
-        datas = calcular_datas_aulas(data_inicio_str, total_aulas)
+        datas = calcular_datas_aulas(
+            data_inicio_str,
+            total_aulas,
+            dias_semana=dias_semana,
+            feriados=feriados,
+            periodicidade=periodicidade
+        )
+
+        data_fim_calculada = datas[-1].strftime("%Y-%m-%d") if datas else data_inicio_str
+        if not data_fim_str:
+            data_fim_str = data_fim_calculada
 
         aulas = gerar_planejamento_ia(
             dados_plano,
@@ -1916,53 +1954,16 @@ def planejamento_docente():
                 )
             )
             planejamento_id = cursor.fetchone()[0]
-
-            # 4.3 Gera automaticamente todos os Planos de Aula estruturados por encontro
-            planos_gerados = gerar_todos_planos_de_planejamento(
-                aulas,
-                nome_curso,
-                unidade_curricular,
-                horas_por_dia,
-                max_workers=2
-            )
-
-            # 4.4 Salva os planos de aula no banco vinculados ao curso e ao planejamento
-            planos_completos = ""
-            for dia, plano_texto in enumerate(planos_gerados, start=1):
-                planos_completos += f"\n\nDIA {dia}\n\n{plano_texto}"
-                cursor.execute(
-                    """
-                    INSERT INTO planos_aula (curso_id, dia, tema, plano_gerado, usuario_id, planejamento_id)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                    """,
-                    (curso_id, dia, f"Plano Dia {dia} — {unidade_curricular}", plano_texto, session["usuario_id"], planejamento_id)
-                )
-
             conn.commit()
-            print(f"[OK] Planejamento Docente #{planejamento_id} e {len(planos_gerados)} Planos de Aula gerados para o Curso #{curso_id}!")
+            print(f"[OK] Planejamento Docente #{planejamento_id} (Curso #{curso_id}) salvo com sucesso!")
         finally:
             release_cursor(conn, cursor)
 
-        # 4.5 Gera DOCX e PDF consolidados do curso
-        try:
-            os.makedirs("outputs", exist_ok=True)
-            arquivo_docx = f"outputs/plano_{curso_id}.docx"
-            arquivo_pdf = f"outputs/plano_{curso_id}.pdf"
-            gerar_docx_plano(
-                titulo="PLANO DE AULA",
-                subtitulo=f"Curso: {nome_curso} — {unidade_curricular}",
-                conteudo=planos_completos,
-                caminho_saida=arquivo_docx
-            )
-            gerar_pdf_plano(arquivo_docx, arquivo_pdf)
-        except Exception as e:
-            print(f"[AVISO] Erro ao consolidar DOCX/PDF do curso: {e}")
-
-        print(f"[OK] Planejamento Docente e Planos de Aula prontos!")
+        print(f"[OK] Planejamento Docente pronto!")
         print(f"[INFO] Disponibilizando arquivo Excel para download imediato...")
         print("=" * 60)
 
-        # Redireciona para a lista de planejamentos com feedback visual e download automático
+        # Redireciona para a lista de planejamentos com download automático
         return redirect(f"/listar_planejamentos?sucesso=1&download={planejamento_id}")
 
     return render_template("planejamento_docente.html")
@@ -1979,24 +1980,35 @@ def listar_planejamentos():
 
     conn, cursor = get_cursor()
     try:
+        sql_select = """
+            SELECT 
+                p.id,
+                p.nome_curso,
+                p.unidade_curricular,
+                p.turma,
+                p.unidade_escolar,
+                p.carga_horaria,
+                p.horas_por_dia,
+                p.data_inicio,
+                p.data_fim,
+                p.total_aulas,
+                p.arquivo_excel,
+                p.usuario_id,
+                p.data_criacao,
+                p.curso_id,
+                p.modalidade,
+                COALESCE(
+                    (SELECT COUNT(*) FROM planos_aula pa WHERE pa.planejamento_id = p.id),
+                    (SELECT COUNT(*) FROM planos_aula pa WHERE p.curso_id IS NOT NULL AND pa.curso_id = p.curso_id),
+                    0
+                ) AS qtd_planos
+            FROM planejamentos_docente p
+        """
+
         if session["perfil"] == "admin":
-            cursor.execute(
-                """
-                SELECT *
-                FROM planejamentos_docente
-                ORDER BY id DESC
-                """
-            )
+            cursor.execute(sql_select + " ORDER BY p.id DESC")
         else:
-            cursor.execute(
-                """
-                SELECT *
-                FROM planejamentos_docente
-                WHERE usuario_id = %s
-                ORDER BY id DESC
-                """,
-                (session["usuario_id"],)
-            )
+            cursor.execute(sql_select + " WHERE p.usuario_id = %s ORDER BY p.id DESC", (session["usuario_id"],))
 
         planejamentos = cursor.fetchall()
     finally:
@@ -2021,12 +2033,12 @@ def baixar_planejamento(planejamento_id):
     try:
         if session["perfil"] == "admin":
             cursor.execute(
-                "SELECT * FROM planejamentos_docente WHERE id = %s",
+                "SELECT id, arquivo_excel FROM planejamentos_docente WHERE id = %s",
                 (planejamento_id,)
             )
         else:
             cursor.execute(
-                "SELECT * FROM planejamentos_docente WHERE id = %s AND usuario_id = %s",
+                "SELECT id, arquivo_excel FROM planejamentos_docente WHERE id = %s AND usuario_id = %s",
                 (planejamento_id, session["usuario_id"])
             )
         planejamento = cursor.fetchone()
@@ -2036,7 +2048,7 @@ def baixar_planejamento(planejamento_id):
     if not planejamento:
         return "Planejamento não encontrado", 404
 
-    nome_arquivo = planejamento[10]  # coluna arquivo_excel
+    nome_arquivo = planejamento[1]  # coluna arquivo_excel
     caminho = os.path.join("outputs", nome_arquivo)
 
     if not os.path.exists(caminho):
@@ -2108,7 +2120,13 @@ def gerar_planos_planejamento(planejamento_id):
     conn, cursor = get_cursor()
     try:
         cursor.execute(
-            "SELECT * FROM planejamentos_docente WHERE id = %s",
+            """
+            SELECT id, nome_curso, unidade_curricular, turma, unidade_escolar,
+                   carga_horaria, horas_por_dia, data_inicio, data_fim, total_aulas,
+                   arquivo_excel, usuario_id, data_criacao, curso_id, modalidade
+            FROM planejamentos_docente
+            WHERE id = %s
+            """,
             (planejamento_id,)
         )
         plan = cursor.fetchone()
@@ -2118,66 +2136,99 @@ def gerar_planos_planejamento(planejamento_id):
     if not plan:
         return "Planejamento não encontrado", 404
 
-    curso_id = plan[11] if len(plan) > 11 else None
+    # Verifica permissão: dono ou admin
+    if session.get("perfil") != "admin" and plan[11] != session["usuario_id"]:
+        return "Acesso não autorizado", 403
 
-    # Se já tem planos gerados e curso_id vinculado, vai direto para o curso
-    if curso_id:
-        conn, cursor = get_cursor()
-        try:
-            cursor.execute("SELECT COUNT(*) FROM planos_aula WHERE curso_id = %s", (curso_id,))
-            qtd = cursor.fetchone()[0]
-            if qtd > 0:
-                return redirect(f"/curso/{curso_id}")
-        finally:
-            release_cursor(conn, cursor)
-
+    p_id = plan[0]
     nome_curso = plan[1]
     uc = plan[2]
+    turma = plan[3]
+    unidade_escolar = plan[4]
     ch = plan[5]
     hd = plan[6]
+    data_inicio = plan[7]
+    data_fim = plan[8]
+    total_aulas = plan[9]
     nome_arquivo_excel = plan[10]
+    dono_id = plan[11]
+    curso_id = plan[13]
 
+    # 1. Se já tem planos gerados e curso_id vinculado, vai direto para o curso
+    conn, cursor = get_cursor()
+    try:
+        qtd = 0
+        if curso_id:
+            cursor.execute("SELECT COUNT(*) FROM planos_aula WHERE curso_id = %s", (curso_id,))
+            qtd = cursor.fetchone()[0]
+        if qtd == 0:
+            cursor.execute("SELECT COUNT(*) FROM planos_aula WHERE planejamento_id = %s", (p_id,))
+            qtd = cursor.fetchone()[0]
+
+        if qtd > 0:
+            if not curso_id:
+                cursor.execute("SELECT curso_id FROM planos_aula WHERE planejamento_id = %s LIMIT 1", (p_id,))
+                c_row = cursor.fetchone()
+                if c_row and c_row[0]:
+                    curso_id = c_row[0]
+                    cursor.execute("UPDATE planejamentos_docente SET curso_id = %s WHERE id = %s", (curso_id, p_id))
+                    conn.commit()
+            if curso_id:
+                return redirect(f"/curso/{curso_id}")
+    finally:
+        release_cursor(conn, cursor)
+
+    # 2. Lê as aulas estruturadas da planilha Excel do planejamento
     caminho_excel = os.path.join("outputs", nome_arquivo_excel) if nome_arquivo_excel else ""
-
     aulas_excel = []
     if caminho_excel and os.path.exists(caminho_excel):
         try:
             _, aulas_excel = ler_excel_planejamento_docente(caminho_excel)
         except Exception as e:
-            print(f"Erro ao ler Excel do planejamento: {e}")
+            print(f"[AVISO] Erro ao ler Excel do planejamento #{p_id}: {e}")
 
-    # Cria ou vincula o curso
-    if not curso_id:
-        conn, cursor = get_cursor()
-        try:
+    # 3. Cria ou vincula o curso na tabela cursos_plano
+    conn, cursor = get_cursor()
+    try:
+        if not curso_id:
             cursor.execute(
                 """
                 INSERT INTO cursos_plano (nome_curso, carga_horaria, aulas_por_dia, usuario_id)
                 VALUES (%s, %s, %s, %s)
                 RETURNING id
                 """,
-                (f"{nome_curso} — {uc}", ch, hd, session["usuario_id"])
+                (f"{nome_curso} — {uc}", ch, hd, dono_id)
             )
             curso_id = cursor.fetchone()[0]
 
             cursor.execute(
                 "UPDATE planejamentos_docente SET curso_id = %s WHERE id = %s",
-                (curso_id, planejamento_id)
+                (curso_id, p_id)
             )
             conn.commit()
-        finally:
-            release_cursor(conn, cursor)
+    finally:
+        release_cursor(conn, cursor)
 
+    # 4. Fallback caso não tenha conseguido ler do Excel
     if not aulas_excel:
-        datas = calcular_datas_aulas(str(plan[7]) if plan[7] else None, plan[9])
+        datas = calcular_datas_aulas(str(data_inicio) if data_inicio else None, total_aulas)
         dados_plano = {"unidade_curricular": uc, "conhecimentos": []}
-        aulas_excel = gerar_planejamento_ia(dados_plano, [], plan[9], hd, datas)
+        aulas_excel = gerar_planejamento_ia(dados_plano, [], total_aulas, hd, datas)
 
-    planos_gerados = gerar_todos_planos_de_planejamento(aulas_excel, nome_curso, uc, hd, max_workers=2)
+    # 5. Gera os planos de aula detalhados
+    planos_gerados = gerar_todos_planos_de_planejamento(
+        aulas_excel,
+        nome_curso,
+        uc,
+        hd,
+        max_workers=2
+    )
 
+    # 6. Salva no banco de dados vinculando curso_id e planejamento_id
     planos_completos = ""
     conn, cursor = get_cursor()
     try:
+        cursor.execute("DELETE FROM planos_aula WHERE curso_id = %s OR planejamento_id = %s", (curso_id, p_id))
         for dia, plano_texto in enumerate(planos_gerados, start=1):
             planos_completos += f"\n\nDIA {dia}\n\n{plano_texto}"
             cursor.execute(
@@ -2185,13 +2236,14 @@ def gerar_planos_planejamento(planejamento_id):
                 INSERT INTO planos_aula (curso_id, dia, tema, plano_gerado, usuario_id, planejamento_id)
                 VALUES (%s, %s, %s, %s, %s, %s)
                 """,
-                (curso_id, dia, f"Plano Dia {dia} — {uc}", plano_texto, session["usuario_id"], planejamento_id)
+                (curso_id, dia, f"Plano Dia {dia} — {uc}", plano_texto, dono_id, p_id)
             )
         conn.commit()
+        print(f"[OK] {len(planos_gerados)} Planos de Aula gerados e salvos para o Planejamento #{p_id} (Curso #{curso_id})!")
     finally:
         release_cursor(conn, cursor)
 
-    # Gera DOCX e PDF consolidados do curso
+    # 7. Gera DOCX e PDF consolidados do curso
     try:
         os.makedirs("outputs", exist_ok=True)
         arquivo_docx = f"outputs/plano_{curso_id}.docx"

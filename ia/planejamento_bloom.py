@@ -1,7 +1,7 @@
 import os
 import json
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import requests
 from dotenv import load_dotenv
 from utils.texto_utils import limpar_numeracao_item, limpar_numeracao_texto, eh_linha_lixo
@@ -57,10 +57,11 @@ NIVEIS_BLOOM = {
 }
 
 
-def calcular_datas_aulas(data_inicio_str, total_aulas):
+def calcular_datas_aulas(data_inicio_str, total_aulas, dias_semana=None, feriados=None, periodicidade="semanal"):
     """
-    Gera as datas para cada aula em dias úteis (Segunda a Sexta),
-    a partir da data inicial.
+    Gera as datas para cada aula conforme os dias da semana selecionados (0=Seg, ..., 6=Dom),
+    desconsiderando feriados e recessos municipais/regionais,
+    e respeitando a periodicidade ('semanal' ou 'quinzenal' / a cada 15 dias).
     """
     if not data_inicio_str:
         hoje = datetime.now()
@@ -72,12 +73,53 @@ def calcular_datas_aulas(data_inicio_str, total_aulas):
         else:
             data_inicio = datetime.strptime(str(data_inicio_str).strip()[:10], "%Y-%m-%d")
 
-    datas = []
-    atual = data_inicio
+    # Padrão: Segunda a Sexta (0, 1, 2, 3, 4) se não especificado
+    if dias_semana is None or len(dias_semana) == 0:
+        dias_semana = [0, 1, 2, 3, 4]
+    else:
+        dias_semana = [int(d) for d in dias_semana if str(d).isdigit()]
 
-    while len(datas) < total_aulas:
-        if atual.weekday() < 5:
-            datas.append(atual)
+    # Conjunto de feriados no formato date
+    feriados_set = set()
+    if feriados:
+        for f in feriados:
+            if not f:
+                continue
+            if isinstance(f, (datetime, date)):
+                feriados_set.add(f.date() if isinstance(f, datetime) else f)
+            elif isinstance(f, str):
+                s = f.strip()[:10]
+                try:
+                    if "/" in s:
+                        p = s.split("/")
+                        feriados_set.add(date(int(p[2]), int(p[1]), int(p[0])))
+                    elif "-" in s:
+                        p = s.split("-")
+                        feriados_set.add(date(int(p[0]), int(p[1]), int(p[2])))
+                except Exception:
+                    pass
+
+    datas = []
+    atual = data_inicio.date() if isinstance(data_inicio, datetime) else data_inicio
+
+    eh_quinzenal = (str(periodicidade).lower() in ["quinzenal", "15_dias", "15", "quinzena"])
+    segunda_base = atual - timedelta(days=atual.weekday())
+
+    # Itera dia a dia até atingir a quantidade total de aulas necessárias
+    iteracoes = 0
+    max_iter = total_aulas * 40 + 365  # Proteção contra loop infinito
+    while len(datas) < total_aulas and iteracoes < max_iter:
+        iteracoes += 1
+        if atual.weekday() in dias_semana:
+            if eh_quinzenal:
+                semanas_decorridas = (atual - segunda_base).days // 7
+                if semanas_decorridas % 2 != 0:
+                    atual += timedelta(days=1)
+                    continue
+
+            if atual not in feriados_set:
+                datas.append(datetime.combine(atual, datetime.min.time()))
+
         atual += timedelta(days=1)
 
     return datas

@@ -122,6 +122,204 @@
                             <input type="date" name="data_fim" id="data_fim" class="form-control form-control-lg">
                         </div>
 
+                        <!-- Seleção dos Dias da Semana de Aula -->
+                        <div class="col-12">
+                            <div class="p-3 bg-light rounded-3 border">
+                                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-2">
+                                    <label class="form-label fw-bold mb-0 text-dark">
+                                        <i class="bi bi-calendar-week text-primary me-1"></i> Dias da Semana com Aula <span class="text-danger">*</span>
+                                    </label>
+                                    <!-- Ações Rápidas -->
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="selecionarDiasSemana('uteis')">
+                                            Seg a Sex
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="selecionarDiasSemana('sabado')">
+                                            Seg a Sáb
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="selecionarDiasSemana('todos')">
+                                            Todos
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="selecionarDiasSemana('nenhum')">
+                                            Limpar
+                                        </button>
+                                    </div>
+                                </div>
+                                <p class="text-muted small mb-3">Marque os dias em que haverá encontro desta Unidade Curricular para cálculo preciso do cronograma.</p>
+
+                                <div class="d-flex flex-wrap gap-2" id="containerDiasSemana">
+                                    <div class="position-relative">
+                                        <input type="checkbox" class="btn-check dia-semana-check" name="dias_semana" id="dia_seg" value="0" checked onchange="atualizarResumoAulas()">
+                                        <label class="btn btn-outline-primary px-3 py-2 fw-semibold" for="dia_seg">Segunda</label>
+                                    </div>
+                                    <div class="position-relative">
+                                        <input type="checkbox" class="btn-check dia-semana-check" name="dias_semana" id="dia_ter" value="1" checked onchange="atualizarResumoAulas()">
+                                        <label class="btn btn-outline-primary px-3 py-2 fw-semibold" for="dia_ter">Terça</label>
+                                    </div>
+                                    <div class="position-relative">
+                                        <input type="checkbox" class="btn-check dia-semana-check" name="dias_semana" id="dia_qua" value="2" checked onchange="atualizarResumoAulas()">
+                                        <label class="btn btn-outline-primary px-3 py-2 fw-semibold" for="dia_qua">Quarta</label>
+                                    </div>
+                                    <div class="position-relative">
+                                        <input type="checkbox" class="btn-check dia-semana-check" name="dias_semana" id="dia_qui" value="3" checked onchange="atualizarResumoAulas()">
+                                        <label class="btn btn-outline-primary px-3 py-2 fw-semibold" for="dia_qui">Quinta</label>
+                                    </div>
+                                    <div class="position-relative">
+                                        <input type="checkbox" class="btn-check dia-semana-check" name="dias_semana" id="dia_sex" value="4" checked onchange="atualizarResumoAulas()">
+                                        <label class="btn btn-outline-primary px-3 py-2 fw-semibold" for="dia_sex">Sexta</label>
+                                    </div>
+                                    <div class="position-relative">
+                                        <input type="checkbox" class="btn-check dia-semana-check" name="dias_semana" id="dia_sab" value="5" onchange="atualizarResumoAulas()">
+                                        <label class="btn btn-outline-primary px-3 py-2 fw-semibold" for="dia_sab">Sábado</label>
+                                    </div>
+                                    <div class="position-relative">
+                                        <input type="checkbox" class="btn-check dia-semana-check" name="dias_semana" id="dia_dom" value="6" onchange="atualizarResumoAulas()">
+                                        <label class="btn btn-outline-primary px-3 py-2 fw-semibold" for="dia_dom">Domingo</label>
+                                    </div>
+                                </div>
+
+                                <!-- Seletor de Periodicidade: Semanal ou Quinzenal -->
+                                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3 pt-2 border-top">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="small text-muted fw-semibold"><i class="bi bi-arrow-repeat text-primary me-1"></i> Periodicidade:</span>
+                                        <div class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="periodicidade" id="freq_semanal" value="semanal" checked onchange="alternarPeriodicidade('semanal')">
+                                            <label class="form-check-label small" for="freq_semanal">Toda semana (Semanal)</label>
+                                        </div>
+                                        <div class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="periodicidade" id="freq_quinzenal" value="quinzenal" onchange="alternarPeriodicidade('quinzenal')">
+                                            <label class="form-check-label small fw-semibold text-primary" for="freq_quinzenal">
+                                                <i class="bi bi-clock-history me-1"></i> De 15 em 15 dias (Quinzenal)
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div id="dicaQuinzenal" class="small text-primary fst-italic d-none">
+                                        <i class="bi bi-info-circle me-1"></i> Selecione acima o(s) dia(s) da semana da aula quinzenal.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Feriados Municipais / Regionais e Recessos -->
+                        <div class="col-12">
+                            <div class="p-3 bg-light rounded-3 border">
+                                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-2">
+                                    <label class="form-label fw-bold mb-0 text-dark">
+                                        <i class="bi bi-calendar-x text-danger me-1"></i> Feriados, Recessos e Dias sem Aula
+                                    </label>
+                                    <span class="text-muted small fw-semibold" id="contadorFeriados">0 dias cadastrados</span>
+                                </div>
+                                <p class="text-muted small mb-3">Selecione datas que devem ser <strong>desconsideradas</strong> no cronograma. As aulas serão reagendadas automaticamente.</p>
+
+                                <!-- Recessos de Julho e Dezembro -->
+                                <div class="mb-3">
+                                    <span class="small fw-bold text-dark d-block mb-2"><i class="bi bi-snow text-info me-1"></i><i class="bi bi-sun text-warning me-1"></i> Recesso Escolar — Marque o período que não haverá aulas:</span>
+                                    <div class="row g-2">
+                                        <!-- Recesso de Julho -->
+                                        <div class="col-md-6">
+                                            <div class="card border-info border-opacity-50 shadow-sm">
+                                                <div class="card-body p-3">
+                                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                                        <span class="fw-semibold small text-info"><i class="bi bi-snow me-1"></i> Recesso de Julho</span>
+                                                        <div class="form-check form-switch mb-0">
+                                                            <input class="form-check-input" type="checkbox" id="toggleRecessoJulho" onchange="toggleRecesso('julho')">
+                                                            <label class="form-check-label small text-muted" for="toggleRecessoJulho">Ativar</label>
+                                                        </div>
+                                                    </div>
+                                                    <div id="recessoJulhoConfig" class="d-none">
+                                                        <div class="row g-2">
+                                                            <div class="col-6">
+                                                                <label class="form-label small text-muted mb-1">Início</label>
+                                                                <input type="date" id="recessoJulhoInicio" class="form-control form-control-sm" onchange="aplicarRecesso('julho')">
+                                                            </div>
+                                                            <div class="col-6">
+                                                                <label class="form-label small text-muted mb-1">Fim</label>
+                                                                <input type="date" id="recessoJulhoFim" class="form-control form-control-sm" onchange="aplicarRecesso('julho')">
+                                                            </div>
+                                                        </div>
+                                                        <div class="d-flex gap-1 mt-2 flex-wrap">
+                                                            <button type="button" class="btn btn-xs btn-outline-info py-0 px-2" style="font-size:0.75rem;" onclick="preencherRecessoMes('julho','07-13','07-25')">13 a 25/Jul</button>
+                                                            <button type="button" class="btn btn-xs btn-outline-info py-0 px-2" style="font-size:0.75rem;" onclick="preencherRecessoMes('julho','07-07','07-18')">07 a 18/Jul</button>
+                                                            <button type="button" class="btn btn-xs btn-outline-info py-0 px-2" style="font-size:0.75rem;" onclick="preencherRecessoMes('julho','07-14','07-31')">14 a 31/Jul</button>
+                                                        </div>
+                                                        <div id="recessoJulhoStatus" class="mt-2 small text-muted fst-italic"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Recesso de Dezembro -->
+                                        <div class="col-md-6">
+                                            <div class="card border-warning border-opacity-50 shadow-sm">
+                                                <div class="card-body p-3">
+                                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                                        <span class="fw-semibold small text-warning"><i class="bi bi-sun me-1"></i> Recesso de Dezembro</span>
+                                                        <div class="form-check form-switch mb-0">
+                                                            <input class="form-check-input" type="checkbox" id="toggleRecessoDezembro" onchange="toggleRecesso('dezembro')">
+                                                            <label class="form-check-label small text-muted" for="toggleRecessoDezembro">Ativar</label>
+                                                        </div>
+                                                    </div>
+                                                    <div id="recessoDezembroConfig" class="d-none">
+                                                        <div class="row g-2">
+                                                            <div class="col-6">
+                                                                <label class="form-label small text-muted mb-1">Início</label>
+                                                                <input type="date" id="recessoDezembroInicio" class="form-control form-control-sm" onchange="aplicarRecesso('dezembro')">
+                                                            </div>
+                                                            <div class="col-6">
+                                                                <label class="form-label small text-muted mb-1">Fim</label>
+                                                                <input type="date" id="recessoDezembroFim" class="form-control form-control-sm" onchange="aplicarRecesso('dezembro')">
+                                                            </div>
+                                                        </div>
+                                                        <div class="d-flex gap-1 mt-2 flex-wrap">
+                                                            <button type="button" class="btn btn-xs btn-outline-warning py-0 px-2" style="font-size:0.75rem;" onclick="preencherRecessoMes('dezembro','12-20','12-31')">20 a 31/Dez</button>
+                                                            <button type="button" class="btn btn-xs btn-outline-warning py-0 px-2" style="font-size:0.75rem;" onclick="preencherRecessoDezembroJan()">22/Dez–05/Jan</button>
+                                                            <button type="button" class="btn btn-xs btn-outline-warning py-0 px-2" style="font-size:0.75rem;" onclick="preencherRecessoMes('dezembro','12-15','12-31')">15 a 31/Dez</button>
+                                                        </div>
+                                                        <div id="recessoDezembroStatus" class="mt-2 small text-muted fst-italic"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Feriado/dia avulso -->
+                                <div class="border-top pt-3">
+                                    <span class="small fw-bold text-dark d-block mb-2"><i class="bi bi-calendar-event text-danger me-1"></i> Feriados e dias avulsos sem aula:</span>
+                                    <div class="row g-2 align-items-end mb-3">
+                                        <div class="col-sm-4">
+                                            <label class="form-label small text-muted mb-1">Data</label>
+                                            <input type="date" id="inputFeriadoData" class="form-control">
+                                        </div>
+                                        <div class="col-sm-5">
+                                            <label class="form-label small text-muted mb-1">Descrição / Motivo (opcional)</label>
+                                            <input type="text" id="inputFeriadoNome" class="form-control" placeholder="Ex: Padroeira, Aniversário da Cidade" onkeydown="if(event.key==='Enter'){event.preventDefault(); adicionarFeriado();}">
+                                        </div>
+                                        <div class="col-sm-3">
+                                            <button type="button" class="btn btn-outline-danger w-100 fw-semibold" onclick="adicionarFeriado()">
+                                                <i class="bi bi-plus-circle me-1"></i> Adicionar
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Atalhos rápidos para feriados nacionais -->
+                                    <div class="d-flex flex-wrap align-items-center gap-1 mb-3">
+                                        <span class="text-muted small me-2"><i class="bi bi-lightning-charge-fill text-warning"></i> Feriados nacionais:</span>
+                                        <button type="button" class="btn btn-sm btn-white border shadow-xs py-0 px-2" style="font-size: 0.78rem;" onclick="adicionarFeriadoRapido('2026-11-15', 'Proclamação da República')">+ 15/Nov</button>
+                                        <button type="button" class="btn btn-sm btn-white border shadow-xs py-0 px-2" style="font-size: 0.78rem;" onclick="adicionarFeriadoRapido('2026-11-20', 'Consciência Negra')">+ 20/Nov</button>
+                                        <button type="button" class="btn btn-sm btn-white border shadow-xs py-0 px-2" style="font-size: 0.78rem;" onclick="adicionarFeriadoRapido('2026-12-25', 'Natal')">+ 25/Dez</button>
+                                        <button type="button" class="btn btn-sm btn-white border shadow-xs py-0 px-2" style="font-size: 0.78rem;" onclick="adicionarFeriadoRapido('2027-01-01', 'Ano Novo')">+ 01/Jan</button>
+                                    </div>
+                                </div>
+
+                                <!-- Lista de todos os dias sem aula adicionados -->
+                                <div id="listaFeriadosChips" class="d-flex flex-wrap gap-2 pt-2 border-top">
+                                    <span class="text-muted small fst-italic py-1" id="nenhumFeriadoMsg">Nenhum feriado ou recesso adicionado para este cronograma.</span>
+                                </div>
+
+                                <input type="hidden" name="feriados_json" id="feriados_json" value="[]">
+                            </div>
+                        </div>
+
                         <div class="col-12">
                             <div class="alert alert-info py-3 px-3 d-flex align-items-center mb-0 rounded-3 shadow-sm" id="resumoCalculo">
                                 <i class="bi bi-info-circle-fill fs-4 me-3 text-primary"></i>
@@ -239,24 +437,302 @@ function atualizarTipoCurso() {
     }
 }
 
+// ==========================================
+// DIAS DA SEMANA E FERIADOS / RECESSOS
+// ==========================================
+let listaFeriados = [];
+
+function escapeHtml(text) {
+    if (!text) return '';
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function selecionarDiasSemana(modo) {
+    const checks = document.querySelectorAll('.dia-semana-check');
+    const radioSemanal = document.getElementById('freq_semanal');
+    const dica = document.getElementById('dicaQuinzenal');
+
+    if (radioSemanal) radioSemanal.checked = true;
+    if (dica) dica.classList.add('d-none');
+
+    checks.forEach(chk => {
+        const val = parseInt(chk.value);
+        if (modo === 'uteis') {
+            chk.checked = (val >= 0 && val <= 4); // Seg a Sex
+        } else if (modo === 'sabado') {
+            chk.checked = (val >= 0 && val <= 5); // Seg a Sáb
+        } else if (modo === 'todos') {
+            chk.checked = true;
+        } else if (modo === 'nenhum') {
+            chk.checked = false;
+        }
+    });
+    atualizarResumoAulas();
+}
+
+function alternarPeriodicidade(tipo) {
+    const dica = document.getElementById('dicaQuinzenal');
+    if (tipo === 'quinzenal') {
+        if (dica) dica.classList.remove('d-none');
+    } else {
+        if (dica) dica.classList.add('d-none');
+    }
+    atualizarResumoAulas();
+}
+
+function adicionarFeriado() {
+    const inputData = document.getElementById('inputFeriadoData');
+    const inputNome = document.getElementById('inputFeriadoNome');
+    if (!inputData || !inputData.value) {
+        alert('Por favor, selecione uma data no calendário para o feriado ou recesso.');
+        if (inputData) inputData.focus();
+        return;
+    }
+    const dataVal = inputData.value;
+    const nomeVal = inputNome ? inputNome.value.trim() : '';
+
+    if (listaFeriados.some(f => f.data === dataVal)) {
+        alert('Esta data já foi incluída na lista de feriados/recessos.');
+        return;
+    }
+
+    listaFeriados.push({
+        data: dataVal,
+        nome: nomeVal || 'Feriado / Recesso'
+    });
+
+    listaFeriados.sort((a, b) => a.data.localeCompare(b.data));
+
+    inputData.value = '';
+    if (inputNome) inputNome.value = '';
+
+    renderizarFeriados();
+    atualizarResumoAulas();
+}
+
+function adicionarFeriadoRapido(dataStr, nomeStr) {
+    if (listaFeriados.some(f => f.data === dataStr)) return;
+    listaFeriados.push({ data: dataStr, nome: nomeStr });
+    listaFeriados.sort((a, b) => a.data.localeCompare(b.data));
+    renderizarFeriados();
+    atualizarResumoAulas();
+}
+
+// ==========================================
+// RECESSOS DE JULHO E DEZEMBRO
+// ==========================================
+// Tags de datas adicionadas pelo recesso para remoção em lote
+let recessoTags = { julho: [], dezembro: [] };
+
+function getAnoReferencia(offset = 0) {
+    // Retorna o ano da data de início se preenchida, senão ano corrente
+    const dataInicio = document.getElementById('data_inicio');
+    if (dataInicio && dataInicio.value) {
+        return parseInt(dataInicio.value.split('-')[0]) + offset;
+    }
+    return new Date().getFullYear() + offset;
+}
+
+function toggleRecesso(mes) {
+    const toggleId = mes === 'julho' ? 'toggleRecessoJulho' : 'toggleRecessoDezembro';
+    const configId  = mes === 'julho' ? 'recessoJulhoConfig'  : 'recessoDezembroConfig';
+    const toggle    = document.getElementById(toggleId);
+    const config    = document.getElementById(configId);
+    if (!toggle || !config) return;
+
+    if (toggle.checked) {
+        config.classList.remove('d-none');
+    } else {
+        config.classList.add('d-none');
+        // Remove datas do recesso da lista
+        removerRecessoDaLista(mes);
+    }
+}
+
+function preencherRecesso(mes, inicio, fim) {
+    const idInicio = mes === 'julho' ? 'recessoJulhoInicio' : 'recessoDezembroInicio';
+    const idFim    = mes === 'julho' ? 'recessoJulhoFim'   : 'recessoDezembroFim';
+    const inpI = document.getElementById(idInicio);
+    const inpF = document.getElementById(idFim);
+    if (inpI) inpI.value = inicio;
+    if (inpF) inpF.value = fim;
+    aplicarRecesso(mes);
+}
+
+// Helpers sem aspas simples no onclick HTML
+function preencherRecessoMes(mes, mmddInicio, mmddFim) {
+    const ano = getAnoReferencia();
+    preencherRecesso(mes, ano + '-' + mmddInicio, ano + '-' + mmddFim);
+}
+
+function preencherRecessoDezembroJan() {
+    const ano = getAnoReferencia();
+    preencherRecesso('dezembro', ano + '-12-22', (ano + 1) + '-01-05');
+}
+
+function aplicarRecesso(mes) {
+    const idInicio = mes === 'julho' ? 'recessoJulhoInicio' : 'recessoDezembroInicio';
+    const idFim    = mes === 'julho' ? 'recessoJulhoFim'   : 'recessoDezembroFim';
+    const idStatus = mes === 'julho' ? 'recessoJulhoStatus' : 'recessoDezembroStatus';
+    const nomeRecesso = mes === 'julho' ? 'Recesso de Julho' : 'Recesso de Dezembro';
+
+    const inpI = document.getElementById(idInicio);
+    const inpF = document.getElementById(idFim);
+    const status = document.getElementById(idStatus);
+
+    if (!inpI || !inpF || !inpI.value || !inpF.value) return;
+
+    const inicio = new Date(inpI.value + 'T00:00:00');
+    const fim    = new Date(inpF.value + 'T00:00:00');
+    if (fim < inicio) {
+        if (status) status.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-circle me-1"></i>Data fim deve ser após a data início.</span>';
+        return;
+    }
+
+    // Remove datas antigas deste recesso
+    removerRecessoDaLista(mes);
+
+    // Gera todas as datas do período
+    const novasDatas = [];
+    let atual = new Date(inicio);
+    while (atual <= fim) {
+        const iso = atual.toISOString().split('T')[0];
+        novasDatas.push(iso);
+        atual.setDate(atual.getDate() + 1);
+    }
+
+    recessoTags[mes] = novasDatas;
+
+    // Adiciona à lista de feriados (somente datas novas)
+    novasDatas.forEach(iso => {
+        if (!listaFeriados.some(f => f.data === iso)) {
+            listaFeriados.push({ data: iso, nome: nomeRecesso });
+        }
+    });
+
+    listaFeriados.sort((a, b) => a.data.localeCompare(b.data));
+    renderizarFeriados();
+    atualizarResumoAulas();
+
+    if (status) {
+        status.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i>${novasDatas.length} dias de recesso adicionados ao cronograma.</span>`;
+    }
+}
+
+function removerRecessoDaLista(mes) {
+    const datasRecesso = recessoTags[mes] || [];
+    if (datasRecesso.length === 0) return;
+    listaFeriados = listaFeriados.filter(f => !datasRecesso.includes(f.data));
+    recessoTags[mes] = [];
+    renderizarFeriados();
+    atualizarResumoAulas();
+    const idStatus = mes === 'julho' ? 'recessoJulhoStatus' : 'recessoDezembroStatus';
+    const status = document.getElementById(idStatus);
+    if (status) status.innerHTML = '';
+}
+
+function removerFeriado(dataStr) {
+    listaFeriados = listaFeriados.filter(f => f.data !== dataStr);
+    renderizarFeriados();
+    atualizarResumoAulas();
+}
+
+function renderizarFeriados() {
+    const container = document.getElementById('listaFeriadosChips');
+    const contador = document.getElementById('contadorFeriados');
+    const hiddenInput = document.getElementById('feriados_json');
+    if (!container) return;
+
+    if (hiddenInput) {
+        hiddenInput.value = JSON.stringify(listaFeriados);
+    }
+
+    if (contador) {
+        contador.innerText = `${listaFeriados.length} feriado${listaFeriados.length !== 1 ? 's' : ''} cadastrado${listaFeriados.length !== 1 ? 's' : ''}`;
+    }
+
+    if (listaFeriados.length === 0) {
+        container.innerHTML = '<span class="text-muted small fst-italic py-1" id="nenhumFeriadoMsg">Nenhum feriado ou recesso adicionado para este cronograma.</span>';
+        return;
+    }
+
+    let html = '';
+    listaFeriados.forEach(f => {
+        const partes = f.data.split('-');
+        const dataFormatada = partes.length === 3 ? `${partes[2]}/${partes[1]}/${partes[0]}` : f.data;
+        html += `
+            <span class="badge bg-white text-dark border shadow-xs p-2 d-inline-flex align-items-center gap-2 rounded-3 animate__animated animate__fadeIn">
+                <i class="bi bi-calendar-event text-danger"></i>
+                <span><strong>${dataFormatada}</strong> &mdash; ${escapeHtml(f.nome)}</span>
+                <button type="button" class="btn-close ms-1" style="font-size: 0.65rem;" onclick="removerFeriado('${f.data}')" aria-label="Remover"></button>
+            </span>
+        `;
+    });
+    container.innerHTML = html;
+}
+
 function calcularDataFimEstimada(dataInicioStr, totalAulas) {
     if (!dataInicioStr || !totalAulas || totalAulas <= 0) return null;
     const partes = dataInicioStr.split('-');
     if (partes.length !== 3) return null;
     let data = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
-    let diasUteisRestantes = totalAulas;
-    
-    while (diasUteisRestantes > 1) {
-        data.setDate(data.getDate() + 1);
-        const diaSemana = data.getDay();
-        if (diaSemana !== 0 && diaSemana !== 6) {
-            diasUteisRestantes--;
+
+    // Obter dias da semana permitidos (0=Segunda, ..., 6=Domingo)
+    const checks = document.querySelectorAll('.dia-semana-check:checked');
+    const diasPermitidos = Array.from(checks).map(c => parseInt(c.value));
+    if (diasPermitidos.length === 0) return null;
+
+    // Feriados cadastrados
+    const feriadosSet = new Set(listaFeriados.map(f => f.data));
+
+    // Periodicidade
+    const ehQuinzenal = document.getElementById('freq_quinzenal') && document.getElementById('freq_quinzenal').checked;
+
+    // Segunda-feira base da semana de início
+    const pyDayInicio = (data.getDay() + 6) % 7;
+    const segundaBase = new Date(data);
+    segundaBase.setDate(data.getDate() - pyDayInicio);
+    segundaBase.setHours(0, 0, 0, 0);
+
+    let aulasRestantes = totalAulas;
+    let iteracoes = 0;
+    const maxIteracoes = 2500; // Proteção contra loop infinito
+
+    while (aulasRestantes > 0 && iteracoes < maxIteracoes) {
+        iteracoes++;
+        const pyDay = (data.getDay() + 6) % 7; // Seg=0, ..., Dom=6
+
+        if (diasPermitidos.includes(pyDay)) {
+            if (ehQuinzenal) {
+                const diffTime = data.getTime() - segundaBase.getTime();
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                const semanas = Math.floor(diffDays / 7);
+                if (semanas % 2 !== 0) {
+                    data.setDate(data.getDate() + 1);
+                    continue;
+                }
+            }
+
+            const y = data.getFullYear();
+            const m = String(data.getMonth() + 1).padStart(2, '0');
+            const d = String(data.getDate()).padStart(2, '0');
+            const iso = `${y}-${m}-${d}`;
+
+            if (!feriadosSet.has(iso)) {
+                aulasRestantes--;
+                if (aulasRestantes === 0) {
+                    return iso;
+                }
+            }
         }
+        data.setDate(data.getDate() + 1);
     }
-    const ano = data.getFullYear();
-    const mes = String(data.getMonth() + 1).padStart(2, '0');
-    const dia = String(data.getDate()).padStart(2, '0');
-    return `${ano}-${mes}-${dia}`;
+    return null;
 }
 
 function atualizarResumoAulas() {
@@ -266,17 +742,45 @@ function atualizarResumoAulas() {
     const dataInicioEl = document.getElementById('data_inicio');
     const dataFimEl = document.getElementById('data_fim');
 
+    const checks = document.querySelectorAll('.dia-semana-check:checked');
+    const diasPermitidos = Array.from(checks).map(c => parseInt(c.value));
+    const nomesDias = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+    const diasTexto = diasPermitidos.map(d => nomesDias[d]).join(', ') || 'Nenhum dia selecionado';
+
+    const ehQuinzenal = document.getElementById('freq_quinzenal') && document.getElementById('freq_quinzenal').checked;
+    const freqTxt = ehQuinzenal ? ' <span class="badge bg-warning text-dark border px-2 py-1 ms-1"><i class="bi bi-clock-history me-1"></i> Quinzenal (15 em 15 dias)</span>' : '';
+
     if (ch && hd && hd > 0) {
         const total = Math.ceil(ch / hd);
-        resumo.innerHTML = `<strong>${total} encontros/aulas</strong> calculados (${ch}h totais ÷ ${hd}h/dia). As aulas serão distribuídas em dias úteis com aplicação progressiva da Taxonomia de Bloom.`;
-        
-        if (dataInicioEl && dataInicioEl.value && dataFimEl) {
-            const dataFimPrevista = calcularDataFimEstimada(dataInicioEl.value, total);
-            if (dataFimPrevista && (!dataFimEl.value || dataFimEl.dataset.autoCalculada === "true")) {
-                dataFimEl.value = dataFimPrevista;
-                dataFimEl.dataset.autoCalculada = "true";
+
+        if (diasPermitidos.length === 0) {
+            resumo.innerHTML = `<span class="text-danger fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i> Atenção: Selecione ao menos um dia da semana para ministrar as aulas!</span>`;
+            return;
+        }
+
+        let dataFimPrevista = null;
+        if (dataInicioEl && dataInicioEl.value) {
+            dataFimPrevista = calcularDataFimEstimada(dataInicioEl.value, total);
+            if (dataFimPrevista && dataFimEl) {
+                if (!dataFimEl.value || dataFimEl.dataset.autoCalculada === "true") {
+                    dataFimEl.value = dataFimPrevista;
+                    dataFimEl.dataset.autoCalculada = "true";
+                }
             }
         }
+
+        let feriadosTxt = '';
+        if (listaFeriados.length > 0) {
+            feriadosTxt = ` | Feriados/Recessos: <strong>${listaFeriados.length} dia${listaFeriados.length > 1 ? 's' : ''}</strong>`;
+        }
+
+        let fimFormatado = '';
+        if (dataFimPrevista) {
+            const p = dataFimPrevista.split('-');
+            fimFormatado = ` | Término previsto: <strong>${p[2]}/${p[1]}/${p[0]}</strong>`;
+        }
+
+        resumo.innerHTML = `<strong>${total} encontros/aulas</strong> calculados (${ch}h totais ÷ ${hd}h/dia). Dias de aula: <strong>${diasTexto}</strong>${freqTxt}${feriadosTxt}${fimFormatado}.`;
     } else {
         resumo.innerText = 'Informe a Carga Horária e as Horas/Dia para calcular a quantidade total de aulas e cronograma.';
     }

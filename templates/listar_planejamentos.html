@@ -69,12 +69,12 @@
                             <td class="fw-semibold">
                                 <div class="text-dark">{{ p[1] }}</div>
                                 <div class="small mt-1">
-                                    {% if p|length > 12 and p[12] %}
-                                        {% if 'TÉCNIC' in p[12]|upper or 'TECNIC' in p[12]|upper or 'HABILITA' in p[12]|upper %}
+                                    {% if p|length > 14 and p[14] %}
+                                        {% if 'TÉCNIC' in p[14]|upper or 'TECNIC' in p[14]|upper or 'HABILITA' in p[14]|upper %}
                                             <span class="badge badge-subtle-primary me-1">
                                                 <i class="bi bi-mortarboard-fill me-1"></i> Técnico
                                             </span>
-                                        {% elif 'APERFEIÇ' in p[12]|upper or 'APERFEIC' in p[12]|upper %}
+                                        {% elif 'APERFEIÇ' in p[14]|upper or 'APERFEIC' in p[14]|upper %}
                                             <span class="badge badge-subtle-success me-1">
                                                 <i class="bi bi-award-fill me-1"></i> Aperfeiçoamento
                                             </span>
@@ -117,23 +117,27 @@
                                 {% endif %}
                             </td>
                             <td class="text-center small text-muted">
-                                {{ p[14].strftime('%d/%m/%Y %H:%M') if p|length > 14 and p[14] and p[14].strftime else p[14] if p|length > 14 else '' }}
+                                {{ p[12].strftime('%d/%m/%Y %H:%M') if p|length > 12 and p[12] and p[12].strftime else p[12] if p|length > 12 else '' }}
                             </td>
                             <td class="text-center">
                                 <div class="d-flex align-items-center justify-content-center gap-1">
-                                    {% if p|length > 11 and p[11] %}
-                                        <a href="/curso/{{ p[11] }}" class="btn btn-outline-primary btn-sm" title="Ver Planos de Aula gerados para este planejamento">
-                                            <i class="bi bi-journal-text"></i> Ver Planos
+                                    {% if p|length > 15 and p[15] and p[15] > 0 and p[13] %}
+                                        <a href="/curso/{{ p[13] }}" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1 shadow-sm" title="Abrir os {{ p[15] }} planos de aula já estruturados para este planejamento">
+                                            <i class="bi bi-journal-check text-primary"></i>
+                                            <span>Ver Planos</span>
+                                            <span class="badge bg-primary text-white rounded-pill ms-1" style="font-size: 0.72rem;">{{ p[15] }}</span>
                                         </a>
                                     {% else %}
-                                        <a href="/gerar_planos_planejamento/{{ p[0] }}" class="btn btn-outline-primary btn-sm btn-gerar-planos" title="Ver Planos de Aula deste planejamento">
-                                            <i class="bi bi-journal-text"></i> Ver Planos
+                                        <a href="/gerar_planos_planejamento/{{ p[0] }}" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1 btn-gerar-planos shadow-sm" title="Gerar os planos de aula para este planejamento" onclick="iniciarGeracaoPlanosOverlay('{{ p[2]|replace("'", "\\'") }}')">
+                                            <i class="bi bi-magic"></i>
+                                            <span>Gerar Planos</span>
                                         </a>
                                     {% endif %}
-                                    <a href="/baixar_planejamento/{{ p[0] }}" class="btn btn-success btn-sm" title="Baixar arquivo Excel (.xlsx) preenchido">
-                                        <i class="bi bi-file-earmark-excel"></i> Excel
+                                    <a href="/baixar_planejamento/{{ p[0] }}" class="btn btn-success btn-sm d-inline-flex align-items-center gap-1 shadow-sm" title="Baixar arquivo Excel (.xlsx) preenchido">
+                                        <i class="bi bi-file-earmark-excel"></i>
+                                        <span>Excel</span>
                                     </a>
-                                    <a href="/deletar_planejamento/{{ p[0] }}" class="btn btn-outline-danger btn-sm"
+                                    <a href="/deletar_planejamento/{{ p[0] }}" class="btn btn-outline-danger btn-sm shadow-sm"
                                        onclick="return confirm('Deseja realmente excluir este planejamento docente e arquivos associados?')" title="Excluir planejamento">
                                         <i class="bi bi-trash3"></i>
                                     </a>
@@ -150,6 +154,17 @@
 </div>
 
 <script>
+function iniciarGeracaoPlanosOverlay(uc) {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        const title = document.getElementById('loadingTitle');
+        const msg = document.getElementById('loadingMessage');
+        if (title) title.innerText = 'Gerando Planos de Aula...';
+        if (msg) msg.innerText = 'Estruturando os planos diários a partir do Planejamento Docente' + (uc ? ' (' + uc + ')' : '') + '... Por favor, aguarde.';
+        overlay.classList.add('active');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const downloadId = urlParams.get('download');
