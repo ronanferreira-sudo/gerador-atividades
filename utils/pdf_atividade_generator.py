@@ -108,7 +108,7 @@ def gerar_pdf_atividade_reportlab(
 
     cabecalho = dict(dados_cabecalho or {})
     texto_questoes = conteudo or ""
-    titulo_doc = str(titulo or "ATIVIDADE AVALIATIVA")
+    titulo_doc = str(titulo or "ATIVIDADE")
 
     # Se faltar dados e houver o DOCX disponível, lê parágrafos do DOCX
     if (not cabecalho or not texto_questoes) and arquivo_docx and os.path.exists(arquivo_docx):

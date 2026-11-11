@@ -739,7 +739,7 @@ def gerar_pdf(id):
     os.makedirs("outputs", exist_ok=True)
 
     gerar_docx_atividade(
-        titulo="ATIVIDADE AVALIATIVA",
+        titulo="ATIVIDADE",
         subtitulo=dados_cab["curso"],
         conteudo=atividade[5],
         caminho_saida=arquivo_docx,
@@ -749,7 +749,7 @@ def gerar_pdf(id):
     resultado = gerar_pdf_atividade(
         arquivo_docx=arquivo_docx,
         arquivo_pdf=arquivo_pdf,
-        titulo="ATIVIDADE AVALIATIVA",
+        titulo="ATIVIDADE",
         subtitulo=dados_cab["curso"],
         dados_cabecalho=dados_cab,
         conteudo=atividade[5]
@@ -759,7 +759,7 @@ def gerar_pdf(id):
         from utils.pdf_atividade_generator import gerar_pdf_atividade_reportlab
         gerar_pdf_atividade_reportlab(
             arquivo_pdf=arquivo_pdf,
-            titulo="ATIVIDADE AVALIATIVA",
+            titulo="ATIVIDADE",
             subtitulo=dados_cab["curso"],
             dados_cabecalho=dados_cab,
             conteudo=atividade[5],
@@ -812,7 +812,7 @@ def gerar_word(id):
     dados_cab = extrair_cabecalho_atividade(atividade)
 
     gerar_docx_atividade(
-        titulo="ATIVIDADE AVALIATIVA",
+        titulo="ATIVIDADE",
         subtitulo=dados_cab["curso"],
         conteudo=atividade[5],
         caminho_saida=arquivo,

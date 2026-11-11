@@ -20,7 +20,7 @@ def gerar_docx_atividade(
     bloom_val = dados_cabecalho.get("nivel_bloom") or "Lembrar"
 
     contexto = {
-        "titulo": titulo or "ATIVIDADE AVALIATIVA",
+        "titulo": titulo or "ATIVIDADE",
         "subtitulo": subtitulo,
         "curso": curso_val,
         "unidade_curricular": uc_val,
