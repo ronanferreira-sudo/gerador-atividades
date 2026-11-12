@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 120" fill="none">
+  <!-- Ícone Corporativo -->
+  <rect x="10" y="10" width="100" height="100" rx="22" fill="#0F2942"/>
+  <rect x="12" y="12" width="96" height="96" rx="20" stroke="#FFFFFF" stroke-opacity="0.1" stroke-width="1.5"/>
+
+  <path d="M30 37C30 34.7909 31.7909 33 34 33H54C57.3137 33 60 35.6863 60 39V85C60 82.7909 57.3137 81 54 81H34C31.7909 81 30 79.2091 30 77V37Z" fill="#FFFFFF"/>
+  <path d="M90 37C90 34.7909 88.2091 33 86 33H66C62.6863 33 60 35.6863 60 39V85C60 82.7909 62.6863 81 66 81H86C88.2091 81 90 79.2091 90 77V37Z" fill="#DBEAFE"/>
+
+  <rect x="37" y="44" width="16" height="3.5" rx="1.75" fill="#0F2942"/>
+  <rect x="37" y="53" width="16" height="3.5" rx="1.75" fill="#0F2942" fill-opacity="0.65"/>
+  <rect x="37" y="62" width="11" height="3.5" rx="1.75" fill="#0F2942" fill-opacity="0.4"/>
+
+  <path d="M68 49L72.5 53.5L83 43" stroke="#1D4ED8" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="68" y="62" width="15" height="3.5" rx="1.75" fill="#1D4ED8" fill-opacity="0.5"/>
+  <path d="M28 89H92" stroke="#60A5FA" stroke-width="3.2" stroke-linecap="round"/>
+
+  <!-- Tipografia Corporativa SGP -->
+  <text x="128" y="65" font-family="'Inter', system-ui, -apple-system, sans-serif" font-size="46" font-weight="800" fill="#0F2942" letter-spacing="-1.5">SGP</text>
+  <line x1="230" y1="34" x2="230" y2="68" stroke="#CBD5E1" stroke-width="2"/>
+  <text x="244" y="49" font-family="'Inter', system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" fill="#1E40AF" letter-spacing="0.8">GESTÃO &amp; ENSINO</text>
+  <text x="244" y="65" font-family="'Inter', system-ui, -apple-system, sans-serif" font-size="12" font-weight="500" fill="#64748B">PLATAFORMA DOCENTE</text>
+
+  <!-- Subtítulo -->
+  <text x="128" y="90" font-family="'Inter', system-ui, -apple-system, sans-serif" font-size="14" font-weight="500" fill="#475569">Sistema de Gestão e Planejamento Pedagógico</text>
+</svg>

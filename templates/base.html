@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>{% block titulo %}Gerador Pedagógico SENAI{% endblock %}</title>
+    <title>{% block titulo %}SGP &mdash; Sistema de Gestão e Planejamento Pedagógico{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/logo_sgp_icon.svg') }}?v=4">
 
     <!-- Google Fonts Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,7 +18,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     
     <!-- CSS Customizado -->
-    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}?v=4" rel="stylesheet">
 </head>
 
 <body>
@@ -51,13 +52,11 @@
 <!-- Barra de Navegação -->
 <nav class="navbar navbar-expand-lg navbar-dark navbar-senai">
     <div class="container-fluid px-lg-4">
-        <a class="navbar-brand navbar-brand-senai" href="/dashboard">
-            <div class="brand-icon-wrapper">
-                <i class="bi bi-mortarboard-fill"></i>
-            </div>
+        <a class="navbar-brand navbar-brand-senai" href="/" title="Ir para a Página Inicial (Landing Page)">
+            <img src="{{ url_for('static', filename='img/logo_sgp_icon.svg') }}" alt="Logo SGP" width="38" height="38">
             <div>
-                <span class="fw-bold">SENAI</span>
-                <span class="fw-normal text-white-50 ms-1 small">| Gerador Pedagógico</span>
+                <span class="fw-bold">SGP</span>
+                <span class="fw-normal text-white-50 ms-1 small">| Gestão &amp; Planejamento Pedagógico</span>
             </div>
         </a>
 
@@ -95,7 +94,7 @@
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link nav-link-modern {% if request.path == '/atividades' or request.path == '/' %}active{% endif %}" href="/atividades">
+                    <a class="nav-link nav-link-modern {% if request.path == '/atividades' or request.path == '/nova_atividade' %}active{% endif %}" href="/atividades">
                         <i class="bi bi-check2-square"></i>
                         <span>Atividades</span>
                     </a>
@@ -118,7 +117,7 @@
                 {% endif %}
             </ul>
 
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex flex-wrap align-items-center justify-content-between justify-content-lg-end gap-2 pt-3 pt-lg-0 mt-2 mt-lg-0 border-top border-secondary border-opacity-25 border-lg-0">
                 <div class="dropdown">
                     <button class="btn user-profile-badge border-0 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-person-circle fs-5 text-info"></i>
@@ -165,8 +164,9 @@
 <!-- Rodapé Moderno -->
 <footer class="footer-modern">
     <div class="container-fluid px-lg-4 d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
-        <div>
-            <span>Plataforma Pedagógica &mdash; SENAI &copy; 2026. Todos os direitos reservados.</span>
+        <div class="d-flex align-items-center gap-2">
+            <img src="{{ url_for('static', filename='img/logo_sgp_icon.svg') }}" alt="Logo SGP" width="24" height="24">
+            <span><strong>SGP</strong> &mdash; Sistema de Gestão e Planejamento Pedagógico &copy; 2026. Todos os direitos reservados.</span>
         </div>
         <div class="d-flex align-items-center gap-3">
             <span class="badge bg-light text-muted border">
@@ -238,7 +238,7 @@ document.addEventListener('submit', function(e) {
     const action = (form.action || '').toLowerCase();
 
     // Formulário de geração de atividade (index.html)
-    if (form.action === '' || form.action.endsWith('/') || action.endsWith('/')) {
+    if (form.action === '' || form.action.endsWith('/') || action.endsWith('/') || action.includes('/nova_atividade')) {
         const hasNomeCurso = form.querySelector('[name="curso"]');
         const hasConteudo = form.querySelector('[name="conteudo"]');
 

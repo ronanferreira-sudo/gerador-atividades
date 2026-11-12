@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block titulo %}Nova Atividade &mdash; Gerador Pedagógico SENAI{% endblock %}
+{% block titulo %}Nova Atividade &mdash; SGP{% endblock %}
 
 {% block conteudo %}
 
@@ -24,7 +24,7 @@
                     </p>
 
                     <div class="d-flex flex-wrap gap-2">
-                        <form method="POST" action="/" class="d-inline">
+                        <form method="POST" action="/nova_atividade" class="d-inline">
                             <input type="hidden" name="curso" value="{{ dados_form.curso }}">
                             <input type="hidden" name="disciplina" value="{{ dados_form.disciplina }}">
                             <input type="hidden" name="conteudo" value="{{ dados_form.conteudo }}">
@@ -38,7 +38,7 @@
                             </button>
                         </form>
 
-                        <a href="/?curso={{ dados_form.curso }}&disciplina={{ dados_form.disciplina }}&conteudo={{ dados_form.conteudo }}&dificuldade={{ dados_form.dificuldade }}&tipo={{ dados_form.tipo }}&quantidade={{ dados_form.quantidade }}&fonte=repositorio"
+                        <a href="/nova_atividade?curso={{ dados_form.curso }}&disciplina={{ dados_form.disciplina }}&conteudo={{ dados_form.conteudo }}&dificuldade={{ dados_form.dificuldade }}&tipo={{ dados_form.tipo }}&quantidade={{ dados_form.quantidade }}&fonte=repositorio"
                            class="btn btn-outline-secondary">
                             <i class="bi bi-arrow-left"></i> Não, voltar para solicitação
                         </a>
@@ -50,9 +50,9 @@
 
         <div class="card card-modern shadow-md">
             <!-- Cabeçalho do Card -->
-            <div class="card-header-modern bg-white d-flex align-items-center justify-content-between">
+            <div class="card-header-modern bg-white d-flex flex-wrap align-items-center justify-content-between gap-3">
                 <div class="d-flex align-items-center gap-3">
-                    <div class="brand-icon-wrapper" style="width: 44px; height: 44px; font-size: 1.3rem;">
+                    <div class="brand-icon-wrapper flex-shrink-0" style="width: 44px; height: 44px; font-size: 1.3rem;">
                         <i class="bi bi-pencil-square"></i>
                     </div>
                     <div>
@@ -60,7 +60,7 @@
                         <span class="text-muted small">Crie avaliações utilizando o repositório do professor ou gerando via IA</span>
                     </div>
                 </div>
-                <div class="d-flex gap-2">
+                <div class="d-flex flex-wrap gap-2">
                     <a href="/repositorio" class="btn btn-outline-secondary btn-sm" title="Consultar repositório de questões">
                         <i class="bi bi-archive-fill"></i> Repositório
                     </a>
@@ -72,7 +72,7 @@
 
             <div class="card-body p-4 p-md-5">
 
-                <form method="POST" id="formGerarAtividade">
+                <form method="POST" action="/nova_atividade" id="formGerarAtividade">
                     <input type="hidden" name="completar_com_ia" id="inputCompletarIA" value="">
 
                     <!-- Seleção da Fonte das Atividades -->

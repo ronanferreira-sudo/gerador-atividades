@@ -56,6 +56,8 @@ import re
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "gerador_atividades_2026")
+app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 
 
 def pode_acessar_atividade(id, usuario_id, perfil):
@@ -382,9 +384,20 @@ def admin_deletar_usuario(id):
 
 
 # =========================
-# INDEX (GERAR ATIVIDADE - REPOSITÓRIO / IA)
+# LANDING PAGE (PÁGINA INICIAL DO SGP)
 # =========================
-@app.route("/", methods=["GET", "POST"])
+@app.route("/", methods=["GET"])
+@app.route("/inicio", methods=["GET"])
+def landing():
+    # Sempre exibe a Landing Page ao abrir o site (mesmo logado, com botão 'Ir para o Painel')
+    return render_template("landing.html")
+
+
+# =========================
+# NOVA ATIVIDADE (GERAR ATIVIDADE - REPOSITÓRIO / IA)
+# =========================
+@app.route("/nova_atividade", methods=["GET", "POST"])
+@app.route("/", methods=["POST"])
 def index():
 
     if "usuario_id" not in session:

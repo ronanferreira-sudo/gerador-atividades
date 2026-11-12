@@ -1,5 +1,6 @@
 /* ============================================================
-   SISTEMA PEDAGÓGICO SENAI — Design System Moderno & Profissional
+   SGP — Sistema de Gestão e Planejamento Pedagógico
+   Design System Moderno & Profissional
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -7,18 +8,18 @@
 :root {
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     
-    /* Cores Institucionais SENAI & UI Moderna */
-    --primary: #005baa;
-    --primary-hover: #004582;
-    --primary-light: #e8f2fc;
-    --primary-subtle: #d0e4f8;
+    /* Paleta Executiva & Sóbria SGP */
+    --primary: #1e3a8a;
+    --primary-hover: #172554;
+    --primary-light: #eff6ff;
+    --primary-subtle: #dbeafe;
     
     --secondary: #475569;
     --secondary-hover: #334155;
     
-    --dark-slate: #0f172a;
-    --dark-surface: #1e293b;
-    --dark-border: #334155;
+    --dark-slate: #0f2942;
+    --dark-surface: #163352;
+    --dark-border: #26466d;
     
     --bg-page: #f8fafc;
     --bg-surface: #ffffff;
@@ -120,14 +121,14 @@ h1, h2, h3, h4, h5, h6 {
 .brand-icon-wrapper {
     width: 38px;
     height: 38px;
-    background: linear-gradient(135deg, #005baa 0%, #0284c7 100%);
+    background: #1e3a8a;
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #ffffff;
     font-size: 1.2rem;
-    box-shadow: 0 4px 10px rgba(0, 91, 170, 0.4);
+    box-shadow: 0 2px 6px rgba(15, 41, 66, 0.25);
 }
 
 .nav-link-modern {
@@ -154,17 +155,17 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .nav-link-modern:hover i {
-    color: #38bdf8;
+    color: #93c5fd;
 }
 
 .nav-link-modern.active {
     color: #ffffff !important;
-    background-color: rgba(0, 91, 170, 0.35);
-    border: 1px solid rgba(56, 189, 248, 0.25);
+    background-color: rgba(30, 58, 138, 0.48);
+    border: 1px solid rgba(147, 197, 253, 0.25);
 }
 
 .nav-link-modern.active i {
-    color: #38bdf8;
+    color: #93c5fd;
 }
 
 .user-profile-badge {
@@ -253,15 +254,15 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .dash-card-planejamento {
-    background: linear-gradient(135deg, #3730a3 0%, #4f46e5 50%, #6366f1 100%);
+    background: linear-gradient(135deg, #0f2942 0%, #1e3a8a 100%);
 }
 
 .dash-card-plano {
-    background: linear-gradient(135deg, #0369a1 0%, #0284c7 50%, #38bdf8 100%);
+    background: linear-gradient(135deg, #134e4a 0%, #0f766e 100%);
 }
 
 .dash-card-atividade {
-    background: linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%);
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
 }
 
 .dash-icon-circle {
@@ -576,7 +577,7 @@ h1, h2, h3, h4, h5, h6 {
 .auth-sidebar {
     background: #f4f7fd;
     color: var(--text-primary);
-    padding: 50px 48px;
+    padding: 48px 52px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -589,11 +590,27 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     flex-direction: column;
     height: 100%;
+    max-width: 540px;
+}
+
+.auth-hero-copy {
+    max-width: 500px;
+}
+
+.auth-main-title {
+    font-size: clamp(1.85rem, 2.6vw, 2.55rem);
+    line-height: 1.18;
+    letter-spacing: -0.025em;
+}
+
+.auth-main-subtitle {
+    font-size: clamp(0.98rem, 1.25vw, 1.12rem);
+    line-height: 1.6;
 }
 
 .auth-illustration {
-    max-width: 85%;
-    max-height: 440px;
+    max-width: 82%;
+    max-height: 400px;
     object-fit: contain;
     filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.07));
     transition: transform 0.3s ease;
@@ -821,4 +838,585 @@ h1, h2, h3, h4, h5, h6 {
 .hover-lift:hover {
     transform: translateY(-3px);
     box-shadow: var(--shadow-md);
+}
+
+.fw-extrabold {
+    font-weight: 800;
+}
+
+.max-w-700 {
+    max-width: 700px;
+}
+
+/* ============================================================
+   LANDING PAGE SGP (VISUAL CORPORATIVO, SÓBRIO & ANIMAÇÕES)
+   ============================================================ */
+
+.landing-body {
+    background-color: #f8fafc;
+    color: #0f172a;
+    overflow-x: hidden;
+}
+
+.landing-navbar {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid #e2e8f0;
+    padding: 12px 0;
+    transition: box-shadow 0.25s ease, background-color 0.25s ease;
+}
+
+.landing-navbar.scrolled {
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 4px 20px -4px rgba(15, 23, 42, 0.06);
+}
+
+.landing-logo-img {
+    border-radius: 9px;
+    transition: transform 0.2s ease;
+}
+
+.navbar-brand:hover .landing-logo-img {
+    transform: translateY(-1px);
+}
+
+.landing-brand-title {
+    color: #0f2942;
+    letter-spacing: -0.03em;
+}
+
+.landing-brand-divider {
+    color: #cbd5e1;
+    font-weight: 300;
+}
+
+.landing-brand-tag {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #1e3a8a;
+    letter-spacing: 0.01em;
+}
+
+.landing-brand-subtitle {
+    font-size: 0.73rem;
+    font-weight: 500;
+    color: #64748b;
+}
+
+.landing-nav-link {
+    color: #475569 !important;
+    font-weight: 500;
+    font-size: 0.92rem;
+    transition: color 0.2s ease;
+}
+
+.landing-nav-link:hover {
+    color: #0f2942 !important;
+}
+
+/* Botões Executivos da Landing */
+.btn-landing-primary {
+    background-color: #0f2942;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.92rem;
+    border: 1px solid #0f2942;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-landing-primary:hover {
+    background-color: #1e3a8a;
+    border-color: #1e3a8a;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px -4px rgba(15, 41, 66, 0.22);
+}
+
+.btn-landing-outline {
+    background-color: #ffffff;
+    color: #1e293b;
+    font-weight: 600;
+    font-size: 0.92rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-landing-outline:hover {
+    background-color: #f1f5f9;
+    border-color: #94a3b8;
+    color: #0f172a;
+}
+
+/* Hero Section Executiva com Contraste Sóbrio (Azul Oxford Profundo) */
+.landing-hero {
+    background: linear-gradient(135deg, #0b192c 0%, #0f2942 55%, #163659 100%);
+    border-bottom: 1px solid #1e3a5f;
+}
+
+.landing-eyebrow {
+    background-color: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    padding: 5px 14px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #e2e8f0;
+}
+
+.landing-eyebrow-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: #93c5fd;
+    display: inline-block;
+}
+
+.landing-hero-title {
+    font-size: clamp(2.1rem, 3.6vw, 3.1rem);
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+}
+
+.landing-hero-lead {
+    font-size: 1.06rem;
+    color: #cbd5e1;
+    line-height: 1.68;
+    font-weight: 400;
+}
+
+.landing-hero-lead strong {
+    color: #ffffff;
+}
+
+.landing-metric-value {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+}
+
+.landing-metric-label {
+    font-size: 0.78rem;
+    color: #94a3b8;
+}
+
+/* Mockup Estruturado de UI (Coluna Direita) */
+.landing-ui-window {
+    background: #ffffff;
+    border: 1px solid #dbe2ea;
+    border-radius: 14px;
+    box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.09), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+    overflow: hidden;
+}
+
+.landing-ui-header {
+    background: #f1f5f9;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ui-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background-color: #cbd5e1;
+    display: inline-block;
+}
+
+.landing-status-pill {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #065f46;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    padding: 3px 10px;
+    border-radius: 999px;
+}
+
+.landing-ui-body {
+    padding: 20px 22px;
+}
+
+.landing-tag-neutral {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #475569;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    padding: 3px 10px;
+    border-radius: 6px;
+}
+
+.landing-tag-primary {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #1e3a8a;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    padding: 3px 10px;
+    border-radius: 6px;
+}
+
+.landing-schedule-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.landing-schedule-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.landing-schedule-row:hover {
+    background: #ffffff;
+    border-color: #cbd5e1;
+}
+
+.schedule-date-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #0f2942;
+    background: #e2e8f0;
+    padding: 4px 9px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+
+.schedule-bloom-tag {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #334155;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    padding: 3px 9px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+
+.landing-ui-footer {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.ui-doc-pill {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #1e293b;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    padding: 4px 10px;
+    border-radius: 6px;
+}
+
+/* Seções e Títulos */
+.landing-section-white {
+    background-color: #ffffff;
+}
+
+.landing-section-subtle {
+    background-color: #f8fafc;
+}
+
+.landing-section-kicker {
+    font-size: 0.76rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #1e3a8a;
+}
+
+.landing-section-title {
+    font-size: clamp(1.65rem, 2.5vw, 2.25rem);
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.025em;
+    line-height: 1.22;
+}
+
+/* Cards de Módulos */
+.landing-module-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 26px 24px;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.landing-module-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px -8px rgba(15, 23, 42, 0.08);
+    border-color: #cbd5e1;
+}
+
+.landing-module-number {
+    position: absolute;
+    top: 22px;
+    right: 22px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #94a3b8;
+}
+
+.landing-module-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #0f2942;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    margin-bottom: 18px;
+}
+
+/* Cards de Etapas (Fluxo) */
+.landing-step-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.landing-step-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 6px 16px -6px rgba(15, 23, 42, 0.06);
+}
+
+.landing-step-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.landing-step-badge {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: #0f2942;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    padding: 4px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+
+.landing-step-line {
+    height: 1px;
+    background: #e2e8f0;
+    flex-grow: 1;
+}
+
+/* Lista de Conformidade */
+.landing-check-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.landing-check-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #0f2942;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+/* Painel CTA Final */
+.landing-cta-panel {
+    background: #0f2942;
+    border: 1px solid #1e3a8a;
+    border-radius: 14px;
+    box-shadow: 0 20px 35px -12px rgba(15, 41, 66, 0.22);
+}
+
+/* ============================================================
+   ANIMAÇÕES AO DESLIZAR PARA BAIXO (SCROLL REVEAL)
+   ============================================================ */
+
+.reveal-on-scroll {
+    opacity: 0;
+    will-change: opacity, transform;
+    transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal-up {
+    transform: translateY(32px);
+}
+
+.reveal-left {
+    transform: translateX(-32px);
+}
+
+.reveal-right {
+    transform: translateX(32px);
+}
+
+.reveal-on-scroll.is-visible {
+    opacity: 1;
+    transform: translate(0, 0);
+}
+
+.delay-100 { transition-delay: 0.08s; }
+.delay-200 { transition-delay: 0.16s; }
+.delay-300 { transition-delay: 0.24s; }
+.delay-400 { transition-delay: 0.32s; }
+
+@media (prefers-reduced-motion: reduce) {
+    .reveal-on-scroll {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+}
+
+/* ============================================================
+   RESPONSIVIDADE GLOBAL DO SISTEMA (MOBILE, TABLET & DESKTOP)
+   ============================================================ */
+
+@media (min-width: 576px) {
+    .border-start-sm {
+        border-left: 1px solid rgba(255, 255, 255, 0.14);
+    }
+}
+
+@media (max-width: 1199.98px) {
+    .auth-sidebar {
+        padding: 36px 32px;
+    }
+
+    .dash-numero {
+        font-size: 2.8rem;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .auth-main {
+        padding: 32px 20px;
+        align-items: center;
+    }
+
+    .auth-card {
+        padding: 36px 28px;
+    }
+
+    .navbar-senai {
+        padding: 10px 0;
+    }
+
+    .nav-link-modern {
+        padding: 10px 12px !important;
+    }
+
+    .dash-quadrado {
+        min-height: 230px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .card-header-modern {
+        padding: 16px 18px;
+    }
+
+    .card-body-modern {
+        padding: 18px;
+    }
+
+    .table-modern thead th,
+    .table-modern tbody td {
+        padding: 10px 12px;
+        font-size: 0.85rem;
+    }
+
+    .landing-ui-body {
+        padding: 16px;
+    }
+
+    .landing-schedule-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .loading-box {
+        padding: 28px 22px;
+    }
+
+    .footer-modern {
+        text-align: center;
+        margin-top: 32px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .auth-main {
+        padding: 24px 14px;
+    }
+
+    .auth-card {
+        padding: 28px 20px;
+        border-radius: 16px;
+    }
+
+    .auth-card-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 22px;
+        margin-bottom: 14px;
+    }
+
+    .btn-lg {
+        padding: 11px 18px;
+        font-size: 0.96rem;
+    }
+
+    .dash-numero {
+        font-size: 2.4rem;
+    }
+
+    .landing-hero-title {
+        font-size: 1.85rem;
+    }
+
+    .landing-hero-lead {
+        font-size: 0.96rem;
+    }
+
+    .landing-module-card,
+    .landing-step-card {
+        padding: 20px 18px;
+    }
 }

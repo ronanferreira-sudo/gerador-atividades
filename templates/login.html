@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login &mdash; Gerador Pedagógico SENAI</title>
+    <title>Login &mdash; SGP | Sistema de Gestão e Planejamento Pedagógico</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/logo_sgp_icon.svg') }}?v=4">
 
     <!-- Google Fonts Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,7 +15,7 @@
     <!-- Bootstrap 5 & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=4">
 </head>
 
 <body>
@@ -22,103 +23,119 @@
     <div class="container-fluid p-0">
         <div class="row g-0 auth-wrapper">
 
-            <!-- PAINEL ESQUERDO (CLARO, SEM AZUL, COM A IMAGEM EM DESTAQUE) -->
+            <!-- PAINEL ESQUERDO (TÍTULOS E SUBTÍTULOS PERFEITAMENTE ALINHADOS) -->
             <div class="col-lg-6 auth-sidebar d-none d-lg-flex">
                 <div class="auth-sidebar-content">
-                    <div class="auth-sidebar-brand">
-                        <div class="auth-sidebar-icon">
-                            <i class="bi bi-mortarboard-fill"></i>
+                    <a href="/" class="auth-sidebar-brand text-decoration-none">
+                        <img src="{{ url_for('static', filename='img/logo_sgp_icon.svg') }}?v=4" alt="Logo SGP" width="46" height="46">
+                        <div class="text-start">
+                            <h4 class="mb-0 fw-bold text-dark">SGP</h4>
+                            <span class="text-muted small">Sistema de Gestão e Planejamento Pedagógico</span>
                         </div>
-                        <div>
-                            <h4 class="mb-0 fw-bold text-dark">SENAI</h4>
-                            <span class="text-muted small">Gestão &amp; Planejamento Docente</span>
-                        </div>
+                    </a>
+
+                    <div class="auth-hero-copy text-start">
+                        <h1 class="auth-main-title fw-bold text-dark mb-3">
+                            Sistema de Planejamento Pedagógico
+                        </h1>
+                        <p class="auth-main-subtitle text-muted mb-0">
+                            Plataforma inteligente para geração de planejamentos com Taxonomia de Bloom, planos de aula e atividades.
+                        </p>
                     </div>
 
-                    <h1 class="display-5 fw-bold text-dark mb-2">
-                        <span class="d-inline-block mw-100">
-                            Sistema de Planejamento
-                            <span class="d-block text-center">Pedagógico</span>
-                        </span>
-                    </h1>
-                    <p class="text-muted fs-5 mb-3">
-                        Plataforma inteligente para geração de planejamentos com Taxonomia de Bloom, planos de aula e atividades.
-                    </p>
-
-                    <!-- Imagem oficial dos livros e notebook, ampla e perfeitamente encaixada -->
-                    <div class="text-center my-auto py-2">
+                    <!-- Ilustração centralizada verticalmente no espaço restante -->
+                    <div class="text-center my-auto py-3">
                         <img src="{{ url_for('static', filename='img/computador.png') }}"
                              alt="Sistema de Planejamento Pedagógico"
                              class="img-fluid auth-illustration">
                     </div>
                 </div>
 
-                <div class="pt-3 border-top border-secondary border-opacity-10 text-muted small">
-                    Ambiente Institucional Integrado &copy; 2026 SENAI. Acesso restrito ao corpo docente.
+                <div class="pt-3 border-top border-secondary border-opacity-10 text-muted small text-start">
+                    SGP &mdash; Sistema de Gestão e Planejamento Pedagógico &copy; 2026. Acesso ao corpo docente.
                 </div>
             </div>
 
             <!-- PAINEL DIREITO (FORMULÁRIO DE LOGIN) -->
             <div class="col-12 col-lg-6 auth-main">
-                <div class="auth-card">
-                    <div class="text-center mb-4">
-                        <div class="auth-card-icon">
-                            <i class="bi bi-person-fill-lock"></i>
-                        </div>
-                        <h2 class="fw-bold mb-1 text-dark">Portal do Docente</h2>
-                        <p class="text-muted small">Informe suas credenciais para acessar o sistema</p>
-                    </div>
+                <div class="w-100" style="max-width: 460px;">
 
-                    {% if erro %}
-                    <div class="alert alert-danger py-2 px-3 mb-4 d-flex align-items-center gap-2 small rounded-3" role="alert">
-                        <i class="bi bi-exclamation-triangle-fill fs-5"></i>
-                        <div>{{ erro }}</div>
-                    </div>
-                    {% endif %}
-
-                    {% if request.args.get('sucesso') == 'senha_redefinida' %}
-                    <div class="alert alert-success py-2 px-3 mb-4 d-flex align-items-center gap-2 small rounded-3" role="alert">
-                        <i class="bi bi-check-circle-fill fs-5 text-success"></i>
-                        <div>Sua senha foi redefinida com sucesso! Entre com a nova senha.</div>
-                    </div>
-                    {% endif %}
-
-                    <form method="POST">
-                        <div class="mb-3">
-                            <label class="form-label">
-                                <i class="bi bi-envelope text-primary"></i> E-mail Institucional
-                            </label>
-                            <input type="email" name="email" class="form-control form-control-lg"
-                                   placeholder="nome.sobrenome@senai.br" required autofocus>
-                        </div>
-
-                        <div class="mb-4">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <label class="form-label mb-0">
-                                    <i class="bi bi-key text-primary"></i> Senha de Acesso
-                                </label>
-                                <a href="/redefinir_senha" class="text-primary text-decoration-none small">
-                                    Esqueceu a senha?
-                                </a>
+                    <!-- Cabeçalho Mobile/Tablet (visível em telas menores que 992px) -->
+                    <div class="d-flex d-lg-none align-items-center justify-content-center gap-3 mb-4 text-start">
+                        <a href="/" class="d-flex align-items-center gap-3 text-decoration-none">
+                            <img src="{{ url_for('static', filename='img/logo_sgp_icon.svg') }}?v=4" alt="Logo SGP" width="42" height="42">
+                            <div>
+                                <div class="fw-bold text-dark fs-5 lh-1">SGP</div>
+                                <small class="text-muted">Sistema de Planejamento Pedagógico</small>
                             </div>
-                            <input type="password" name="senha" class="form-control form-control-lg"
-                                   placeholder="Sua senha de acesso" required>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm">
-                            <i class="bi bi-box-arrow-in-right"></i> Entrar no Sistema
-                        </button>
-                    </form>
-
-                    <div class="text-center mt-4 pt-3 border-top">
-                        <span class="text-muted small">Ainda não possui uma conta?</span>
-                        <a href="/cadastro" class="fw-semibold text-primary text-decoration-none ms-1 small">
-                            Solicitar cadastro
                         </a>
                     </div>
 
-                    <div class="text-center mt-3 text-muted" style="font-size: 0.78rem;">
-                        <i class="bi bi-shield-check text-success me-1"></i> Conexão Criptografada e Segura
+                    <div class="auth-card">
+                        <div class="text-center mb-4">
+                            <div class="auth-card-icon">
+                                <i class="bi bi-person-fill-lock"></i>
+                            </div>
+                            <h2 class="fw-bold mb-1 text-dark fs-3">Portal do Docente</h2>
+                            <p class="text-muted small mb-0">Informe suas credenciais para acessar o sistema</p>
+                        </div>
+
+                        {% if erro %}
+                        <div class="alert alert-danger py-2 px-3 mb-4 d-flex align-items-center gap-2 small rounded-3" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                            <div>{{ erro }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if request.args.get('sucesso') == 'senha_redefinida' %}
+                        <div class="alert alert-success py-2 px-3 mb-4 d-flex align-items-center gap-2 small rounded-3" role="alert">
+                            <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+                            <div>Sua senha foi redefinida com sucesso! Entre com a nova senha.</div>
+                        </div>
+                        {% endif %}
+
+                        <form method="POST">
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="bi bi-envelope text-primary"></i> E-mail Institucional
+                                </label>
+                                <input type="email" name="email" class="form-control form-control-lg"
+                                       placeholder="nome.sobrenome@email.com" required autofocus>
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-1">
+                                    <label class="form-label mb-0">
+                                        <i class="bi bi-key text-primary"></i> Senha de Acesso
+                                    </label>
+                                    <a href="/redefinir_senha" class="text-primary text-decoration-none small">
+                                        Esqueceu a senha?
+                                    </a>
+                                </div>
+                                <input type="password" name="senha" class="form-control form-control-lg"
+                                       placeholder="Sua senha de acesso" required>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm">
+                                <i class="bi bi-box-arrow-in-right"></i> Entrar no Sistema
+                            </button>
+                        </form>
+
+                        <div class="text-center mt-4 pt-3 border-top">
+                            <span class="text-muted small">Ainda não possui uma conta?</span>
+                            <a href="/cadastro" class="fw-semibold text-primary text-decoration-none ms-1 small">
+                                Solicitar cadastro
+                            </a>
+                            <div class="mt-2">
+                                <a href="/" class="text-muted text-decoration-none small">
+                                    <i class="bi bi-arrow-left"></i> Voltar para a Página Inicial
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-3 text-muted" style="font-size: 0.78rem;">
+                            <i class="bi bi-shield-check text-success me-1"></i> Conexão Criptografada e Segura
+                        </div>
                     </div>
                 </div>
             </div>

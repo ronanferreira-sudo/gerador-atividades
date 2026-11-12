@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Redefinir Senha &mdash; Gerador Pedagógico SENAI</title>
+    <title>Redefinir Senha &mdash; SGP | Sistema de Gestão e Planejamento Pedagógico</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/logo_sgp_icon.svg') }}?v=4">
 
     <!-- Google Fonts Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,7 +15,7 @@
     <!-- Bootstrap 5 & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=4">
 </head>
 
 <body>
@@ -22,102 +23,115 @@
     <div class="container-fluid p-0">
         <div class="row g-0 auth-wrapper">
 
-            <!-- PAINEL ESQUERDO (CLARO, SEM AZUL, COM A IMAGEM EM DESTAQUE) -->
+            <!-- PAINEL ESQUERDO -->
             <div class="col-lg-6 auth-sidebar d-none d-lg-flex">
                 <div class="auth-sidebar-content">
-                    <div class="auth-sidebar-brand">
-                        <div class="auth-sidebar-icon">
-                            <i class="bi bi-mortarboard-fill"></i>
+                    <a href="/" class="auth-sidebar-brand text-decoration-none">
+                        <img src="{{ url_for('static', filename='img/logo_sgp_icon.svg') }}?v=4" alt="Logo SGP" width="46" height="46">
+                        <div class="text-start">
+                            <h4 class="mb-0 fw-bold text-dark">SGP</h4>
+                            <span class="text-muted small">Sistema de Gestão e Planejamento Pedagógico</span>
                         </div>
-                        <div>
-                            <h4 class="mb-0 fw-bold text-dark">SENAI</h4>
-                            <span class="text-muted small">Gestão &amp; Planejamento Docente</span>
-                        </div>
+                    </a>
+
+                    <div class="auth-hero-copy text-start">
+                        <h1 class="auth-main-title fw-bold text-dark mb-3">
+                            Recuperação de Acesso Docente
+                        </h1>
+                        <p class="auth-main-subtitle text-muted mb-0">
+                            Redefina sua senha de acesso ao sistema de planejamento pedagógico com rapidez e segurança.
+                        </p>
                     </div>
 
-                    <h1 class="display-5 fw-bold text-dark mb-2">
-                        Recuperação de Acesso Docente
-                    </h1>
-                    <p class="text-muted fs-5 mb-3">
-                        Redefina sua senha de acesso ao sistema de planejamento pedagógico da rede local com rapidez e segurança.
-                    </p>
-
-                    <!-- Imagem oficial dos livros e notebook -->
-                    <div class="text-center my-auto py-2">
+                    <div class="text-center my-auto py-3">
                         <img src="{{ url_for('static', filename='img/computador.png') }}"
                              alt="Sistema de Planejamento Pedagógico"
                              class="img-fluid auth-illustration">
                     </div>
                 </div>
 
-                <div class="pt-3 border-top border-secondary border-opacity-10 text-muted small">
-                    Ambiente Institucional Integrado &copy; 2026 SENAI. Suporte técnico via administrador local.
+                <div class="pt-3 border-top border-secondary border-opacity-10 text-muted small text-start">
+                    SGP &mdash; Sistema de Gestão e Planejamento Pedagógico &copy; 2026. Suporte técnico via administrador local.
                 </div>
             </div>
 
             <!-- PAINEL DIREITO (FORMULÁRIO DE REDEFINIÇÃO) -->
             <div class="col-12 col-lg-6 auth-main">
-                <div class="auth-card">
-                    <div class="text-center mb-4">
-                        <div class="auth-card-icon">
-                            <i class="bi bi-key-fill"></i>
-                        </div>
-                        <h2 class="fw-bold mb-1 text-dark">Redefinir Senha</h2>
-                        <p class="text-muted small">Informe seu e-mail cadastrado e escolha uma nova senha</p>
+                <div class="w-100" style="max-width: 460px;">
+
+                    <!-- Cabeçalho Mobile/Tablet -->
+                    <div class="d-flex d-lg-none align-items-center justify-content-center gap-3 mb-4 text-start">
+                        <a href="/" class="d-flex align-items-center gap-3 text-decoration-none">
+                            <img src="{{ url_for('static', filename='img/logo_sgp_icon.svg') }}?v=4" alt="Logo SGP" width="42" height="42">
+                            <div>
+                                <div class="fw-bold text-dark fs-5 lh-1">SGP</div>
+                                <small class="text-muted">Sistema de Planejamento Pedagógico</small>
+                            </div>
+                        </a>
                     </div>
 
-                    {% if erro %}
-                    <div class="alert alert-danger py-2 px-3 mb-4 d-flex align-items-center gap-2 small rounded-3" role="alert">
-                        <i class="bi bi-exclamation-triangle-fill fs-5"></i>
-                        <div>{{ erro }}</div>
-                    </div>
-                    {% endif %}
-
-                    <form method="POST">
-                        <div class="mb-3">
-                            <label class="form-label">
-                                <i class="bi bi-envelope text-primary"></i> E-mail Cadastrado <span class="text-danger">*</span>
-                            </label>
-                            <input type="email" name="email" class="form-control form-control-lg"
-                                   placeholder="seu.email@senai.br" value="{{ email or '' }}" required autofocus>
+                    <div class="auth-card">
+                        <div class="text-center mb-4">
+                            <div class="auth-card-icon">
+                                <i class="bi bi-key-fill"></i>
+                            </div>
+                            <h2 class="fw-bold mb-1 text-dark fs-3">Redefinir Senha</h2>
+                            <p class="text-muted small mb-0">Informe seu e-mail cadastrado e escolha uma nova senha</p>
                         </div>
 
-                        {% if exige_codigo %}
-                        <div class="mb-3">
-                            <label class="form-label">
-                                <i class="bi bi-shield-check text-primary"></i> Chave de Segurança Institucional <span class="text-danger">*</span>
-                            </label>
-                            <input type="password" name="codigo_recuperacao" class="form-control form-control-lg"
-                                   placeholder="Chave fornecida pelo administrador" required>
-                            <div class="form-text small">Solicite esta chave ao administrador do servidor local.</div>
+                        {% if erro %}
+                        <div class="alert alert-danger py-2 px-3 mb-4 d-flex align-items-center gap-2 small rounded-3" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                            <div>{{ erro }}</div>
                         </div>
                         {% endif %}
 
-                        <div class="mb-3">
-                            <label class="form-label">
-                                <i class="bi bi-lock text-primary"></i> Nova Senha <span class="text-danger">*</span>
-                            </label>
-                            <input type="password" name="nova_senha" class="form-control form-control-lg"
-                                   placeholder="Mínimo 3 caracteres" minlength="3" required>
+                        <form method="POST">
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="bi bi-envelope text-primary"></i> E-mail Cadastrado <span class="text-danger">*</span>
+                                </label>
+                                <input type="email" name="email" class="form-control form-control-lg"
+                                       placeholder="seu.email@email.com" value="{{ email or '' }}" required autofocus>
+                            </div>
+
+                            {% if exige_codigo %}
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="bi bi-shield-check text-primary"></i> Chave de Segurança Institucional <span class="text-danger">*</span>
+                                </label>
+                                <input type="password" name="codigo_recuperacao" class="form-control form-control-lg"
+                                       placeholder="Chave fornecida pelo administrador" required>
+                                <div class="form-text small">Solicite esta chave ao administrador do servidor local.</div>
+                            </div>
+                            {% endif %}
+
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="bi bi-lock text-primary"></i> Nova Senha <span class="text-danger">*</span>
+                                </label>
+                                <input type="password" name="nova_senha" class="form-control form-control-lg"
+                                       placeholder="Mínimo 3 caracteres" minlength="3" required>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label">
+                                    <i class="bi bi-lock-fill text-primary"></i> Confirmar Nova Senha <span class="text-danger">*</span>
+                                </label>
+                                <input type="password" name="confirmar_senha" class="form-control form-control-lg"
+                                       placeholder="Repita a nova senha" minlength="3" required>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm">
+                                <i class="bi bi-check2-circle"></i> Salvar Nova Senha
+                            </button>
+                        </form>
+
+                        <div class="text-center mt-4 pt-3 border-top">
+                            <a href="/login" class="fw-semibold text-primary text-decoration-none small">
+                                <i class="bi bi-arrow-left"></i> Voltar para a tela de Login
+                            </a>
                         </div>
-
-                        <div class="mb-4">
-                            <label class="form-label">
-                                <i class="bi bi-lock-fill text-primary"></i> Confirmar Nova Senha <span class="text-danger">*</span>
-                            </label>
-                            <input type="password" name="confirmar_senha" class="form-control form-control-lg"
-                                   placeholder="Repita a nova senha" minlength="3" required>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm">
-                            <i class="bi bi-check2-circle"></i> Salvar Nova Senha
-                        </button>
-                    </form>
-
-                    <div class="text-center mt-4 pt-3 border-top">
-                        <a href="/login" class="fw-semibold text-primary text-decoration-none small">
-                            <i class="bi bi-arrow-left"></i> Voltar para a tela de Login
-                        </a>
                     </div>
                 </div>
             </div>

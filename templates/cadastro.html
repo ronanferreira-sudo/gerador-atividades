@@ -1,72 +1,142 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="pt-br">
 
-{% block titulo %}Cadastro de Docente &mdash; SENAI{% endblock %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Docente &mdash; SGP | Sistema de Gestão e Planejamento Pedagógico</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/logo_sgp_icon.svg') }}?v=4">
 
-{% block conteudo %}
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-<div class="row justify-content-center py-4">
-    <div class="col-md-7 col-lg-5">
+    <!-- Bootstrap 5 & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=4">
+</head>
 
-        <div class="card-modern shadow-md">
-            <div class="card-body p-4 p-md-5">
+<body>
 
-                <div class="text-center mb-4">
-                    <div class="auth-card-icon mb-3">
-                        <i class="bi bi-person-plus-fill"></i>
-                    </div>
-                    <h3 class="fw-bold mb-1">Novo Cadastro</h3>
-                    <p class="text-muted small">Crie sua conta docente para acessar as ferramentas pedagógicas</p>
-                </div>
+    <div class="container-fluid p-0">
+        <div class="row g-0 auth-wrapper">
 
-                {% if erro %}
-                <div class="alert alert-danger py-2 px-3 mb-4 d-flex align-items-center gap-2 small rounded-3" role="alert">
-                    <i class="bi bi-exclamation-triangle-fill fs-5"></i>
-                    <div>{{ erro }}</div>
-                </div>
-                {% endif %}
-
-                <form method="POST">
-                    <div class="mb-3">
-                        <label class="form-label">
-                            <i class="bi bi-person text-primary"></i> Nome Completo <span class="text-danger">*</span>
-                        </label>
-                        <input type="text" name="nome" class="form-control form-control-lg"
-                               placeholder="Ex: Prof. Carlos Eduardo" required autofocus>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">
-                            <i class="bi bi-envelope text-primary"></i> E-mail <span class="text-danger">*</span>
-                        </label>
-                        <input type="email" name="email" class="form-control form-control-lg"
-                               placeholder="seu.email@senai.br" required>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="form-label">
-                            <i class="bi bi-key text-primary"></i> Senha <span class="text-danger">*</span>
-                        </label>
-                        <input type="password" name="senha" class="form-control form-control-lg"
-                               placeholder="Mínimo 3 caracteres" minlength="3" required>
-                        <div class="form-text small">Use uma senha segura para proteger seus planejamentos.</div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm">
-                        <i class="bi bi-check-circle-fill"></i> Concluir Cadastro
-                    </button>
-                </form>
-
-                <div class="text-center mt-4 pt-3 border-top">
-                    <span class="text-muted small">Já possui cadastro?</span>
-                    <a href="/login" class="fw-bold text-primary text-decoration-none ms-1 small">
-                        Fazer login
+            <!-- PAINEL ESQUERDO -->
+            <div class="col-lg-6 auth-sidebar d-none d-lg-flex">
+                <div class="auth-sidebar-content">
+                    <a href="/" class="auth-sidebar-brand text-decoration-none">
+                        <img src="{{ url_for('static', filename='img/logo_sgp_icon.svg') }}?v=4" alt="Logo SGP" width="46" height="46">
+                        <div class="text-start">
+                            <h4 class="mb-0 fw-bold text-dark">SGP</h4>
+                            <span class="text-muted small">Sistema de Gestão e Planejamento Pedagógico</span>
+                        </div>
                     </a>
+
+                    <div class="auth-hero-copy text-start">
+                        <h1 class="auth-main-title fw-bold text-dark mb-3">
+                            Cadastro de Conta Docente
+                        </h1>
+                        <p class="auth-main-subtitle text-muted mb-0">
+                            Crie seu acesso para elaborar planejamentos curriculares, planos de aula e avaliações.
+                        </p>
+                    </div>
+
+                    <div class="text-center my-auto py-3">
+                        <img src="{{ url_for('static', filename='img/computador.png') }}"
+                             alt="Sistema de Planejamento Pedagógico"
+                             class="img-fluid auth-illustration">
+                    </div>
                 </div>
 
+                <div class="pt-3 border-top border-secondary border-opacity-10 text-muted small text-start">
+                    SGP &mdash; Sistema de Gestão e Planejamento Pedagógico &copy; 2026. Acesso ao corpo docente.
+                </div>
             </div>
+
+            <!-- PAINEL DIREITO (FORMULÁRIO DE CADASTRO) -->
+            <div class="col-12 col-lg-6 auth-main">
+                <div class="w-100" style="max-width: 460px;">
+
+                    <!-- Cabeçalho Mobile/Tablet -->
+                    <div class="d-flex d-lg-none align-items-center justify-content-center gap-3 mb-4 text-start">
+                        <a href="/" class="d-flex align-items-center gap-3 text-decoration-none">
+                            <img src="{{ url_for('static', filename='img/logo_sgp_icon.svg') }}?v=4" alt="Logo SGP" width="42" height="42">
+                            <div>
+                                <div class="fw-bold text-dark fs-5 lh-1">SGP</div>
+                                <small class="text-muted">Sistema de Planejamento Pedagógico</small>
+                            </div>
+                        </a>
+                    </div>
+
+                    <div class="auth-card">
+                        <div class="text-center mb-4">
+                            <div class="auth-card-icon">
+                                <i class="bi bi-person-plus-fill"></i>
+                            </div>
+                            <h2 class="fw-bold mb-1 text-dark fs-3">Novo Cadastro</h2>
+                            <p class="text-muted small mb-0">Crie sua conta docente para acessar as ferramentas pedagógicas</p>
+                        </div>
+
+                        {% if erro %}
+                        <div class="alert alert-danger py-2 px-3 mb-4 d-flex align-items-center gap-2 small rounded-3" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                            <div>{{ erro }}</div>
+                        </div>
+                        {% endif %}
+
+                        <form method="POST">
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="bi bi-person text-primary"></i> Nome Completo <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" name="nome" class="form-control form-control-lg"
+                                       placeholder="Ex: Prof. Carlos Eduardo" required autofocus>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="bi bi-envelope text-primary"></i> E-mail <span class="text-danger">*</span>
+                                </label>
+                                <input type="email" name="email" class="form-control form-control-lg"
+                                       placeholder="seu.email@email.com" required>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label">
+                                    <i class="bi bi-key text-primary"></i> Senha <span class="text-danger">*</span>
+                                </label>
+                                <input type="password" name="senha" class="form-control form-control-lg"
+                                       placeholder="Mínimo 3 caracteres" minlength="3" required>
+                                <div class="form-text small">Use uma senha segura para proteger seus planejamentos.</div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm">
+                                <i class="bi bi-check-circle-fill"></i> Concluir Cadastro
+                            </button>
+                        </form>
+
+                        <div class="text-center mt-4 pt-3 border-top">
+                            <span class="text-muted small">Já possui cadastro?</span>
+                            <a href="/login" class="fw-bold text-primary text-decoration-none ms-1 small">
+                                Fazer login
+                            </a>
+                            <div class="mt-2">
+                                <a href="/" class="text-muted text-decoration-none small">
+                                    <i class="bi bi-arrow-left"></i> Voltar para a Página Inicial
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
-
     </div>
-</div>
 
-{% endblock %}
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

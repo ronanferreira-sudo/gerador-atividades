@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGPP &mdash; Sistema de Gestão e Planejamento Pedagógico</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/logo_sgp_icon.svg') }}?v=4">
+
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5 & Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+    <!-- CSS Customizado -->
+    <link href="{{ url_for('static', filename='css/style.css') }}?v=4" rel="stylesheet">
+</head>
+
+<body class="landing-body">
+
+    <!-- Barra de Navegação Executiva -->
+    <nav class="navbar navbar-expand-lg landing-navbar sticky-top" id="mainLandingNav">
+        <div class="container py-1">
+            <a class="navbar-brand d-flex align-items-center gap-3 text-decoration-none" href="/">
+                <img src="{{ url_for('static', filename='img/logo_sgp_icon.svg') }}" alt="Logo SGP" width="42" height="42" class="landing-logo-img">
+                <div class="lh-sm">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="fw-extrabold fs-4 landing-brand-title">SGPP</span>
+                        <span class="landing-brand-divider">|</span>
+                        <span class="landing-brand-tag d-none d-md-inline">Gestão Pedagógica</span>
+                    </div>
+                    <span class="d-none d-sm-block landing-brand-subtitle">
+                        Sistema de Gestão e Planejamento Pedagógico
+                    </span>
+                </div>
+            </a>
+
+            <button class="navbar-toggler border-0 text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#navbarLanding" aria-controls="navbarLanding" aria-expanded="false" aria-label="Alternar navegação">
+                <i class="bi bi-list fs-2"></i>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarLanding">
+                <ul class="navbar-nav mx-auto mb-2 mb-lg-0 gap-lg-4">
+                    <li class="nav-item">
+                        <a class="nav-link landing-nav-link" href="#modulos">Módulos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link landing-nav-link" href="#fluxo">Fluxo de Trabalho</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link landing-nav-link" href="#recursos">Padronização</a>
+                    </li>
+                </ul>
+
+                <div class="d-flex flex-wrap align-items-center gap-2 mt-3 mt-lg-0">
+                    {% if session.get('usuario_id') %}
+                        <span class="text-muted small me-2 d-none d-xl-inline">
+                            Docente: <strong class="text-dark">{{ session.get('nome', 'Docente') }}</strong>
+                        </span>
+                        <a href="/dashboard" class="btn btn-landing-primary px-4 py-2">
+                            <i class="bi bi-grid-1x2 me-1"></i> Ir para o Painel
+                        </a>
+                        <a href="/logout" class="btn btn-landing-outline px-3 py-2" title="Encerrar sessão">
+                            Sair
+                        </a>
+                    {% else %}
+                        <a href="/login" class="btn btn-landing-outline px-3 py-2">
+                            Entrar
+                        </a>
+                        <a href="/cadastro" class="btn btn-landing-primary px-4 py-2">
+                            Criar Conta Docente
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO SECTION (SÓBRIA, EDITORIAL E CORPORATIVA) -->
+    <header class="landing-hero position-relative overflow-hidden">
+        <div class="container position-relative py-5">
+            <div class="row align-items-center g-5 py-lg-4">
+
+                <!-- Coluna de Texto Principal -->
+                <div class="col-lg-6 reveal-on-scroll reveal-up">
+                    <div class="d-inline-flex align-items-center gap-2 landing-eyebrow mb-3">
+                        <span class="landing-eyebrow-dot"></span>
+                        <span>Gestão Acadêmica &amp; Planejamento Curricular</span>
+                    </div>
+
+                    <h1 class="landing-hero-title mb-3">
+                        Organização e precisão no planejamento docente de ponta a ponta.
+                    </h1>
+
+                    <p class="landing-hero-lead mb-4">
+                        O <strong>SGPP</strong> centraliza a elaboração de cronogramas letivos, planos de aula estruturados e avaliações acadêmicas, garantindo conformidade metodológica e exportação nos padrões institucionais.
+                    </p>
+
+                    <div class="d-flex flex-wrap gap-3 mb-5">
+                        {% if session.get('usuario_id') %}
+                            <a href="/dashboard" class="btn btn-light btn-lg fw-bold text-dark px-4 py-3 d-inline-flex align-items-center gap-2 shadow-sm">
+                                <span>Ir para o Painel de Controle</span>
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
+                            <a href="/listar_planejamentos" class="btn btn-outline-light btn-lg px-4 py-3 d-inline-flex align-items-center gap-2">
+                                <i class="bi bi-file-earmark-spreadsheet"></i>
+                                <span>Ver Planejamentos</span>
+                            </a>
+                        {% else %}
+                            <a href="/login" class="btn btn-light btn-lg fw-bold text-dark px-4 py-3 d-inline-flex align-items-center gap-2 shadow-sm">
+                                <span>Acessar o Sistema</span>
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
+                            <a href="/cadastro" class="btn btn-outline-light btn-lg px-4 py-3 d-inline-flex align-items-center gap-2">
+                                <span>Cadastrar Docente</span>
+                            </a>
+                        {% endif %}
+                    </div>
+
+                    <!-- Métricas Institucionais Sóbrias -->
+                    <div class="row g-3 g-sm-4 pt-4 border-top border-light border-opacity-10">
+                        <div class="col-12 col-sm-4">
+                            <div class="landing-metric-value">Excel &amp; PDF</div>
+                            <div class="landing-metric-label">Exportação oficial formatada</div>
+                        </div>
+                        <div class="col-12 col-sm-4 border-start-sm ps-sm-4">
+                            <div class="landing-metric-value">Bloom</div>
+                            <div class="landing-metric-label">Alinhamento de competências</div>
+                        </div>
+                        <div class="col-12 col-sm-4 border-start-sm ps-sm-4">
+                            <div class="landing-metric-value">Repositório</div>
+                            <div class="landing-metric-label">Banco próprio de questões</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coluna Direita: Mockup Estruturado de Interface (Sem Ilustração Genérica) -->
+                <div class="col-lg-6 reveal-on-scroll reveal-right delay-100">
+                    <div class="landing-ui-window">
+                        <!-- Barra de Topo da Janela -->
+                        <div class="landing-ui-header">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="ui-dot"></span>
+                                <span class="ui-dot"></span>
+                                <span class="ui-dot"></span>
+                                <span class="ms-2 fw-semibold text-secondary" style="font-size: 0.78rem;">
+                                    Cronograma e Estrutura Curricular
+                                </span>
+                            </div>
+                            <span class="landing-status-pill">
+                                <i class="bi bi-check2-circle me-1"></i> Matriz Validada
+                            </span>
+                        </div>
+
+                        <!-- Corpo do Mockup: Demonstração Realista de Planejamento -->
+                        <div class="landing-ui-body">
+                            <!-- Cabeçalho da Unidade Curricular -->
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pb-3 mb-3 border-bottom">
+                                <div>
+                                    <div class="text-uppercase fw-bold text-muted" style="font-size: 0.68rem; letter-spacing: 0.06em;">
+                                        Unidade Curricular
+                                    </div>
+                                    <div class="fw-bold text-dark" style="font-size: 0.98rem;">
+                                        Desenvolvimento de Sistemas &mdash; Banco de Dados
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <span class="landing-tag-neutral">80h Totais</span>
+                                    <span class="landing-tag-primary">Semestral</span>
+                                </div>
+                            </div>
+
+                            <!-- Tabela Demonstrativa de Encontros -->
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-semibold text-dark small">Distribuição de Encontros Letivos</span>
+                                    <span class="text-muted" style="font-size: 0.75rem;">Seg / Qua &bull; Feriados filtrados</span>
+                                </div>
+
+                                <div class="landing-schedule-list">
+                                    <div class="landing-schedule-row">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <span class="schedule-date-badge">Aula 01</span>
+                                            <div>
+                                                <div class="fw-semibold text-dark small">Modelagem Conceitual e MER</div>
+                                                <div class="text-muted" style="font-size: 0.74rem;">Capacidade Técnica: Identificar entidades e relacionamentos</div>
+                                            </div>
+                                        </div>
+                                        <span class="schedule-bloom-tag">Compreender</span>
+                                    </div>
+
+                                    <div class="landing-schedule-row">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <span class="schedule-date-badge">Aula 02</span>
+                                            <div>
+                                                <div class="fw-semibold text-dark small">Normalização de Dados (1FN a 3FN)</div>
+                                                <div class="text-muted" style="font-size: 0.74rem;">Estudo de caso prático e refatoração de tabelas</div>
+                                            </div>
+                                        </div>
+                                        <span class="schedule-bloom-tag">Aplicar</span>
+                                    </div>
+
+                                    <div class="landing-schedule-row">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <span class="schedule-date-badge">Aula 03</span>
+                                            <div>
+                                                <div class="fw-semibold text-dark small">Linguagem SQL: DDL e Restrições</div>
+                                                <div class="text-muted" style="font-size: 0.74rem;">Implementação física em SGBD relacional</div>
+                                            </div>
+                                        </div>
+                                        <span class="schedule-bloom-tag">Analisar</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Rodapé do Mockup: Documentos Gerados -->
+                            <div class="landing-ui-footer">
+                                <div class="d-flex align-items-center gap-2 text-muted small">
+                                    <i class="bi bi-file-earmark-check text-dark"></i>
+                                    <span>Documentos prontos para exportação:</span>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <span class="ui-doc-pill"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Planilha (.xlsx)</span>
+                                    <span class="ui-doc-pill"><i class="bi bi-file-earmark-word me-1"></i>Plano (.docx)</span>
+                                    <span class="ui-doc-pill"><i class="bi bi-file-earmark-pdf me-1"></i>Avaliação (.pdf)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </header>
+
+    <!-- SEÇÃO: MÓDULOS DO SISTEMA -->
+    <section id="modulos" class="py-5 landing-section-white border-bottom">
+        <div class="container py-4">
+            <div class="row justify-content-between align-items-end mb-5 reveal-on-scroll reveal-up">
+                <div class="col-lg-7">
+                    <div class="landing-section-kicker mb-2">Arquitetura da Plataforma</div>
+                    <h2 class="landing-section-title mb-0">
+                        Quatro módulos integrados para a rotina pedagógica
+                    </h2>
+                </div>
+                <div class="col-lg-4 mt-3 mt-lg-0">
+                    <p class="text-muted mb-0 small">
+                        Cada etapa do planejamento conversa entre si: a matriz curricular alimenta o cronograma, que origina os planos de aula e as avaliações.
+                    </p>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- Módulo 1 -->
+                <div class="col-md-6 col-xl-3 reveal-on-scroll reveal-up delay-100">
+                    <div class="landing-module-card h-100">
+                        <div class="landing-module-number">01</div>
+                        <div class="landing-module-icon">
+                            <i class="bi bi-table"></i>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-2">Planejamento Docente</h5>
+                        <p class="text-muted small mb-4">
+                            Elaboração de cronogramas completos a partir da matriz curricular, com cálculo automático de dias da semana, aulas quinzenais, feriados e níveis da Taxonomia de Bloom.
+                        </p>
+                        <div class="mt-auto pt-3 border-top d-flex align-items-center justify-content-between small fw-semibold text-dark">
+                            <span>Planilha Oficial (.xlsx)</span>
+                            <i class="bi bi-arrow-up-right text-muted"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Módulo 2 -->
+                <div class="col-md-6 col-xl-3 reveal-on-scroll reveal-up delay-200">
+                    <div class="landing-module-card h-100">
+                        <div class="landing-module-number">02</div>
+                        <div class="landing-module-icon">
+                            <i class="bi bi-journal-text"></i>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-2">Planos de Aula</h5>
+                        <p class="text-muted small mb-4">
+                            Desdobramento estruturado dos encontros letivos com definição de objetivos, estratégias de ensino, recursos didáticos e instrumentos de avaliação.
+                        </p>
+                        <div class="mt-auto pt-3 border-top d-flex align-items-center justify-content-between small fw-semibold text-dark">
+                            <span>Word (.docx) e PDF</span>
+                            <i class="bi bi-arrow-up-right text-muted"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Módulo 3 -->
+                <div class="col-md-6 col-xl-3 reveal-on-scroll reveal-up delay-300">
+                    <div class="landing-module-card h-100">
+                        <div class="landing-module-number">03</div>
+                        <div class="landing-module-icon">
+                            <i class="bi bi-clipboard2-check"></i>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-2">Avaliações e Listas</h5>
+                        <p class="text-muted small mb-4">
+                            Criação de instrumentos avaliativos objetivos, discursivos ou mistos graduados por complexidade, gerando simultaneamente o caderno do aluno e o gabarito.
+                        </p>
+                        <div class="mt-auto pt-3 border-top d-flex align-items-center justify-content-between small fw-semibold text-dark">
+                            <span>Prova + Gabarito</span>
+                            <i class="bi bi-arrow-up-right text-muted"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Módulo 4 -->
+                <div class="col-md-6 col-xl-3 reveal-on-scroll reveal-up delay-400">
+                    <div class="landing-module-card h-100">
+                        <div class="landing-module-number">04</div>
+                        <div class="landing-module-icon">
+                            <i class="bi bi-collection"></i>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-2">Repositório de Questões</h5>
+                        <p class="text-muted small mb-4">
+                            Acervo organizado por curso, disciplina e dificuldade. Permite montar provas com questões autorais dos professores e complementar lacunas sob demanda.
+                        </p>
+                        <div class="mt-auto pt-3 border-top d-flex align-items-center justify-content-between small fw-semibold text-dark">
+                            <span>Acervo Compartilhado</span>
+                            <i class="bi bi-arrow-up-right text-muted"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SEÇÃO: FLUXO DE TRABALHO -->
+    <section id="fluxo" class="py-5 landing-section-subtle border-bottom">
+        <div class="container py-4">
+            <div class="text-center max-w-700 mx-auto mb-5 reveal-on-scroll reveal-up">
+                <div class="landing-section-kicker mb-2">Metodologia de Uso</div>
+                <h2 class="landing-section-title mb-2">Fluxo de trabalho contínuo e auditável</h2>
+                <p class="text-muted small">
+                    Reduza o retrabalho administrativo mantendo total controle docente sobre o conteúdo pedagógico.
+                </p>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-3 reveal-on-scroll reveal-up delay-100">
+                    <div class="landing-step-card h-100">
+                        <div class="landing-step-header">
+                            <span class="landing-step-badge">Etapa 1</span>
+                            <span class="landing-step-line"></span>
+                        </div>
+                        <h6 class="fw-bold text-dark mt-3 mb-2">Leitura da Matriz</h6>
+                        <p class="text-muted small mb-0">
+                            Importe a matriz curricular (PDF/Excel) ou cadastre a unidade curricular com suas capacidades técnicas e socioemocionais.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-3 reveal-on-scroll reveal-up delay-200">
+                    <div class="landing-step-card h-100">
+                        <div class="landing-step-header">
+                            <span class="landing-step-badge">Etapa 2</span>
+                            <span class="landing-step-line"></span>
+                        </div>
+                        <h6 class="fw-bold text-dark mt-3 mb-2">Definição de Calendário</h6>
+                        <p class="text-muted small mb-0">
+                            Configure o período letivo, selecione os dias da semana da turma, a periodicidade (semanal ou quinzenal) e os dias não letivos.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-3 reveal-on-scroll reveal-up delay-300">
+                    <div class="landing-step-card h-100">
+                        <div class="landing-step-header">
+                            <span class="landing-step-badge">Etapa 3</span>
+                            <span class="landing-step-line"></span>
+                        </div>
+                        <h6 class="fw-bold text-dark mt-3 mb-2">Estruturação Pedagógica</h6>
+                        <p class="text-muted small mb-0">
+                            O sistema distribui os objetos de conhecimento por encontro, sugere estratégias didáticas e organiza o banco de questões.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-3 reveal-on-scroll reveal-up delay-400">
+                    <div class="landing-step-card h-100">
+                        <div class="landing-step-header">
+                            <span class="landing-step-badge">Etapa 4</span>
+                        </div>
+                        <h6 class="fw-bold text-dark mt-3 mb-2">Revisão e Emissão</h6>
+                        <p class="text-muted small mb-0">
+                            Revise ou edite qualquer campo diretamente na tela e emita as planilhas e documentos prontos para assinatura e arquivo.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SEÇÃO: PADRONIZAÇÃO E CONFORMIDADE -->
+    <section id="recursos" class="py-5 landing-section-white">
+        <div class="container py-4">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-6 reveal-on-scroll reveal-left">
+                    <div class="landing-section-kicker mb-2">Conformidade Institucional</div>
+                    <h2 class="landing-section-title mb-3">
+                        Ferramenta externa independente, com exportação fiel aos modelos documentais
+                    </h2>
+                    <p class="text-muted mb-4">
+                        O SGP opera como uma plataforma dedicada à produtividade dos professores, preservando integralmente a formatação, cabeçalhos e identidades visuais exigidas nos documentos oficiais exportados.
+                    </p>
+
+                    <div class="d-flex flex-column gap-3">
+                        <div class="landing-check-item">
+                            <div class="landing-check-icon">
+                                <i class="bi bi-check2"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold text-dark mb-1">Preservação de Layout nos Documentos</h6>
+                                <p class="text-muted small mb-0">
+                                    Planilhas de planejamento (`.xlsx`), planos de aula (`.docx` / `.pdf`) e provas mantêm a estrutura tabular e a logo institucional oficial na exportação.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="landing-check-item">
+                            <div class="landing-check-icon">
+                                <i class="bi bi-check2"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold text-dark mb-1">Geração em Lote de Planos de Aula</h6>
+                                <p class="text-muted small mb-0">
+                                    Converta todos os encontros de um planejamento aprovado em planos de aula individuais com um único comando.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="landing-check-item">
+                            <div class="landing-check-icon">
+                                <i class="bi bi-check2"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold text-dark mb-1">Gestão por Docente e Coordenação</h6>
+                                <p class="text-muted small mb-0">
+                                    Acesso autenticado com separação de históricos por professor e painel administrativo para gerenciamento de contas.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 reveal-on-scroll reveal-right delay-100">
+                    <div class="landing-cta-panel p-4 p-md-5">
+                        <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom border-light border-opacity-10">
+                            <img src="{{ url_for('static', filename='img/logo_sgp_icon.svg') }}" alt="SGP" width="50" height="50">
+                            <div>
+                                <h4 class="fw-bold text-white mb-0">Portal de Acesso SGP</h4>
+                                <span class="text-white-50 small">Sistema de Gestão e Planejamento Pedagógico</span>
+                            </div>
+                        </div>
+
+                        <p class="text-white-50 mb-4">
+                            Entre com suas credenciais docentes para acessar seus planejamentos, emitir relatórios ou cadastrar novas questões no repositório.
+                        </p>
+
+                        <div class="d-grid gap-3">
+                            {% if session.get('usuario_id') %}
+                                <a href="/dashboard" class="btn btn-light btn-lg fw-bold text-dark py-3">
+                                    <i class="bi bi-grid-1x2 me-2"></i> Acessar Painel Pedagógico
+                                </a>
+                                <a href="/nova_atividade" class="btn btn-outline-light py-2 fw-semibold">
+                                    <i class="bi bi-plus-circle me-2"></i> Elaborar Nova Avaliação
+                                </a>
+                            {% else %}
+                                <a href="/login" class="btn btn-light btn-lg fw-bold text-dark py-3">
+                                    <i class="bi bi-box-arrow-in-right me-2"></i> Entrar no Sistema
+                                </a>
+                                <a href="/cadastro" class="btn btn-outline-light py-2 fw-semibold">
+                                    <i class="bi bi-person-plus me-2"></i> Solicitar Cadastro Docente
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- RODAPÉ -->
+    <footer class="footer-modern bg-white border-top py-4">
+        <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <div class="d-flex align-items-center gap-2">
+                <img src="{{ url_for('static', filename='img/logo_sgp_icon.svg') }}" alt="SGP" width="26" height="26">
+                <span class="text-muted small">
+                    <strong>SGPP</strong> &mdash; Sistema de Gestão e Planejamento Pedagógico &copy; 2026. Todos os direitos reservados.
+                </span>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <span class="text-muted small">
+                    <i class="bi bi-shield-check me-1"></i> Ambiente Autenticado
+                </span>
+                <span class="text-muted small">&bull;</span>
+                <span class="text-muted small">
+                    <i class="bi bi-file-earmark-text me-1"></i> Gestão Documental
+                </span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Script de Animações ao Deslizar (Scroll Reveal) e Navbar -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const revealElements = document.querySelectorAll('.reveal-on-scroll');
+
+            if ('IntersectionObserver' in window) {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('is-visible');
+                            observer.unobserve(entry.target);
+                        }
+                    });
+                }, {
+                    threshold: 0.12,
+                    rootMargin: '0px 0px -40px 0px'
+                });
+
+                revealElements.forEach(el => observer.observe(el));
+            } else {
+                revealElements.forEach(el => el.classList.add('is-visible'));
+            }
+
+            // Sombra sutil na barra de navegação ao rolar a página
+            const nav = document.getElementById('mainLandingNav');
+            window.addEventListener('scroll', function () {
+                if (window.scrollY > 16) {
+                    nav.classList.add('scrolled');
+                } else {
+                    nav.classList.remove('scrolled');
+                }
+            }, { passive: true });
+        });
+    </script>
+</body>
+
+</html>
