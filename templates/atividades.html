@@ -38,6 +38,9 @@
                 {% endif %}
             </form>
 
+            <a href="/repositorio" class="btn btn-outline-secondary shadow-sm text-nowrap" title="Ver banco de questões">
+                <i class="bi bi-archive-fill"></i> Repositório
+            </a>
             <a href="/" class="btn btn-primary shadow-sm text-nowrap">
                 <i class="bi bi-plus-lg"></i> Nova Atividade
             </a>
@@ -79,6 +82,27 @@
                             <span class="badge badge-subtle-primary">
                                 {{ atividade[2] }}
                             </span>
+                            {% if atividade|length > 8 and atividade[8] %}
+                                {% if atividade[8] == 'repositorio' %}
+                                    <div class="mt-1">
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25" style="font-size: 0.72rem;" title="Origem: Repositório">
+                                            <i class="bi bi-archive-fill"></i> Repositório
+                                        </span>
+                                    </div>
+                                {% elif atividade[8] == 'misto' %}
+                                    <div class="mt-1">
+                                        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25" style="font-size: 0.72rem;" title="Origem: Híbrido (Repositório + IA)">
+                                            <i class="bi bi-shuffle"></i> Híbrido (Repo+IA)
+                                        </span>
+                                    </div>
+                                {% else %}
+                                    <div class="mt-1">
+                                        <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25" style="font-size: 0.72rem;" title="Origem: IA / Banco Externo">
+                                            <i class="bi bi-cpu-fill"></i> Gerada por IA
+                                        </span>
+                                    </div>
+                                {% endif %}
+                            {% endif %}
                         </td>
                         <td class="small text-muted">
                             {% if atividade[3]|length > 70 %}

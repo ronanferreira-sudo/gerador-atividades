@@ -31,18 +31,45 @@ CREATE TABLE IF NOT EXISTS atividades (
     conteudo         VARCHAR(255) NOT NULL,
     dificuldade      VARCHAR(50) NOT NULL,
     atividade_gerada TEXT,
+    origem           VARCHAR(50) DEFAULT 'ia',
     data_criacao     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     usuario_id       INTEGER REFERENCES usuarios(id) ON DELETE SET NULL
 );
 
-COMMENT ON TABLE atividades IS 'Atividades geradas pela IA';
+COMMENT ON TABLE atividades IS 'Atividades geradas pela IA ou compostas pelo repositório';
 COMMENT ON COLUMN atividades.dificuldade IS 'Nível de dificuldade: fácil, médio, difícil';
 COMMENT ON COLUMN atividades.atividade_gerada IS 'Texto completo da atividade gerada pela IA';
+COMMENT ON COLUMN atividades.origem IS 'Origem da geração: ia, repositorio ou misto';
 
 -- Índice para busca por curso, disciplina e conteúdo
 CREATE INDEX IF NOT EXISTS idx_atividades_curso ON atividades(curso);
 CREATE INDEX IF NOT EXISTS idx_atividades_usuario ON atividades(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_atividades_data ON atividades(data_criacao DESC);
+
+-- ============================================================
+-- TABELA: repositorio_atividades
+-- ============================================================
+CREATE TABLE IF NOT EXISTS repositorio_atividades (
+    id               SERIAL PRIMARY KEY,
+    curso            VARCHAR(150) NOT NULL,
+    disciplina       VARCHAR(150) NOT NULL,
+    conteudo         VARCHAR(255) NOT NULL,
+    dificuldade      VARCHAR(50) NOT NULL DEFAULT 'médio',
+    tipo             VARCHAR(50) NOT NULL DEFAULT 'objetiva',
+    enunciado        TEXT NOT NULL,
+    alternativas     TEXT,
+    resposta_correta TEXT,
+    origem           VARCHAR(20) NOT NULL DEFAULT 'professor',
+    usuario_id       INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+    data_criacao     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_repositorio_curso ON repositorio_atividades(curso);
+CREATE INDEX IF NOT EXISTS idx_repositorio_disciplina ON repositorio_atividades(disciplina);
+CREATE INDEX IF NOT EXISTS idx_repositorio_usuario ON repositorio_atividades(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_repositorio_origem ON repositorio_atividades(origem);
+CREATE INDEX IF NOT EXISTS idx_repositorio_dificuldade ON repositorio_atividades(dificuldade);
+CREATE INDEX IF NOT EXISTS idx_repositorio_tipo ON repositorio_atividades(tipo);
 
 -- ============================================================
 -- TABELA: cursos_plano

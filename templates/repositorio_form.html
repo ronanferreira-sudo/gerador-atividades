@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block titulo %}{{ 'Editar Questão' if item else 'Nova Questão' }} &mdash; Repositório Pedagógico{% endblock %}
+
+{% block conteudo %}
+
+<div class="row justify-content-center py-3">
+    <div class="col-md-9 col-lg-8">
+
+        <div class="card card-modern shadow-md border-0">
+            <!-- Cabeçalho do Card -->
+            <div class="card-header-modern bg-white d-flex align-items-center justify-content-between p-4 border-bottom">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="brand-icon-wrapper" style="width: 44px; height: 44px; font-size: 1.3rem;">
+                        <i class="bi bi-{{ 'pencil-square' if item else 'plus-circle' }}"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0 fw-bold">{{ 'Editar Questão do Repositório' if item else 'Cadastrar Questão no Repositório' }}</h4>
+                        <span class="text-muted small">Crie ou edite questões autorais para o banco de atividades</span>
+                    </div>
+                </div>
+                <a href="/repositorio" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left"></i> Voltar ao Repositório
+                </a>
+            </div>
+
+            <div class="card-body p-4 p-md-5">
+
+                <form method="POST" id="formRepositorio">
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-mortarboard text-primary"></i> Curso <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="curso" class="form-control"
+                                   placeholder="Ex: Técnico em Desenvolvimento de Sistemas"
+                                   value="{{ item.curso if item else '' }}" required autofocus>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-book text-primary"></i> Unidade Curricular / Disciplina <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="disciplina" class="form-control"
+                                   placeholder="Ex: Banco de Dados Relacional"
+                                   value="{{ item.disciplina if item else '' }}" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-card-text text-primary"></i> Conteúdo / Tópico Avaliado <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="conteudo" class="form-control"
+                               placeholder="Ex: Chaves Primárias, Chaves Estrangeiras e Integridade Referencial"
+                               value="{{ item.conteudo if item else '' }}" required>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-speedometer2 text-primary"></i> Nível de Dificuldade <span class="text-danger">*</span>
+                            </label>
+                            <select name="dificuldade" class="form-select">
+                                <option value="fácil" {% if item and item.dificuldade == 'fácil' %}selected{% endif %}>Fácil (Conceitual / Lembrar)</option>
+                                <option value="médio" {% if not item or item.dificuldade == 'médio' %}selected{% endif %}>Médio (Aplicação / Compreensão)</option>
+                                <option value="difícil" {% if item and item.dificuldade == 'difícil' %}selected{% endif %}>Difícil (Análise / Avaliação)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-ui-checks text-primary"></i> Tipo de Questão <span class="text-danger">*</span>
+                            </label>
+                            <select name="tipo" id="selectTipo" class="form-select" onchange="alternarCamposTipo()">
+                                <option value="objetiva" {% if not item or item.tipo == 'objetiva' %}selected{% endif %}>Objetiva (Múltipla Escolha)</option>
+                                <option value="discursiva" {% if item and item.tipo == 'discursiva' %}selected{% endif %}>Discursiva (Dissertativa)</option>
+                                <option value="prática" {% if item and item.tipo == 'prática' %}selected{% endif %}>Prática / Laboratório</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Enunciado -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-fonts text-primary"></i> Enunciado da Questão / Atividade <span class="text-danger">*</span>
+                        </label>
+                        <textarea name="enunciado" class="form-control font-monospace" rows="5"
+                                  placeholder="Digite o enunciado claro da atividade ou questão avaliativa..." required>{{ item.enunciado if item else '' }}</textarea>
+                    </div>
+
+                    <!-- Alternativas (para Objetiva) -->
+                    <div class="mb-4" id="divAlternativas">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-list-check text-primary"></i> Alternativas de Múltipla Escolha
+                        </label>
+                        <textarea name="alternativas" class="form-control font-monospace" rows="4"
+                                  placeholder="A) Primeira alternativa&#10;B) Segunda alternativa&#10;C) Terceira alternativa&#10;D) Quarta alternativa">{{ item.alternativas if item else '' }}</textarea>
+                        <div class="form-text small">Formate com uma opção por linha: A) ..., B) ..., C) ..., D) ...</div>
+                    </div>
+
+                    <!-- Gabarito / Resposta Correta -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-check-circle text-success"></i> Gabarito / Resposta Esperada / Critério de Correção
+                        </label>
+                        <textarea name="resposta_correta" class="form-control font-monospace" rows="3"
+                                  placeholder="Para objetivas: A, B, C ou D (e justificativa opcional). Para discursivas: pontos-chave esperados na resposta do aluno.">{{ item.resposta_correta if item else '' }}</textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                        <a href="/repositorio" class="btn btn-outline-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary px-4 fw-bold shadow-sm">
+                            <i class="bi bi-save me-1"></i> {{ 'Salvar Alterações' if item else 'Cadastrar no Repositório' }}
+                        </button>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+function alternarCamposTipo() {
+    const tipo = document.getElementById('selectTipo').value;
+    const divAlt = document.getElementById('divAlternativas');
+    if (tipo === 'objetiva') {
+        divAlt.style.display = 'block';
+    } else {
+        divAlt.style.display = 'none';
+    }
+}
+document.addEventListener('DOMContentLoaded', alternarCamposTipo);
+</script>
+
+{% endblock %}

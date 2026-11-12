@@ -7,7 +7,48 @@
 <div class="row justify-content-center py-3">
     <div class="col-md-9 col-lg-8">
 
-        <div class="card-modern shadow-md">
+        <!-- Mensagem de Confirmação (Fallback Servidor) -->
+        {% if confirmar_complemento %}
+        <div class="alert alert-warning border-warning shadow-sm p-4 mb-4 rounded-3" role="alert">
+            <div class="d-flex align-items-start gap-3">
+                <div class="fs-2 text-warning">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <h5 class="fw-bold mb-1">Quantidade Insuficiente no Repositório</h5>
+                    <p class="mb-2">
+                        Foram encontradas apenas <strong class="text-dark">{{ disponiveis }}</strong> atividade(s) no repositório correspondentes aos critérios informados (você solicitou <strong class="text-dark">{{ solicitadas }}</strong>).
+                    </p>
+                    <p class="fw-semibold text-primary mb-3">
+                        Deseja completar as <strong>{{ faltantes }}</strong> atividade(s) restantes buscando na IA / banco externo de informações?
+                    </p>
+
+                    <div class="d-flex flex-wrap gap-2">
+                        <form method="POST" action="/" class="d-inline">
+                            <input type="hidden" name="curso" value="{{ dados_form.curso }}">
+                            <input type="hidden" name="disciplina" value="{{ dados_form.disciplina }}">
+                            <input type="hidden" name="conteudo" value="{{ dados_form.conteudo }}">
+                            <input type="hidden" name="dificuldade" value="{{ dados_form.dificuldade }}">
+                            <input type="hidden" name="tipo" value="{{ dados_form.tipo }}">
+                            <input type="hidden" name="quantidade" value="{{ dados_form.quantidade }}">
+                            <input type="hidden" name="fonte" value="{{ dados_form.fonte }}">
+                            <input type="hidden" name="completar_com_ia" value="sim">
+                            <button type="submit" class="btn btn-primary fw-bold shadow-sm">
+                                <i class="bi bi-cpu-fill me-1"></i> Sim, completar com banco externo
+                            </button>
+                        </form>
+
+                        <a href="/?curso={{ dados_form.curso }}&disciplina={{ dados_form.disciplina }}&conteudo={{ dados_form.conteudo }}&dificuldade={{ dados_form.dificuldade }}&tipo={{ dados_form.tipo }}&quantidade={{ dados_form.quantidade }}&fonte=repositorio"
+                           class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Não, voltar para solicitação
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card card-modern shadow-md">
             <!-- Cabeçalho do Card -->
             <div class="card-header-modern bg-white d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center gap-3">
@@ -16,76 +57,124 @@
                     </div>
                     <div>
                         <h4 class="mb-0 fw-bold">Gerar Nova Atividade Avaliativa</h4>
-                        <span class="text-muted small">Crie avaliações objetivas, discursivas ou mistas com auxílio de IA</span>
+                        <span class="text-muted small">Crie avaliações utilizando o repositório do professor ou gerando via IA</span>
                     </div>
                 </div>
-                <a href="/atividades" class="btn btn-outline-primary btn-sm">
-                    <i class="bi bi-arrow-left"></i> Ver Banco
-                </a>
+                <div class="d-flex gap-2">
+                    <a href="/repositorio" class="btn btn-outline-secondary btn-sm" title="Consultar repositório de questões">
+                        <i class="bi bi-archive-fill"></i> Repositório
+                    </a>
+                    <a href="/atividades" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-check2-square"></i> Ver Avaliações
+                    </a>
+                </div>
             </div>
 
             <div class="card-body p-4 p-md-5">
 
                 <form method="POST" id="formGerarAtividade">
+                    <input type="hidden" name="completar_com_ia" id="inputCompletarIA" value="">
+
+                    <!-- Seleção da Fonte das Atividades -->
+                    <div class="mb-4 p-3 bg-light rounded-3 border">
+                        <label class="form-label fw-bold mb-2">
+                            <i class="bi bi-database-fill text-primary me-1"></i> Fonte / Origem das Atividades:
+                        </label>
+                        <div class="row g-2">
+                            <div class="col-sm-6">
+                                <label class="card h-100 p-3 border cursor-pointer source-card {% if (dados_form and dados_form.fonte == 'repositorio') or request.args.get('fonte') == 'repositorio' %}border-primary bg-primary bg-opacity-10{% endif %}" id="cardFonteRepositorio" style="cursor: pointer;">
+                                    <div class="form-check d-flex align-items-center gap-2">
+                                        <input class="form-check-input" type="radio" name="fonte" id="fonteRepositorio" value="repositorio"
+                                               {% if (dados_form and dados_form.fonte == 'repositorio') or request.args.get('fonte') == 'repositorio' %}checked{% endif %}>
+                                        <div class="form-check-label">
+                                            <div class="fw-bold text-dark">
+                                                <i class="bi bi-archive-fill text-success me-1"></i> Repositório do Professor
+                                            </div>
+                                            <small class="text-muted d-block">Busca atividades cadastradas no repositório interno</small>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="card h-100 p-3 border cursor-pointer source-card {% if not ((dados_form and dados_form.fonte == 'repositorio') or request.args.get('fonte') == 'repositorio') %}border-primary bg-primary bg-opacity-10{% endif %}" id="cardFonteIA" style="cursor: pointer;">
+                                    <div class="form-check d-flex align-items-center gap-2">
+                                        <input class="form-check-input" type="radio" name="fonte" id="fonteIA" value="ia"
+                                               {% if not ((dados_form and dados_form.fonte == 'repositorio') or request.args.get('fonte') == 'repositorio') %}checked{% endif %}>
+                                        <div class="form-check-label">
+                                            <div class="fw-bold text-dark">
+                                                <i class="bi bi-cpu-fill text-info me-1"></i> IA / Banco Externo
+                                            </div>
+                                            <small class="text-muted d-block">Gera novas questões formuladas pelo modelo de IA</small>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
-                            <label class="form-label">
+                            <label class="form-label fw-semibold">
                                 <i class="bi bi-mortarboard text-primary"></i> Curso <span class="text-danger">*</span>
                             </label>
-                            <input type="text" name="curso" class="form-control form-control-lg"
-                                   placeholder="Ex: Técnico em Desenvolvimento de Sistemas" required autofocus>
+                            <input type="text" name="curso" id="inputCurso" class="form-control form-control-lg"
+                                   placeholder="Ex: Técnico em Desenvolvimento de Sistemas"
+                                   value="{{ dados_form.curso if dados_form else request.args.get('curso', '') }}" required autofocus>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">
+                            <label class="form-label fw-semibold">
                                 <i class="bi bi-book text-primary"></i> Unidade Curricular / Disciplina <span class="text-danger">*</span>
                             </label>
-                            <input type="text" name="disciplina" class="form-control form-control-lg"
-                                   placeholder="Ex: Banco de Dados Relacional" required>
+                            <input type="text" name="disciplina" id="inputDisciplina" class="form-control form-control-lg"
+                                   placeholder="Ex: Banco de Dados Relacional"
+                                   value="{{ dados_form.disciplina if dados_form else request.args.get('disciplina', '') }}" required>
                         </div>
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label">
+                        <label class="form-label fw-semibold">
                             <i class="bi bi-card-text text-primary"></i> Conteúdo / Tópicos a serem Avaliados <span class="text-danger">*</span>
                         </label>
-                        <textarea name="conteudo" class="form-control form-control-lg" rows="4"
-                                  placeholder="Descreva detalhadamente o conteúdo, habilidades ou competências que devem ser cobradas na atividade..." required></textarea>
-                        <div class="form-text small">Quanto mais específico for o tema, mais alinhadas serão as questões geradas.</div>
+                        <textarea name="conteudo" id="inputConteudo" class="form-control form-control-lg" rows="4"
+                                  placeholder="Descreva detalhadamente o conteúdo, habilidades ou competências que devem ser cobradas na atividade..." required>{{ dados_form.conteudo if dados_form else request.args.get('conteudo', '') }}</textarea>
+                        <div class="form-text small">Quanto mais específico for o tema, mais alinhadas serão as questões localizadas ou geradas.</div>
                     </div>
 
                     <div class="row g-3 mb-4">
                         <div class="col-md-4">
-                            <label class="form-label">
+                            <label class="form-label fw-semibold">
                                 <i class="bi bi-speedometer2 text-primary"></i> Nível de Dificuldade
                             </label>
-                            <select name="dificuldade" class="form-select form-select-lg">
-                                <option value="fácil">Fácil (Conceitual)</option>
-                                <option value="médio" selected>Médio (Aplicação)</option>
-                                <option value="difícil">Difícil (Análise / Resolução)</option>
+                            <select name="dificuldade" id="selectDificuldade" class="form-select form-select-lg">
+                                {% set dif_val = dados_form.dificuldade if dados_form else request.args.get('dificuldade', 'médio') %}
+                                <option value="fácil" {% if dif_val == 'fácil' %}selected{% endif %}>Fácil (Conceitual)</option>
+                                <option value="médio" {% if dif_val == 'médio' %}selected{% endif %}>Médio (Aplicação)</option>
+                                <option value="difícil" {% if dif_val == 'difícil' %}selected{% endif %}>Difícil (Análise / Resolução)</option>
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">
+                            <label class="form-label fw-semibold">
                                 <i class="bi bi-ui-checks text-primary"></i> Formato das Questões
                             </label>
-                            <select name="tipo" class="form-select form-select-lg">
-                                <option value="objetiva">Objetiva (Múltipla Escolha)</option>
-                                <option value="discursiva">Discursiva</option>
-                                <option value="mista" selected>Mista (Objetiva + Discursiva)</option>
+                            <select name="tipo" id="selectTipo" class="form-select form-select-lg">
+                                {% set tip_val = dados_form.tipo if dados_form else request.args.get('tipo', 'mista') %}
+                                <option value="objetiva" {% if tip_val == 'objetiva' %}selected{% endif %}>Objetiva (Múltipla Escolha)</option>
+                                <option value="discursiva" {% if tip_val == 'discursiva' %}selected{% endif %}>Discursiva</option>
+                                <option value="mista" {% if tip_val == 'mista' %}selected{% endif %}>Mista (Objetiva + Discursiva)</option>
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">
+                            <label class="form-label fw-semibold">
                                 <i class="bi bi-hash text-primary"></i> Quantidade de Questões
                             </label>
-                            <input type="number" name="quantidade" class="form-control form-control-lg"
-                                   value="5" min="1" max="50" required>
+                            <input type="number" name="quantidade" id="inputQuantidade" class="form-control form-control-lg"
+                                   value="{{ dados_form.quantidade if dados_form else request.args.get('quantidade', '5') }}" min="1" max="50" required>
                         </div>
                     </div>
 
                     <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm" id="btnSubmitAtividade">
-                        <i class="bi bi-cpu-fill"></i> Gerar Atividade com IA
+                        <i class="bi bi-arrow-right-circle-fill me-1"></i>
+                        <span id="btnSubmitTexto">Gerar Atividade Avaliativa</span>
                     </button>
 
                 </form>
@@ -96,12 +185,163 @@
     </div>
 </div>
 
+<!-- Modal de Confirmação: Quantidade Insuficiente no Repositório -->
+<div class="modal fade" id="modalInsuficiente" tabindex="-1" aria-labelledby="modalInsuficienteLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-warning bg-opacity-10 border-bottom border-warning border-opacity-25">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-exclamation-triangle-fill text-warning fs-4"></i>
+                    <h5 class="modal-title fw-bold" id="modalInsuficienteLabel">Quantidade Insuficiente no Repositório</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="mb-3" id="textoModalMensagem">
+                    Foram encontradas apenas <strong class="text-primary" id="modalQtdDisponivel">0</strong> atividade(s) no repositório do professor para os critérios informados (você solicitou <strong id="modalQtdSolicitada">0</strong>).
+                </p>
+                <div class="alert alert-info py-3 px-3 mb-0 rounded-3">
+                    <div class="fw-bold mb-1">
+                        <i class="bi bi-question-circle-fill me-1"></i> Deseja completar as atividades restantes com o banco externo / IA?
+                    </div>
+                    <small class="text-muted d-block">
+                        Se confirmar <strong>SIM</strong>, as questões restantes serão geradas automaticamente pela IA para completar a sua atividade.
+                        Se optar por <strong>NÃO</strong>, você voltará para a solicitação para ajustar os parâmetros.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-top d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="btnModalNaoVoltar">
+                    <i class="bi bi-arrow-left"></i> Não, voltar para solicitação
+                </button>
+                <button type="button" class="btn btn-primary fw-bold" id="btnModalSimCompletar">
+                    <i class="bi bi-cpu-fill me-1"></i> Sim, completar com banco externo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-document.getElementById('formGerarAtividade').addEventListener('submit', function() {
+// Atualização visual do card de seleção de fonte
+const radioRepo = document.getElementById('fonteRepositorio');
+const radioIA = document.getElementById('fonteIA');
+const cardRepo = document.getElementById('cardFonteRepositorio');
+const cardIA = document.getElementById('cardFonteIA');
+const btnSubmitTexto = document.getElementById('btnSubmitTexto');
+
+function atualizarEstiloFonte() {
+    if (radioRepo.checked) {
+        cardRepo.classList.add('border-primary', 'bg-primary', 'bg-opacity-10');
+        cardIA.classList.remove('border-primary', 'bg-primary', 'bg-opacity-10');
+        btnSubmitTexto.innerText = "Buscar e Montar do Repositório";
+    } else {
+        cardIA.classList.add('border-primary', 'bg-primary', 'bg-opacity-10');
+        cardRepo.classList.remove('border-primary', 'bg-primary', 'bg-opacity-10');
+        btnSubmitTexto.innerText = "Gerar Atividade com IA";
+    }
+}
+
+radioRepo.addEventListener('change', atualizarEstiloFonte);
+radioIA.addEventListener('change', atualizarEstiloFonte);
+cardRepo.addEventListener('click', () => { radioRepo.checked = true; atualizarEstiloFonte(); });
+cardIA.addEventListener('click', () => { radioIA.checked = true; atualizarEstiloFonte(); });
+atualizarEstiloFonte();
+
+// Verificação de quantidade no repositório antes do envio
+const form = document.getElementById('formGerarAtividade');
+const modalInsuficienteEl = document.getElementById('modalInsuficiente');
+let modalBootstrap = null;
+if (modalInsuficienteEl) {
+    modalBootstrap = new bootstrap.Modal(modalInsuficienteEl);
+}
+
+form.addEventListener('submit', async function(e) {
+    const inputCompletar = document.getElementById('inputCompletarIA');
+
+    // Se já estiver com confirmação definida, submete normalmente
+    if (inputCompletar.value === 'sim') {
+        const btn = document.getElementById('btnSubmitAtividade');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Compondo atividade com repositório + IA... aguarde';
+        return;
+    }
+
+    // Se a fonte for IA, submete diretamente
+    if (!radioRepo.checked) {
+        const btn = document.getElementById('btnSubmitAtividade');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Gerando atividade com IA... aguarde';
+        return;
+    }
+
+    // Fonte é repositório: verificar quantidade antes
+    e.preventDefault();
+
+    const dados = {
+        curso: document.getElementById('inputCurso').value,
+        disciplina: document.getElementById('inputDisciplina').value,
+        conteudo: document.getElementById('inputConteudo').value,
+        dificuldade: document.getElementById('selectDificuldade').value,
+        tipo: document.getElementById('selectTipo').value,
+        quantidade: document.getElementById('inputQuantidade').value,
+        fonte: 'repositorio'
+    };
+
     const btn = document.getElementById('btnSubmitAtividade');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Formulando atividade pedagógica... aguarde';
-    this.submit();
+    const textoOriginal = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Verificando repositório...';
+
+    try {
+        const resp = await fetch('/api/repositorio/verificar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dados)
+        });
+
+        const resJson = await resp.json();
+
+        if (resJson.suficiente) {
+            // Quantidade suficiente no repositório! Submete normalmente
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Montando atividade do repositório...';
+            form.submit();
+        } else {
+            // Quantidade insuficiente! Reativa botão e abre modal
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+
+            document.getElementById('modalQtdDisponivel').innerText = resJson.disponiveis;
+            document.getElementById('modalQtdSolicitada').innerText = resJson.solicitadas;
+
+            if (modalBootstrap) {
+                modalBootstrap.show();
+            } else {
+                // Fallback caso Bootstrap JS falhe
+                if (confirm(`Foram encontradas apenas ${resJson.disponiveis} atividade(s) no repositório (você solicitou ${resJson.solicitadas}). Deseja completar as ${resJson.faltantes} restantes com IA / banco externo?`)) {
+                    inputCompletar.value = 'sim';
+                    form.submit();
+                }
+            }
+        }
+    } catch (err) {
+        console.error("Erro na verificação:", err);
+        // Fallback: submete direto
+        btn.disabled = false;
+        btn.innerHTML = textoOriginal;
+        form.submit();
+    }
+});
+
+// Ação de confirmar "Sim, completar com banco externo"
+document.getElementById('btnModalSimCompletar').addEventListener('click', function() {
+    if (modalBootstrap) modalBootstrap.hide();
+    const inputCompletar = document.getElementById('inputCompletarIA');
+    inputCompletar.value = 'sim';
+    const btn = document.getElementById('btnSubmitAtividade');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Compondo atividade com repositório + IA... aguarde';
+    form.submit();
 });
 </script>
 

@@ -36,7 +36,7 @@ def release_cursor(conn, cursor):
 
 
 def _executar_migracoes_iniciais():
-    """Garante que novas colunas existam no banco sem necessidade de intervenção manual."""
+    """Garante que novas tabelas e colunas existam no banco sem necessidade de intervenção manual."""
     try:
         conn = conexao_pool.getconn()
         conn.autocommit = True
@@ -45,6 +45,29 @@ def _executar_migracoes_iniciais():
             ALTER TABLE planejamentos_docente ADD COLUMN IF NOT EXISTS modalidade VARCHAR(100);
             ALTER TABLE planejamentos_docente ADD COLUMN IF NOT EXISTS curso_id INTEGER REFERENCES cursos_plano(id) ON DELETE SET NULL;
             ALTER TABLE planos_aula ADD COLUMN IF NOT EXISTS planejamento_id INTEGER REFERENCES planejamentos_docente(id) ON DELETE SET NULL;
+            ALTER TABLE atividades ADD COLUMN IF NOT EXISTS origem VARCHAR(50) DEFAULT 'ia';
+
+            CREATE TABLE IF NOT EXISTS repositorio_atividades (
+                id SERIAL PRIMARY KEY,
+                curso VARCHAR(150) NOT NULL,
+                disciplina VARCHAR(150) NOT NULL,
+                conteudo VARCHAR(255) NOT NULL,
+                dificuldade VARCHAR(50) NOT NULL DEFAULT 'médio',
+                tipo VARCHAR(50) NOT NULL DEFAULT 'objetiva',
+                enunciado TEXT NOT NULL,
+                alternativas TEXT,
+                resposta_correta TEXT,
+                origem VARCHAR(20) NOT NULL DEFAULT 'professor',
+                usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+                data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_repositorio_curso ON repositorio_atividades(curso);
+            CREATE INDEX IF NOT EXISTS idx_repositorio_disciplina ON repositorio_atividades(disciplina);
+            CREATE INDEX IF NOT EXISTS idx_repositorio_usuario ON repositorio_atividades(usuario_id);
+            CREATE INDEX IF NOT EXISTS idx_repositorio_origem ON repositorio_atividades(origem);
+            CREATE INDEX IF NOT EXISTS idx_repositorio_dificuldade ON repositorio_atividades(dificuldade);
+            CREATE INDEX IF NOT EXISTS idx_repositorio_tipo ON repositorio_atividades(tipo);
         """)
         cur.close()
         conexao_pool.putconn(conn)

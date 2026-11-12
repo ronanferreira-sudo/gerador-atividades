@@ -4,7 +4,9 @@ from flask import (
     request,
     redirect,
     session,
-    send_file
+    send_file,
+    jsonify,
+    flash
 )
 
 from werkzeug.utils import secure_filename
@@ -14,6 +16,17 @@ from PyPDF2 import PdfReader
 from database.conexao import get_cursor, release_cursor
 
 from ia.gerador import gerar_atividade
+from utils.repositorio_service import (
+    buscar_questoes_repositorio,
+    contar_questoes_repositorio,
+    formatar_questoes_para_atividade,
+    compor_atividade_hibrida,
+    salvar_questoes_ia_no_repositorio,
+    adicionar_ao_repositorio,
+    atualizar_no_repositorio,
+    deletar_do_repositorio,
+    obter_item_repositorio,
+)
 from ia.plano_aula import gerar_todos_planos, gerar_plano_aula, gerar_todos_planos_de_planejamento
 from ia.planejamento_bloom import gerar_planejamento_ia, calcular_datas_aulas
 
@@ -369,7 +382,7 @@ def admin_deletar_usuario(id):
 
 
 # =========================
-# INDEX (GERAR IA)
+# INDEX (GERAR ATIVIDADE - REPOSITÓRIO / IA)
 # =========================
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -379,19 +392,113 @@ def index():
 
     if request.method == "POST":
 
-        curso = request.form["curso"]
-        disciplina = request.form["disciplina"]
-        conteudo = request.form["conteudo"]
-        dificuldade = request.form["dificuldade"]
-        tipo = request.form["tipo"]
-        quantidade = request.form["quantidade"]
+        curso = request.form.get("curso", "").strip()
+        disciplina = request.form.get("disciplina", "").strip()
+        conteudo = request.form.get("conteudo", "").strip()
+        dificuldade = request.form.get("dificuldade", "médio").strip()
+        tipo = request.form.get("tipo", "mista").strip()
+        quantidade_str = request.form.get("quantidade", "5").strip()
+        fonte = request.form.get("fonte", "ia").strip()
+        completar_com_ia = request.form.get("completar_com_ia", "").strip()
 
-        atividade_gerada = gerar_atividade(
-            conteudo,
-            dificuldade,
-            tipo,
-            quantidade
-        )
+        try:
+            quantidade = max(1, min(int(quantidade_str), 50))
+        except ValueError:
+            quantidade = 5
+
+        # Se a fonte for Repositório do Professor
+        if fonte == "repositorio":
+            questoes_disp = buscar_questoes_repositorio(
+                curso=curso,
+                disciplina=disciplina,
+                conteudo=conteudo,
+                dificuldade=dificuldade,
+                tipo=tipo,
+                usuario_id=session["usuario_id"],
+                limite=quantidade
+            )
+            qtd_disp = len(questoes_disp)
+
+            # Se não tem o suficiente no repositório e ainda não autorizou completar com IA
+            if qtd_disp < quantidade and completar_com_ia != "sim":
+                # Se o usuário escolheu "Não, voltar para solicitação"
+                if completar_com_ia == "nao":
+                    return render_template(
+                        "index.html",
+                        dados_form={
+                            "curso": curso,
+                            "disciplina": disciplina,
+                            "conteudo": conteudo,
+                            "dificuldade": dificuldade,
+                            "tipo": tipo,
+                            "quantidade": quantidade,
+                            "fonte": fonte
+                        }
+                    )
+
+                # Fallback sem JavaScript ativo: renderiza o aviso com as opções Sim e Não
+                return render_template(
+                    "index.html",
+                    confirmar_complemento=True,
+                    disponiveis=qtd_disp,
+                    solicitadas=quantidade,
+                    faltantes=quantidade - qtd_disp,
+                    dados_form={
+                        "curso": curso,
+                        "disciplina": disciplina,
+                        "conteudo": conteudo,
+                        "dificuldade": dificuldade,
+                        "tipo": tipo,
+                        "quantidade": quantidade,
+                        "fonte": fonte
+                    }
+                )
+
+            # Se atingiu a quantidade pelo repositório
+            if qtd_disp >= quantidade:
+                questoes_selecionadas = questoes_disp[:quantidade]
+                atividade_gerada = formatar_questoes_para_atividade(questoes_selecionadas)
+                origem_salva = "repositorio"
+            else:
+                # Completar com IA / banco externo (Usuário disse SIM!)
+                faltantes = quantidade - qtd_disp
+                texto_ia = gerar_atividade(
+                    conteudo,
+                    dificuldade,
+                    tipo,
+                    faltantes
+                )
+                # Salva as novas questões geradas pela IA no repositório
+                salvar_questoes_ia_no_repositorio(
+                    texto_atividade=texto_ia,
+                    curso=curso,
+                    disciplina=disciplina,
+                    conteudo=conteudo,
+                    dificuldade=dificuldade,
+                    tipo=tipo,
+                    usuario_id=session["usuario_id"]
+                )
+                atividade_gerada = compor_atividade_hibrida(questoes_disp, texto_ia, quantidade)
+                origem_salva = "misto" if qtd_disp > 0 else "ia"
+
+        else:
+            # Geração direta com IA / Banco Externo
+            atividade_gerada = gerar_atividade(
+                conteudo,
+                dificuldade,
+                tipo,
+                quantidade
+            )
+            salvar_questoes_ia_no_repositorio(
+                texto_atividade=atividade_gerada,
+                curso=curso,
+                disciplina=disciplina,
+                conteudo=conteudo,
+                dificuldade=dificuldade,
+                tipo=tipo,
+                usuario_id=session["usuario_id"]
+            )
+            origem_salva = "ia"
 
         conn, cursor = get_cursor()
         try:
@@ -403,9 +510,10 @@ def index():
                     conteudo,
                     dificuldade,
                     atividade_gerada,
-                    usuario_id
+                    usuario_id,
+                    origem
                 )
-                VALUES (%s,%s,%s,%s,%s,%s)
+                VALUES (%s,%s,%s,%s,%s,%s,%s)
                 """,
                 (
                     curso,
@@ -413,7 +521,8 @@ def index():
                     conteudo,
                     dificuldade,
                     atividade_gerada,
-                    session["usuario_id"]
+                    session["usuario_id"],
+                    origem_salva
                 ),
             )
 
@@ -424,6 +533,251 @@ def index():
         return redirect("/atividades")
 
     return render_template("index.html")
+
+
+# =========================
+# API VERIFICAÇÃO REPOSITÓRIO
+# =========================
+@app.route("/api/repositorio/verificar", methods=["POST"])
+def api_verificar_repositorio():
+    if "usuario_id" not in session:
+        return jsonify({"erro": "Não autorizado"}), 401
+
+    dados = request.get_json() or {}
+    curso = dados.get("curso", "").strip()
+    disciplina = dados.get("disciplina", "").strip()
+    conteudo = dados.get("conteudo", "").strip()
+    dificuldade = dados.get("dificuldade", "").strip()
+    tipo = dados.get("tipo", "").strip()
+    fonte = dados.get("fonte", "repositorio").strip()
+
+    try:
+        quantidade = max(1, min(int(dados.get("quantidade", 5)), 50))
+    except (ValueError, TypeError):
+        quantidade = 5
+
+    if fonte != "repositorio":
+        return jsonify({
+            "suficiente": True,
+            "disponiveis": 0,
+            "solicitadas": quantidade,
+            "faltantes": 0
+        })
+
+    questoes = buscar_questoes_repositorio(
+        curso=curso,
+        disciplina=disciplina,
+        conteudo=conteudo,
+        dificuldade=dificuldade,
+        tipo=tipo,
+        usuario_id=session["usuario_id"],
+        limite=quantidade
+    )
+    disponiveis = len(questoes)
+
+    return jsonify({
+        "suficiente": disponiveis >= quantidade,
+        "disponiveis": disponiveis,
+        "solicitadas": quantidade,
+        "faltantes": max(0, quantidade - disponiveis)
+    })
+
+
+# =========================
+# REPOSITÓRIO DE ATIVIDADES
+# =========================
+@app.route("/repositorio")
+def listar_repositorio():
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    busca = (request.args.get("busca") or "").strip()
+    origem = (request.args.get("origem") or "").strip()
+    tipo = (request.args.get("tipo") or "").strip()
+    dificuldade = (request.args.get("dificuldade") or "").strip()
+
+    try:
+        pagina = max(1, int(request.args.get("pagina", 1)))
+    except ValueError:
+        pagina = 1
+
+    por_pagina = 15
+    offset = (pagina - 1) * por_pagina
+
+    conn, cursor = get_cursor()
+    try:
+        condicoes = []
+        params = []
+
+        if busca:
+            condicoes.append("(enunciado ILIKE %s OR curso ILIKE %s OR disciplina ILIKE %s OR conteudo ILIKE %s)")
+            termo = f"%{busca}%"
+            params.extend([termo, termo, termo, termo])
+
+        if origem:
+            condicoes.append("origem = %s")
+            params.append(origem)
+
+        if tipo:
+            condicoes.append("tipo = %s")
+            params.append(tipo)
+
+        if dificuldade:
+            condicoes.append("dificuldade ILIKE %s")
+            params.append(f"%{dificuldade}%")
+
+        where_sql = ("WHERE " + " AND ".join(condicoes)) if condicoes else ""
+
+        # Estatísticas do repositório
+        cursor.execute("SELECT COUNT(*) FROM repositorio_atividades")
+        total_itens = cursor.fetchone()[0]
+
+        cursor.execute("SELECT COUNT(*) FROM repositorio_atividades WHERE origem = 'professor'")
+        total_professor = cursor.fetchone()[0]
+
+        cursor.execute("SELECT COUNT(*) FROM repositorio_atividades WHERE origem = 'ia'")
+        total_ia = cursor.fetchone()[0]
+
+        # Total filtrado para paginação
+        cursor.execute(f"SELECT COUNT(*) FROM repositorio_atividades {where_sql}", tuple(params))
+        total_filtrado = cursor.fetchone()[0]
+
+        total_paginas = (total_filtrado + por_pagina - 1) // por_pagina
+
+        query = f"""
+            SELECT id, curso, disciplina, conteudo, dificuldade, tipo,
+                   enunciado, alternativas, resposta_correta, origem, usuario_id, data_criacao
+            FROM repositorio_atividades
+            {where_sql}
+            ORDER BY id DESC
+            LIMIT %s OFFSET %s
+        """
+        cursor.execute(query, tuple(params + [por_pagina, offset]))
+        rows = cursor.fetchall()
+
+        questoes = []
+        for r in rows:
+            questoes.append({
+                "id": r[0],
+                "curso": r[1],
+                "disciplina": r[2],
+                "conteudo": r[3],
+                "dificuldade": r[4],
+                "tipo": r[5],
+                "enunciado": r[6],
+                "alternativas": r[7],
+                "resposta_correta": r[8],
+                "origem": r[9],
+                "usuario_id": r[10],
+                "data_criacao": r[11]
+            })
+
+    finally:
+        release_cursor(conn, cursor)
+
+    return render_template(
+        "repositorio.html",
+        questoes=questoes,
+        total_itens=total_itens,
+        total_professor=total_professor,
+        total_ia=total_ia,
+        total_paginas=total_paginas,
+        pagina=pagina,
+        busca=busca,
+        origem=origem,
+        tipo=tipo,
+        dificuldade=dificuldade
+    )
+
+
+@app.route("/repositorio/nova", methods=["GET", "POST"])
+def repositorio_nova():
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    if request.method == "POST":
+        curso = request.form.get("curso", "").strip()
+        disciplina = request.form.get("disciplina", "").strip()
+        conteudo = request.form.get("conteudo", "").strip()
+        dificuldade = request.form.get("dificuldade", "médio").strip()
+        tipo = request.form.get("tipo", "objetiva").strip()
+        enunciado = request.form.get("enunciado", "").strip()
+        alternativas = request.form.get("alternativas", "").strip()
+        resposta_correta = request.form.get("resposta_correta", "").strip()
+
+        if not curso or not disciplina or not conteudo or not enunciado:
+            return render_template(
+                "repositorio_form.html",
+                item=request.form,
+                erro="Preencha todos os campos obrigatórios."
+            )
+
+        adicionar_ao_repositorio(
+            curso=curso,
+            disciplina=disciplina,
+            conteudo=conteudo,
+            dificuldade=dificuldade,
+            tipo=tipo,
+            enunciado=enunciado,
+            alternativas=alternativas,
+            resposta_correta=resposta_correta,
+            origem="professor",
+            usuario_id=session["usuario_id"]
+        )
+
+        return redirect("/repositorio")
+
+    return render_template("repositorio_form.html", item=None)
+
+
+@app.route("/repositorio/editar/<int:id>", methods=["GET", "POST"])
+def repositorio_editar(id):
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    item = obter_item_repositorio(id)
+    if not item:
+        return redirect("/repositorio")
+
+    if request.method == "POST":
+        curso = request.form.get("curso", "").strip()
+        disciplina = request.form.get("disciplina", "").strip()
+        conteudo = request.form.get("conteudo", "").strip()
+        dificuldade = request.form.get("dificuldade", "médio").strip()
+        tipo = request.form.get("tipo", "objetiva").strip()
+        enunciado = request.form.get("enunciado", "").strip()
+        alternativas = request.form.get("alternativas", "").strip()
+        resposta_correta = request.form.get("resposta_correta", "").strip()
+
+        atualizar_no_repositorio(
+            item_id=id,
+            curso=curso,
+            disciplina=disciplina,
+            conteudo=conteudo,
+            dificuldade=dificuldade,
+            tipo=tipo,
+            enunciado=enunciado,
+            alternativas=alternativas,
+            resposta_correta=resposta_correta
+        )
+
+        return redirect("/repositorio")
+
+    return render_template("repositorio_form.html", item=item)
+
+
+@app.route("/repositorio/deletar/<int:id>", methods=["GET", "POST"])
+def repositorio_deletar(id):
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    deletar_do_repositorio(
+        item_id=id,
+        usuario_id=session["usuario_id"],
+        perfil=session.get("perfil", "professor")
+    )
+
+    return redirect("/repositorio")
 
 
 # =========================
@@ -1651,9 +2005,10 @@ def gerar_atividade_plano(id):
                 conteudo,
                 dificuldade,
                 atividade_gerada,
-                usuario_id
+                usuario_id,
+                origem
             )
-            VALUES (%s,%s,%s,%s,%s,%s)
+            VALUES (%s,%s,%s,%s,%s,%s,'ia')
             """,
             (
                 curso_ident,
@@ -1666,6 +2021,20 @@ def gerar_atividade_plano(id):
         )
 
         conn.commit()
+
+        # Cataloga também no repositório de atividades
+        try:
+            salvar_questoes_ia_no_repositorio(
+                texto_atividade=atividade,
+                curso=curso_ident,
+                disciplina=uc_ident,
+                conteudo=cabecalho_ident,
+                dificuldade=bloom_ident,
+                tipo=tipo,
+                usuario_id=session["usuario_id"]
+            )
+        except Exception as e_repo:
+            print(f"[REPOSITORIO] Aviso ao catalogar atividade do plano: {e_repo}")
     finally:
         release_cursor(conn, cursor)
 
