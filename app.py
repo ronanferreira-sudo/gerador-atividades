@@ -384,7 +384,7 @@ def admin_deletar_usuario(id):
 
 
 # =========================
-# LANDING PAGE (PÁGINA INICIAL DO SGP)
+# LANDING PAGE (PÁGINA INICIAL DO SGPP)
 # =========================
 @app.route("/", methods=["GET"])
 @app.route("/inicio", methods=["GET"])

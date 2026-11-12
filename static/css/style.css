@@ -1,5 +1,5 @@
 /* ============================================================
-   SGP — Sistema de Gestão e Planejamento Pedagógico
+   SGPP — Sistema de Gestão e Planejamento Pedagógico
    Design System Moderno & Profissional
    ============================================================ */
 
@@ -8,7 +8,7 @@
 :root {
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     
-    /* Paleta Executiva & Sóbria SGP */
+    /* Paleta Executiva & Sóbria SGPP */
     --primary: #1e3a8a;
     --primary-hover: #172554;
     --primary-light: #eff6ff;
@@ -849,7 +849,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ============================================================
-   LANDING PAGE SGP (VISUAL CORPORATIVO, SÓBRIO & ANIMAÇÕES)
+   LANDING PAGE SGPP (VISUAL CORPORATIVO, SÓBRIO & ANIMAÇÕES)
    ============================================================ */
 
 .landing-body {
