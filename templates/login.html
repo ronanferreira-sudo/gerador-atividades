@@ -23,42 +23,52 @@
     <div class="container-fluid p-0">
         <div class="row g-0 auth-wrapper">
 
-            <!-- PAINEL ESQUERDO (TÍTULOS E SUBTÍTULOS PERFEITAMENTE ALINHADOS) -->
+            <!-- PAINEL ESQUERDO (CENTRALIZADO E INTEGRADO) -->
             <div class="col-lg-6 auth-sidebar d-none d-lg-flex">
                 <div class="auth-sidebar-content">
-                    <a href="/" class="auth-sidebar-brand text-decoration-none">
-                        <img src="{{ url_for('static', filename='img/logo_sgp_icon.svg') }}?v=4" alt="Logo SGPP" width="46" height="46">
-                        <div class="text-start">
-                            <h4 class="mb-0 fw-bold text-dark">SGPP</h4>
-                            <span class="text-muted small">Sistema de Gestão e Planejamento Pedagógico</span>
-                        </div>
-                    </a>
+                    <div class="mb-3">
+                        <span class="badge bg-white text-primary border shadow-xs px-3 py-1.5 rounded-pill fw-semibold">
+                            <i class="bi bi-mortarboard-fill me-1"></i> Acesso Docente &bull; SGPP
+                        </span>
+                    </div>
 
-                    <div class="auth-hero-copy text-start">
-                        <h1 class="auth-main-title fw-bold text-dark mb-3">
+                    <div class="auth-hero-copy mb-3" style="text-align: left; max-width: 440px; width: 100%;">
+                        <a href="/" class="auth-sidebar-brand text-decoration-none mb-3" style="align-self: flex-start; justify-content: flex-start;">
+                            <img src="{{ url_for('static', filename='img/logo_sgp_icon.svg') }}?v=4" alt="Logo SGPP" width="46" height="46">
+                            <div class="text-start">
+                                <h4 class="mb-0 fw-bold text-dark lh-1">SGPP</h4>
+                                <span class="text-muted small" style="font-size: 0.78rem;">Gestão e Planejamento Pedagógico</span>
+                            </div>
+                        </a>
+                        <h1 class="auth-main-title fw-bold text-dark mb-2">
                             Sistema de Planejamento Pedagógico
                         </h1>
                         <p class="auth-main-subtitle text-muted mb-0">
-                            Plataforma inteligente para geração de planejamentos com Taxonomia de Bloom, planos de aula e atividades.
+                            Plataforma inteligente para estruturação de planejamentos com Taxonomia de Bloom, planos de aula e avaliações.
                         </p>
                     </div>
 
-                    <!-- Ilustração centralizada verticalmente no espaço restante -->
-                    <div class="text-center my-auto py-3">
+                    <div class="auth-illustration-container text-center my-auto py-2">
                         <img src="{{ url_for('static', filename='img/computador.png') }}"
                              alt="Sistema de Planejamento Pedagógico"
                              class="img-fluid auth-illustration">
                     </div>
+
+                    <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
+                        <span class="auth-feature-pill"><i class="bi bi-diagram-3-fill text-primary"></i> Taxonomia de Bloom</span>
+                        <span class="auth-feature-pill"><i class="bi bi-file-earmark-word-fill text-primary"></i> Exportação Word</span>
+                        <span class="auth-feature-pill"><i class="bi bi-check2-circle text-primary"></i> Alinhado à BNCC</span>
+                    </div>
                 </div>
 
-                <div class="pt-3 border-top border-secondary border-opacity-10 text-muted small text-start">
-                    SGPP &mdash; Sistema de Gestão e Planejamento Pedagógico &copy; 2026. Acesso ao corpo docente.
+                <div class="auth-sidebar-footer pt-3 border-top border-secondary border-opacity-10 text-muted small text-center">
+                    <i class="bi bi-shield-check text-success me-1"></i> SGPP &copy; 2026 &mdash; Ambiente seguro para o corpo docente.
                 </div>
             </div>
 
             <!-- PAINEL DIREITO (FORMULÁRIO DE LOGIN) -->
             <div class="col-12 col-lg-6 auth-main">
-                <div class="w-100" style="max-width: 460px;">
+                <div class="w-100" style="max-width: 470px;">
 
                     <!-- Cabeçalho Mobile/Tablet (visível em telas menores que 992px) -->
                     <div class="d-flex d-lg-none align-items-center justify-content-center gap-3 mb-4 text-start">
@@ -73,7 +83,7 @@
 
                     <div class="auth-card">
                         <div class="text-center mb-4">
-                            <div class="auth-card-icon">
+                            <div class="auth-card-icon shadow-sm">
                                 <i class="bi bi-person-fill-lock"></i>
                             </div>
                             <h2 class="fw-bold mb-1 text-dark fs-3">Portal do Docente</h2>
@@ -81,50 +91,50 @@
                         </div>
 
                         {% if erro %}
-                        <div class="alert alert-danger py-2 px-3 mb-4 d-flex align-items-center gap-2 small rounded-3" role="alert">
-                            <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                        <div class="alert alert-danger py-2.5 px-3 mb-4 d-flex align-items-center gap-2 small rounded-3 shadow-xs border-danger-subtle" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill fs-5 text-danger flex-shrink-0"></i>
                             <div>{{ erro }}</div>
                         </div>
                         {% endif %}
 
                         {% if request.args.get('sucesso') == 'senha_redefinida' %}
-                        <div class="alert alert-success py-2 px-3 mb-4 d-flex align-items-center gap-2 small rounded-3" role="alert">
-                            <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+                        <div class="alert alert-success py-2.5 px-3 mb-4 d-flex align-items-center gap-2 small rounded-3 shadow-xs border-success-subtle" role="alert">
+                            <i class="bi bi-check-circle-fill fs-5 text-success flex-shrink-0"></i>
                             <div>Sua senha foi redefinida com sucesso! Entre com a nova senha.</div>
                         </div>
                         {% endif %}
 
                         <form method="POST">
                             <div class="mb-3">
-                                <label class="form-label">
-                                    <i class="bi bi-envelope text-primary"></i> E-mail Institucional
+                                <label class="form-label fw-semibold text-dark small">
+                                    <i class="bi bi-envelope text-primary me-1"></i> E-mail Institucional <span class="text-danger">*</span>
                                 </label>
-                                <input type="email" name="email" class="form-control form-control-lg"
-                                       placeholder="nome.sobrenome@email.com" required autofocus>
+                                <input type="email" name="email" class="form-control form-control-lg auth-input"
+                                       placeholder="nome.sobrenome@email.com" required autofocus autocomplete="email">
                             </div>
 
                             <div class="mb-4">
                                 <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-1">
-                                    <label class="form-label mb-0">
-                                        <i class="bi bi-key text-primary"></i> Senha de Acesso
+                                    <label class="form-label fw-semibold text-dark small mb-0">
+                                        <i class="bi bi-key text-primary me-1"></i> Senha de Acesso <span class="text-danger">*</span>
                                     </label>
                                     <a href="/redefinir_senha" class="text-primary text-decoration-none small">
                                         Esqueceu a senha?
                                     </a>
                                 </div>
-                                <input type="password" name="senha" class="form-control form-control-lg"
-                                       placeholder="Sua senha de acesso" required>
+                                <input type="password" name="senha" class="form-control form-control-lg auth-input"
+                                       placeholder="Sua senha de acesso" required autocomplete="current-password">
                             </div>
 
-                            <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm">
-                                <i class="bi bi-box-arrow-in-right"></i> Entrar no Sistema
+                            <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm auth-btn-submit">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Entrar no Sistema
                             </button>
                         </form>
 
                         <div class="text-center mt-4 pt-3 border-top">
                             <span class="text-muted small">Ainda não possui uma conta?</span>
                             <a href="/cadastro" class="fw-semibold text-primary text-decoration-none ms-1 small">
-                                Solicitar cadastro
+                                Solicitar cadastro &rarr;
                             </a>
                             <div class="mt-2">
                                 <a href="/" class="text-muted text-decoration-none small">
